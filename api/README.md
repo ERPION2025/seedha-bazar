@@ -4,7 +4,7 @@ Django + Django REST Framework. Phone-OTP login, device-bound sessions, farmer a
 FPO/NGO linkage, agent-assisted onboarding, audit log. Not built on Frappe; runs on any host that can run
 containers and PostgreSQL.
 
-Scope of this drop: accounts and profiles only. Not built yet: Farmer Book, listings, search, chat and unlock,
+Scope of this drop: accounts, profiles and the Farmer Book. Not built yet: listings, search, chat and unlock,
 billing, AI advisor, the Next.js app. See the architecture plan for the order.
 
 ## Run it
@@ -16,7 +16,7 @@ billing, AI advisor, the Next.js app. See the architecture plan for the order.
     python manage.py createsuperuser            # phone number + password, for /admin/
     python manage.py create_agent 98XXXXXXXX naigarhi
     python manage.py runserver
-    python manage.py test                       # 57 tests
+    python manage.py test                       # 81 tests
 
 Local runs print OTPs in the server log (`OTP_BACKEND=console`). Production refuses to start with that setting.
 With Docker: copy `.env.example` to `.env`, then `docker compose up --build`.
@@ -45,6 +45,27 @@ The agent never receives tokens for the farmer. A pending account cannot use the
 (`/api/agent/join-requests/...`). Approval confirms the link.
 
 **6. Delete account.** `POST /api/me/delete {"confirm": "DELETE"}` signs out all devices, clears personal fields, frees the number.
+
+## Farmer Book (`/api/farmerbook/`)
+
+A private ledger for each farmer: plots, crop cycles, activities (harvest calendar), expenses, harvests and sales.
+Only the farmer can read or change their records; buyers and agents get 403.
+
+Endpoints (each supports list, create, read, patch, delete): `plots`, `cycles`, `activities`, `expenses`, `harvests`, `sales`.
+Plus `GET ledger` (profit and loss per crop cycle, optional `?crop_cycle=<id>`) and `GET stock` (stock left and shelf-life days).
+
+Built for patchy networks:
+- The app makes each record's `client_id` (a UUID) and refers to related records by that id, so a whole season can be entered offline and pushed later in order (plot, cycle, then entries).
+- Creating the same `client_id` twice is safe: the second call just returns the first record (HTTP 200).
+- Deletes are soft. `GET <endpoint>?since=<ISO time>` returns everything changed after that time, including deletions (`deleted: true`), up to 500 rows, with `next_since` when there is more.
+
+Numbers:
+- Units are kg, quintal, tonne or bag (a bag needs `bag_weight_kg`). The server stores kg and computes it.
+- A sale's `amount` is always quantity x rate, calculated by the server. Clients cannot send it.
+- You cannot sell more than the stock in a crop cycle, and cannot shrink or delete a harvest below what was already sold (clear error codes: `insufficient_stock`, `stock_would_go_negative`). The app must push harvests before the sales that depend on them.
+- The ledger separates costs tied to a crop cycle from general expenses, and gives cost per kg and average sale rate per quintal only when there is a harvest or a sale to base them on.
+
+Not in this drop: voice entry (the app will turn speech into these same calls, with read-back before saving), subsidised input purchases, photo attachments, and sharing records with a buyer. Anything a buyer eventually sees must be something the farmer chooses to publish on a listing; the book itself stays private.
 
 ## Profile levels
 
