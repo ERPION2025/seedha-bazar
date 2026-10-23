@@ -1,0 +1,12 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{{ org.name }}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<div class="card tint" style="text-align:center">
+  <p class="mute" style="margin-bottom:4px">{% t "You are invited to join" %}</p>
+  <h1>{{ org.name }}</h1>
+  {% if org.district %}<p class="mute">{{ org.district }}</p>{% endif %}
+  <p>{% t "Sign in with your mobile number and your request goes to your FPO." %}</p>
+  <a class="btn block" href="/login/?as=farmer">{% t "Continue" %}</a>
+</div>
+{% endblock %}

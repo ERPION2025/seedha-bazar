@@ -1,0 +1,16 @@
+{% extends "web/fpo/base.html" %}{% load web_tags %}
+{% block title %}{% t "My farmers" %}{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="margin:0">{% t "My farmers" %}</h1>{% if org.verified %}<a class="btn" href="/fpo/farmers/add/">+ {% t "Add farmer" %}</a>{% endif %}</div>
+<form method="get" class="row" style="margin:16px 0"><input type="text" name="q" value="{{ q }}" placeholder="{% t "Name, village or number" %}" style="flex:1"><button class="btn small">{% t "Search" %}</button></form>
+<div class="card scroll"><table class="tbl">
+  <thead><tr><th>{% t "Name" %}</th><th>{% t "Village" %}</th><th>{% t "Acres" %}</th><th>{% t "Crops" %}</th><th>{% t "Status" %}</th><th></th></tr></thead>
+  <tbody>{% for fp in rows %}<tr>
+    <td><b>{{ fp.name|default:"—" }}</b><br><span class="mute">{{ fp.user.phone }}</span></td>
+    <td>{{ fp.village }}</td><td>{{ fp.land_acres|num:1|default:"—" }}</td>
+    <td>{% for c in fp.crops %}{% crop c %}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+    <td>{% if fp.user.status == "pending" %}<span class="pill sun">{% t "Waiting for code" %}</span>{% elif fp.org_status == "confirmed" %}<span class="pill">{% t "Member" %}</span>{% else %}<span class="pill grey">{% t "Requested" %}</span>{% endif %}</td>
+    <td>{% if fp.user.status == "pending" and org.verified %}<form method="post" action="/fpo/farmers/{{ fp.user_id }}/resend/">{% csrf_token %}<button class="btn small ghost">{% t "Resend code" %}</button></form>{% endif %}</td>
+  </tr>{% empty %}<tr><td colspan="6" class="mute">{% t "No farmers yet." %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

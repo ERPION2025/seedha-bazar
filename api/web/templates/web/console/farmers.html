@@ -1,0 +1,11 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Farmers" %}{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="margin:0">{% t "Farmers" %}</h1><a class="btn" href="/console/farmers/add/">+ {% t "Add farmer" %}</a></div>
+<form method="get" class="row" style="margin:16px 0"><input type="text" name="q" value="{{ q }}" placeholder="{% t "Name, village or number" %}" style="flex:1"><button class="btn small">{% t "Search" %}</button></form>
+<div class="card scroll"><table class="tbl">
+<thead><tr><th>{% t "Name" %}</th><th>{% t "Village" %}</th><th>{% t "District" %}</th><th>{% t "FPO" %}</th><th>{% t "Level" %}</th><th>{% t "Status" %}</th></tr></thead>
+<tbody>{% for fp in rows %}<tr><td><b>{{ fp.name|default:"—" }}</b><br><span class="mute">{{ fp.user.phone }}</span></td><td>{{ fp.village }}</td><td>{{ fp.district }}</td><td>{{ fp.organisation.name|default:"—" }}</td><td>{{ fp.level }}</td>
+<td>{% if fp.user.status == "pending" %}<span class="pill sun">{% t "Waiting for code" %}</span>{% elif fp.user.status == "active" %}<span class="pill">{% t "Active" %}</span>{% else %}<span class="pill grey">{{ fp.user.status }}</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6" class="mute">{% t "No farmers yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

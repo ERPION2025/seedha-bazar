@@ -1,0 +1,13 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "FPOs and NGOs" %}{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="margin:0">{% t "FPOs and NGOs" %}</h1><a class="btn" href="/console/orgs/new/">+ {% t "New FPO or NGO" %}</a></div>
+<div class="card scroll" style="margin-top:16px"><table class="tbl">
+<thead><tr><th>{% t "Name" %}</th><th>{% t "District" %}</th><th>{% t "Code" %}</th><th>{% t "Members" %}</th><th>{% t "Status" %}</th><th></th></tr></thead>
+<tbody>{% for o in orgs %}<tr>
+  <td><b>{{ o.name }}</b><br><span class="mute">{{ o.get_kind_display }}{% if o.registration_no %} · {{ o.registration_no }}{% endif %}</span></td>
+  <td>{{ o.district }}</td><td>{{ o.code }}</td><td>{{ o.members }}</td>
+  <td>{% if o.verified %}<span class="pill">{% t "Verified" %}</span>{% else %}<span class="pill sun">{% t "Not verified" %}</span>{% endif %}</td>
+  <td><form method="post" action="/console/orgs/{{ o.pk }}/verify/">{% csrf_token %}<input type="hidden" name="verified" value="{% if o.verified %}0{% else %}1{% endif %}"><button class="btn small {% if o.verified %}ghost{% endif %}">{% if o.verified %}{% t "Remove verification" %}{% else %}{% t "Approve" %}{% endif %}</button></form></td>
+</tr>{% endfor %}</tbody></table></div>
+{% endblock %}

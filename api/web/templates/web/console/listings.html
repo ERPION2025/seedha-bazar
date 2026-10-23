@@ -1,0 +1,12 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Listings" %}{% endblock %}
+{% block content %}
+<h1>{% t "Listings" %}</h1>
+<div class="row" style="margin:14px 0"><a class="pill {% if not status %}{% else %}grey{% endif %}" href="?">{% t "All" %}</a>{% for v, label in statuses %}<a class="pill {% if status == v %}{% else %}grey{% endif %}" href="?status={{ v }}">{% t label %}</a>{% endfor %}</div>
+<div class="card scroll"><table class="tbl">
+<thead><tr><th>{% t "Crop" %}</th><th>{% t "Quantity" %}</th><th>{% t "Price" %}</th><th>{% t "Where" %}</th><th>{% t "Seller" %}</th><th>{% t "Status" %}</th><th></th></tr></thead>
+<tbody>{% for li in rows %}<tr><td><a href="/market/{{ li.pk }}/">{% crop li.crop %}</a></td><td>{{ li.quantity|num:2 }} {% t li.unit %}</td><td>{{ li.price|inr }}</td><td>{{ li.district }}</td>
+<td>{% if li.organisation %}{{ li.organisation.name }}{% else %}{{ li.seller.phone }}{% endif %}</td><td><span class="pill {% if li.status == "active" %}{% else %}grey{% endif %}">{% t li.get_status_display %}</span></td>
+<td><form method="post" action="/console/listings/{{ li.pk }}/visibility/">{% csrf_token %}<input type="hidden" name="hide" value="{% if li.status == "hidden" %}0{% else %}1{% endif %}"><button class="btn small ghost">{% if li.status == "hidden" %}{% t "Show again" %}{% else %}{% t "Hide" %}{% endif %}</button></form></td></tr>
+{% empty %}<tr><td colspan="7" class="mute">{% t "No listings yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

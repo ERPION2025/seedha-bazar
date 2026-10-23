@@ -1,0 +1,13 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block subnav %}<nav class="tabs"><div class="wrap">
+  <a href="/console/"{% if request.path == "/console/" %} class="on"{% endif %}>{% t "Overview" %}</a>
+  <a href="/console/orgs/"{% if "/console/orgs" in request.path %} class="on"{% endif %}>{% t "FPOs and NGOs" %}</a>
+  <a href="/console/farmers/"{% if "/console/farmers" in request.path %} class="on"{% endif %}>{% t "Farmers" %}</a>
+  <a href="/console/listings/"{% if "/console/listings" in request.path %} class="on"{% endif %}>{% t "Listings" %}</a>
+  <a href="/console/buyers/"{% if "/console/buyers" in request.path %} class="on"{% endif %}>{% t "Buyers" %}</a>
+  <a href="/console/rates/"{% if "/console/rates" in request.path %} class="on"{% endif %}>{% t "Rates" %}</a>
+  <a href="/console/messages/"{% if "/console/messages" in request.path %} class="on"{% endif %}>{% t "Messages" %}</a>
+  <a href="/console/leads/"{% if "/console/leads" in request.path %} class="on"{% endif %}>{% t "Leads" %}</a>
+  <a href="/console/audit/"{% if "/console/audit" in request.path %} class="on"{% endif %}>{% t "Activity" %}</a>
+  <a href="/admin/">Django admin</a>
+</div></nav>{% endblock %}

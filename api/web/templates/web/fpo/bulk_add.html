@@ -1,0 +1,16 @@
+{% extends "web/fpo/base.html" %}{% load web_tags %}
+{% block title %}{% t "Add many at once" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Add many at once" %}</h1>
+<p class="mute">{% t "One farmer per line: phone, name, village, district, acres, crops. Acres and crops are optional. Each farmer gets a code on their own phone." %}</p>
+<form method="post" class="card">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block">{% t "Add all" %}</button>
+</form>
+{% if results %}
+<div class="card"><h3>{% t "Result" %}</h3>
+  {% for r in results %}<div class="line"><span class="mute" style="word-break:break-word">{{ r.line }}</span>{% if r.ok %}<span class="pill">✔ {% t "Added" %}</span>{% else %}<span class="pill red">{% t r.error %}</span>{% endif %}</div>{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

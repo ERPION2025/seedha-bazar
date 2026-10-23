@@ -1,0 +1,12 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "List produce for sale" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>🏷️ {% if instance %}{% t "Edit listing" %}{% else %}{% t "List produce for sale" %}{% endif %}</h1>
+{% if ref %}<div class="card tint"><b>📈 {% t "Mandi price near you" %}: {{ ref.typical|inr }}</b> {% t "per quintal" %}<br><span class="hint">{% t "Reported on {date}" date=ref.as_of|date:"j M" %}. {% t "Price a little above or below to suit your quality." %}</span></div>{% endif %}
+<form method="post" class="card">{% csrf_token %}
+  {% if cycle and not instance %}<input type="hidden" name="cycle" value="{{ cycle.client_id|default:cycle }}">{% endif %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block">{% t "Save listing" %}</button>
+</form>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Sell" %}{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="margin:0">🏷️ {% t "My listings" %}</h1><a class="btn" href="{{ px }}/sell/new/">+ {% t "List produce for sale" %}</a></div>
+<div style="margin-top:16px">
+{% for li in rows %}
+<a class="door" href="{{ px }}/sell/{{ li.pk }}/"><div class="card">
+  <div class="row between"><h3 style="margin:0">{{ li.emoji }} {% crop li.crop %}</h3>
+    <span class="pill {% if li.status == "active" %}{% elif li.status == "sold" %}grey{% else %}sun{% endif %}">{% t li.get_status_display %}</span></div>
+  <p style="margin:6px 0 0"><b>{{ li.quantity|num:2 }} {% t li.unit %}</b> · {{ li.price|inr }} / {% t li.unit %} · {{ li.district }}</p>
+  <p class="mute" style="margin:4px 0 0">{% if li.new_enquiries %}<span class="pill red">{% t "{n} new enquiries" n=li.new_enquiries %}</span>{% else %}{% t "{n} enquiries" n=li.total_enquiries %}{% endif %}</p>
+</div></a>
+{% empty %}<div class="card sun"><h3>{% t "Nothing listed yet" %}</h3><p>{% t "List what you have. Buyers across the state can see it and ask you directly." %}</p><a class="btn" href="{{ px }}/sell/new/">{% t "List produce for sale" %}</a></div>{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Activity" %}{% endblock %}
+{% block content %}
+<h1>{% t "Activity" %}</h1>
+<div class="card scroll"><table class="tbl">
+<thead><tr><th>{% t "When" %}</th><th>{% t "Who" %}</th><th>{% t "What" %}</th></tr></thead>
+<tbody>{% for e in rows %}<tr><td>{{ e.created_at|date:"j M, H:i" }}</td><td>{{ e.actor.phone|default:"—" }}</td><td>{{ e.action }}{% if e.target_type %} <span class="mute">· {{ e.target_type }} {{ e.target_id }}</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

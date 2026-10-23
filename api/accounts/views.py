@@ -11,7 +11,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import audit, messaging, otp, tokens
+from . import audit, messaging, otp, signin, tokens
 from .errors import ApiError
 from .models import Device, Language, Role, User, UserStatus
 from .phone import InvalidPhone, normalise_phone
@@ -81,29 +81,7 @@ class OtpVerifyView(APIView):
             return self._sign_in(request, d)
 
     def _sign_in(self, request, d):
-        now = timezone.now()
-        user = User.objects.filter(phone=d["phone"]).first()
-        is_new = False
-        if user is None:
-            user = User.objects.create_user(
-                phone=d["phone"], role=d["role"], language=d.get("language", Language.HINDI),
-                status=UserStatus.ACTIVE, consented_at=now, consent_version=settings.CONSENT_VERSION,
-            )
-            is_new = True
-            audit.log("user_created", actor=user, target=user, request=request, via="self")
-        elif user.status == UserStatus.PENDING:
-            # Assisted onboarding: the farmer confirms on their own phone and takes ownership.
-            user.status = UserStatus.ACTIVE
-            user.consented_at = now
-            user.consent_version = settings.CONSENT_VERSION
-            if d.get("language"):
-                user.language = d["language"]
-            user.save(update_fields=["status", "consented_at", "consent_version", "language"])
-            audit.log("owner_confirmed", actor=user, target=user, request=request)
-            from profiles import services  # lazy: profiles depends on accounts
-            services.on_owner_confirmed(user)
-        if not user.is_active:
-            raise ApiError("account_unavailable", "This account is not available", 403)
+        user, is_new = signin.open_account(d["phone"], d["role"], d.get("language"), request)
 
         had_other_devices = user.devices.filter(revoked_at__isnull=True).exists()
         device, created = Device.objects.get_or_create(user=user, device_id=d["device_id"], defaults={"name": d["device_name"]})

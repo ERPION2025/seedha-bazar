@@ -141,43 +141,50 @@ def cycle_summary(cycle: CropCycle) -> dict:
     return out
 
 
+def ledger_for(user, cycle_id=None) -> dict:
+    cycles = CropCycle.objects.filter(owner=user, deleted_at__isnull=True).select_related("plot")
+    if cycle_id:
+        cycles = cycles.filter(client_id=cycle_id)
+    rows = [cycle_summary(c) for c in cycles.order_by("-created_at")]
+    general = Expense.objects.filter(owner=user, crop_cycle__isnull=True, deleted_at__isnull=True).aggregate(t=Sum("amount"))["t"] or Decimal("0")
+    total_exp = sum((Decimal(r["expenses"]) for r in rows), Decimal("0")) + (general if not cycle_id else Decimal("0"))
+    total_rev = sum((Decimal(r["revenue"]) for r in rows), Decimal("0"))
+    return {
+        "cycles": rows,
+        "general_expenses": _money(general),
+        "totals": {"expenses": _money(total_exp), "revenue": _money(total_rev), "profit": _money(total_rev - total_exp)},
+    }
+
+
 class LedgerView(APIView):
     """Profit and loss per crop cycle, all computed on the server from the farmer's own records."""
 
     permission_classes = [IsFarmer]
 
     def get(self, request):
-        cycles = CropCycle.objects.filter(owner=request.user, deleted_at__isnull=True).select_related("plot")
-        cid = request.query_params.get("crop_cycle")
-        if cid:
-            cycles = cycles.filter(client_id=cid)
-        rows = [cycle_summary(c) for c in cycles.order_by("-created_at")]
-        general = Expense.objects.filter(owner=request.user, crop_cycle__isnull=True, deleted_at__isnull=True).aggregate(t=Sum("amount"))["t"] or Decimal("0")
-        total_exp = sum((Decimal(r["expenses"]) for r in rows), Decimal("0")) + (general if not cid else Decimal("0"))
-        total_rev = sum((Decimal(r["revenue"]) for r in rows), Decimal("0"))
-        return Response({
-            "cycles": rows,
-            "general_expenses": _money(general),
-            "totals": {"expenses": _money(total_exp), "revenue": _money(total_rev), "profit": _money(total_rev - total_exp)},
-        })
+        return Response(ledger_for(request.user, request.query_params.get("crop_cycle")))
+
+
+def stock_for(user) -> list[dict]:
+    today = timezone.now().date()
+    out = []
+    for c in CropCycle.objects.filter(owner=user, deleted_at__isnull=True).select_related("plot"):
+        left = stock_kg(c)
+        if left <= 0:
+            continue
+        batches = c.harvests.filter(deleted_at__isnull=True, shelf_life_days__isnull=False).order_by("date")
+        expiry = None
+        for h in batches:
+            end = h.date + timedelta(days=h.shelf_life_days)
+            expiry = end if expiry is None or end < expiry else expiry
+        out.append({"crop_cycle": str(c.client_id), "crop": c.crop, "stock_kg": _kg(left), "stock_quintal": str((left / 100).quantize(Decimal("0.01"))),
+                    "earliest_shelf_life_end": expiry.isoformat() if expiry else None,
+                    "days_left": (expiry - today).days if expiry else None})
+    return out
 
 
 class StockView(APIView):
     permission_classes = [IsFarmer]
 
     def get(self, request):
-        today = timezone.now().date()
-        out = []
-        for c in CropCycle.objects.filter(owner=request.user, deleted_at__isnull=True).select_related("plot"):
-            left = stock_kg(c)
-            if left <= 0:
-                continue
-            batches = c.harvests.filter(deleted_at__isnull=True, shelf_life_days__isnull=False).order_by("date")
-            expiry = None
-            for h in batches:
-                end = h.date + timedelta(days=h.shelf_life_days)
-                expiry = end if expiry is None or end < expiry else expiry
-            out.append({"crop_cycle": str(c.client_id), "crop": c.crop, "stock_kg": _kg(left), "stock_quintal": str((left / 100).quantize(Decimal("0.01"))),
-                        "earliest_shelf_life_end": expiry.isoformat() if expiry else None,
-                        "days_left": (expiry - today).days if expiry else None})
-        return Response({"stock": out})
+        return Response({"stock": stock_for(request.user)})

@@ -1,0 +1,10 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Leads" %}{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="margin:0">{% t "Leads" %}</h1><a class="btn ghost" href="?{% if kind %}kind={{ kind }}&{% endif %}format=csv">{% t "Download CSV" %}</a></div>
+<div class="row" style="margin:14px 0"><a class="pill {% if not kind %}{% else %}grey{% endif %}" href="?">{% t "All" %}</a>{% for v, label in kinds %}<a class="pill {% if kind == v %}{% else %}grey{% endif %}" href="?kind={{ v }}">{{ label }}</a>{% endfor %}</div>
+<div class="card scroll"><table class="tbl">
+<thead><tr><th>{% t "When" %}</th><th>{% t "Type" %}</th><th>{% t "Name" %}</th><th>{% t "Mobile number" %}</th><th>{% t "City" %}</th><th>{% t "Source" %}</th></tr></thead>
+<tbody>{% for l in rows %}<tr><td>{{ l.created_at|date:"j M, H:i" }}</td><td>{{ l.get_kind_display }}</td><td>{{ l.name }}{% if l.message %}<br><span class="mute">{{ l.message }}</span>{% endif %}</td><td>{{ l.phone }}</td><td>{{ l.city }}</td><td class="mute">{{ l.attribution.utm_source }} {{ l.attribution.utm_campaign }}</td></tr>
+{% empty %}<tr><td colspan="6" class="mute">{% t "No leads yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

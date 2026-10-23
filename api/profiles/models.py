@@ -16,6 +16,8 @@ class Organisation(models.Model):
     district = models.CharField(max_length=80, blank=True)
     block = models.CharField(max_length=80, blank=True)
     verified = models.BooleanField(default=False, help_text="Set by Seedha Bazar staff after checking registration")
+    contact_name = models.CharField(max_length=120, blank=True)
+    auto_approve_members = models.BooleanField(default=False, help_text="Farmers who join with this FPO's code are confirmed without a manual check")
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):

@@ -1,0 +1,11 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "Register your FPO or NGO" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Register your FPO or NGO" %}</h1>
+<p class="mute">{% t "Tell us about your organisation. We check the registration, then you can add farmers." %}</p>
+<form method="post" class="card">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block">{% t "Send for approval" %}</button>
+</form>
+{% endblock %}

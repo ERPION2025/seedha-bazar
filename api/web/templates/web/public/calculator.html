@@ -1,0 +1,22 @@
+{% extends "web/base.html" %}{% load web_tags static %}
+{% block title %}{% t "Harvest calculator" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>🧮 {% t "Harvest calculator" %}</h1>
+<p class="mute">{% t "Find out what really reaches your hand. We fill in the rates for you." %}</p>
+{% include "web/partials/location_bar.html" with auto="1" %}
+<div id="wiz" class="wiz" aria-live="polite"></div>
+
+<div id="lead-card" class="card" style="margin-top:18px" hidden>
+  <h3>{% t "Want help selling directly?" %}</h3>
+  <p class="mute">{% t "Leave your number. It also helps us understand mandi and city price gaps. We never share your number." %}</p>
+  <form method="post" action="/lead/calculator/" data-track="lead_form_submit">{% csrf_token %}
+    <input type="hidden" name="payload" id="payload">
+    {% include "web/partials/form_body.html" %}
+    <button class="btn block">{% t "Send my numbers" %}</button>
+  </form>
+</div>
+<div id="toast" class="toast" hidden></div>
+{{ data|json_script:"calc-data" }}
+<script src="{% static 'web/calculator.js' %}" defer></script>
+{% endblock %}

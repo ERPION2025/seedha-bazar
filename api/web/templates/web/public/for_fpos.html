@@ -1,0 +1,22 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "For FPOs and NGOs" %}{% endblock %}
+{% block hero %}
+<section class="hero"><div class="wrap">
+  <h1>{% t "Bring all your members online without chasing them one by one" %}</h1>
+  <p>{% t "Add farmers by phone number, or share one link and let them join. You see members, crops and acres in one place." %}</p>
+  <div class="row" style="margin-top:20px"><a class="btn sun" href="/login/?as=fpo" data-track="cta_fpo">{% t "Register your FPO or NGO" %}</a></div>
+</div></section>
+{% endblock %}
+{% block content %}
+<div class="grid g2">
+  <div class="card"><h3>➕ {% t "Add members in minutes" %}</h3><p class="mute" style="margin:0">{% t "Type a farmer's number and details, or paste a list. The farmer confirms with a code on their own phone." %}</p></div>
+  <div class="card"><h3>🔗 {% t "One link to share" %}</h3><p class="mute" style="margin:0">{% t "Send your join link on WhatsApp. Turn on auto-approve and members are confirmed for you." %}</p></div>
+  <div class="card"><h3>📊 {% t "See what your members grow" %}</h3><p class="mute" style="margin:0">{% t "Members, acres and main crops on one screen." %}</p></div>
+  <div class="card"><h3>✅ {% t "Checked and verified" %}</h3><p class="mute" style="margin:0">{% t "We check your registration before you can add farmers. Only verified groups appear to farmers." %}</p></div>
+</div>
+<div class="card tint" style="margin-top:18px">
+  <h2>{% t "Prefer to talk first?" %}</h2>
+  <p>{% t "Leave your number and we will call you." %}</p>
+  {% include "web/partials/lead_form.html" with button="Call me" %}
+</div>
+{% endblock %}

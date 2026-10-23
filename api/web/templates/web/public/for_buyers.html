@@ -1,0 +1,16 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "For buyers" %}{% endblock %}
+{% block hero %}
+<section class="hero"><div class="wrap">
+  <h1>{% t "Buy directly from verified farmers and FPOs" %}</h1>
+  <p>{% t "Hotels, caterers, grocers and food companies: get on the waitlist and we will tell you when buying opens in your city." %}</p>
+</div></section>
+{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{% t "Join the buyer waitlist" %}</h2>
+  {% include "web/partials/lead_form.html" with button="Join the waitlist" %}
+</div>
+<p class="mute">{% t "Buying is not open yet. Joining the waitlist is free." %}</p>
+<p>{% t "Already have a buyer account?" %} <a href="/login/?as=buyer">{% t "Sign in" %}</a></p>
+{% endblock %}

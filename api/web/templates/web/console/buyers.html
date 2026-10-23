@@ -1,0 +1,10 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Buyers" %}{% endblock %}
+{% block content %}
+<h1>{% t "Buyers" %}</h1>
+<div class="card scroll"><table class="tbl">
+<thead><tr><th>{% t "Business" %}</th><th>{% t "City" %}</th><th>GSTIN / FSSAI</th><th>{% t "Level" %}</th><th></th></tr></thead>
+<tbody>{% for b in rows %}<tr><td><b>{{ b.business_name|default:"—" }}</b><br><span class="mute">{{ b.contact_name }} · {{ b.user.phone }}</span></td><td>{{ b.city }}</td><td>{{ b.gstin }} {{ b.fssai }}</td><td>{{ b.level }}</td>
+<td><form method="post" action="/console/buyers/{{ b.pk }}/verify/">{% csrf_token %}<input type="hidden" name="verified" value="{% if b.documents_verified %}0{% else %}1{% endif %}"><button class="btn small {% if b.documents_verified %}ghost{% endif %}">{% if b.documents_verified %}{% t "Remove verification" %}{% else %}{% t "Verify" %}{% endif %}</button></form></td></tr>
+{% empty %}<tr><td colspan="5" class="mute">{% t "No buyers yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

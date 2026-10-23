@@ -3,3 +3,4 @@ db.sqlite3
 server.log
 __pycache__/
 .DS_Store
+staticfiles/

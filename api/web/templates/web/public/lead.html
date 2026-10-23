@@ -1,0 +1,7 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "Your details" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Your details" %}</h1>
+<div class="card">{% include "web/partials/lead_form.html" with button="Send" %}</div>
+{% endblock %}

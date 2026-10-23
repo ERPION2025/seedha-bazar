@@ -1,0 +1,24 @@
+{% extends "web/farmer/base.html" %}{% load web_tags %}
+{% block title %}{% t "My book" %}{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="margin:0">{% t "My book" %}</h1><a class="btn" href="/farmer/book/new/">+ {% t "Add crop" %}</a></div>
+<div class="card" style="margin-top:16px">
+  <div class="stats flat">
+    <div class="stat"><small>{% t "Spent" %}</small><div class="big">{{ ledger.totals.expenses|inr }}</div></div>
+    <div class="stat"><small>{% t "Sold for" %}</small><div class="big">{{ ledger.totals.revenue|inr }}</div></div>
+    <div class="stat"><small>{% t "Profit so far" %}</small><div class="big {% if ledger.totals.profit|slice:":1" == "-" %}neg{% else %}pos{% endif %}">{{ ledger.totals.profit|inr }}</div></div>
+  </div>
+  {% if ledger.general_expenses != "0.00" %}<p class="hint">{% t "Includes {amount} of general expenses not tied to a crop." amount=ledger.general_expenses|inr %}</p>{% endif %}
+</div>
+{% for c in ledger.cycles %}
+<a class="door" href="/farmer/book/{{ c.crop_cycle }}/"><div class="card">
+  <div class="row between"><h3 style="margin:0">{% crop c.crop %}</h3>
+    <span class="pill {% if c.status == "active" %}{% elif c.status == "harvested" %}sun{% else %}grey{% endif %}">{% if c.status == "active" %}{% t "Growing" %}{% elif c.status == "harvested" %}{% t "Harvested" %}{% else %}{% t "Closed" %}{% endif %}</span></div>
+  <p class="mute" style="margin:2px 0 10px">{{ c.plot }}</p>
+  <div class="row" style="gap:22px"><span>{% t "Spent" %}: <b>{{ c.expenses|inr }}</b></span><span>{% t "Sold for" %}: <b>{{ c.revenue|inr }}</b></span><span>{% t "Profit" %}: <b class="{% if c.profit|slice:":1" == "-" %}neg{% else %}pos{% endif %}">{{ c.profit|inr }}</b></span></div>
+  {% if c.stock_kg != "0.000" %}<p class="hint" style="margin-top:8px">{% t "In stock" %}: {{ c.stock_kg|num:1 }} kg</p>{% endif %}
+</div></a>
+{% empty %}
+<div class="card sun"><h3>{% t "No crops yet" %}</h3><p>{% t "Add the crop you are growing. Then write down costs, harvest and sales." %}</p><a class="btn" href="/farmer/book/new/">{% t "Add your first crop" %}</a></div>
+{% endfor %}
+{% endblock %}

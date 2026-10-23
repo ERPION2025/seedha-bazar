@@ -1,0 +1,16 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "Privacy" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Privacy notice" %}</h1>
+<h3>{% t "What we keep" %}</h3>
+<p>{% t "Your mobile number, name, village, district, land size and crops. If you use the Farmer Book, the costs, harvests and sales you write down." %}</p>
+<h3>{% t "Why" %}</h3>
+<p>{% t "To run your account and show you your profit. If you join an FPO or NGO, they can see your profile details. Your Farmer Book entries are private to you." %}</p>
+<h3>{% t "What we do not do" %}</h3>
+<p>{% t "We do not sell your data. We do not share your phone number with buyers unless you choose to." %}</p>
+<h3>{% t "Your choices" %}</h3>
+<p>{% t "You can change your details at any time. You can delete your account from your Account page, and your personal details are removed." %}</p>
+<h3>{% t "Questions" %}</h3>
+<p>{% t "Ask us on WhatsApp using the button on this page." %}</p>
+{% endblock %}

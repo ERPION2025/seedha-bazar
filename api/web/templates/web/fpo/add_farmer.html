@@ -1,0 +1,12 @@
+{% extends "web/fpo/base.html" %}{% load web_tags %}
+{% block title %}{% t "Add farmer" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Add farmer" %}</h1>
+<p class="mute">{% t "We send a code to the farmer's own phone. The farmer enters it and the account becomes theirs. You never get their login." %}</p>
+<form method="post" class="card">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block">{% t "Add and send code" %}</button>
+</form>
+<p><a href="/fpo/farmers/bulk/">{% t "Add many farmers at once" %}</a></p>
+{% endblock %}

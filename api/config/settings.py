@@ -20,15 +20,23 @@ INSTALLED_APPS = [
     "accounts",
     "profiles",
     "farmerbook",
+    "rates",
+    "notify",
+    "market",
+    "web",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "web.middleware.LanguageMiddleware",
+    "web.middleware.AttributionMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -40,6 +48,7 @@ TEMPLATES = [{
         "django.template.context_processors.request",
         "django.contrib.auth.context_processors.auth",
         "django.contrib.messages.context_processors.messages",
+        "web.context.site",
     ]},
 }]
 WSGI_APPLICATION = "config.wsgi.application"
@@ -63,6 +72,10 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -75,6 +88,7 @@ REST_FRAMEWORK = {
 
 # --- Seedha Bazar auth settings ---
 OTP_BACKEND = os.environ.get("OTP_BACKEND", "console")  # console | custom dotted path to a backend class
+OTP_CHANNELS = [c for c in os.environ.get("OTP_CHANNELS", "sms,whatsapp,voice").split(",") if c]  # which "send code" choices the website offers
 OTP_LENGTH = 6
 OTP_TTL_SECONDS = 300
 OTP_RESEND_COOLDOWN_SECONDS = 30
@@ -93,3 +107,27 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# --- Website ---
+LOGIN_URL = "/login/"
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 60  # farmers stay signed in on their phone for 60 days
+SITE_URL = os.environ.get("SITE_URL", "http://localhost:8000").rstrip("/")
+SUPPORT_WHATSAPP = os.environ.get("SUPPORT_WHATSAPP", "")  # digits only with country code, e.g. 919876543210
+GA4_ID = os.environ.get("GA4_ID", "")
+META_PIXEL_ID = os.environ.get("META_PIXEL_ID", "")
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if o]
+
+# --- Market rates ---
+DATA_GOV_IN_API_KEY = os.environ.get("DATA_GOV_IN_API_KEY", "")  # free: https://data.gov.in -> My Account
+RATES_STATES = [s for s in os.environ.get("RATES_STATES", "").split(",") if s]  # empty = all states
+RATES_REFRESH_HOURS = int(os.environ.get("RATES_REFRESH_HOURS", "24"))
+RATES_SHOW_DEMO = os.environ.get("RATES_SHOW_DEMO", "1" if DEBUG else "0") == "1"  # sample rows are for local trials only
+DEFAULT_STATE = os.environ.get("DEFAULT_STATE", "Madhya Pradesh")
+GEOCODER_USER_AGENT = os.environ.get("GEOCODER_USER_AGENT", "SeedhaBazar/1.0 (+https://seedhabazar.in; contact: set GEOCODER_USER_AGENT)")
+
+# --- SMS / WhatsApp connectors (see notify/backends.py) ---
+NOTIFY_BACKENDS = {"sms": os.environ.get("NOTIFY_SMS_BACKEND", "notify.backends.LogBackend"),
+                   "whatsapp": os.environ.get("NOTIFY_WHATSAPP_BACKEND", "notify.backends.LogBackend")}
+NOTIFY_WEBHOOK_URL = os.environ.get("NOTIFY_WEBHOOK_URL", "")
+NOTIFY_WEBHOOK_SECRET = os.environ.get("NOTIFY_WEBHOOK_SECRET", "")
+NOTIFY_MAX_PER_PHONE_PER_DAY = int(os.environ.get("NOTIFY_MAX_PER_PHONE_PER_DAY", "10"))

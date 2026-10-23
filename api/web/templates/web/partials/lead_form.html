@@ -1,0 +1,4 @@
+{% load web_tags %}<form method="post" action="/lead/{{ lead_kind }}/" data-track="lead_form_submit">{% csrf_token %}
+{% include "web/partials/form_body.html" %}
+<button class="btn block">{% t button %}</button>
+</form>

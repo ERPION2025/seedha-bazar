@@ -1,8 +1,9 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from accounts.models import Role, User, UserStatus
+from accounts.errors import ApiError
 from accounts.phone import InvalidPhone, normalise_phone
-from profiles.models import Organisation, OrgMembership
+from profiles import services
+from profiles.models import Organisation
 
 
 class Command(BaseCommand):
@@ -20,8 +21,8 @@ class Command(BaseCommand):
         org = Organisation.objects.filter(code=org_code).first()
         if org is None:
             raise CommandError(f"No organisation with code {org_code}")
-        user, created = User.objects.get_or_create(phone=phone, defaults={"role": Role.AGENT, "status": UserStatus.ACTIVE})
-        if not created and user.role != Role.AGENT:
-            raise CommandError("This number already belongs to a farmer or buyer account. Use a different number for the agent.")
-        OrgMembership.objects.get_or_create(user=user, organisation=org)
+        try:
+            services.provision_agent(phone, org)
+        except ApiError as e:
+            raise CommandError(e.message)
         self.stdout.write(f"Agent {phone} linked to {org.name}. They can now sign in with an OTP.")

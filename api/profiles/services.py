@@ -2,6 +2,7 @@ import secrets
 from datetime import timedelta
 
 from django.db import transaction
+from django.utils.text import slugify
 from django.utils import timezone
 from rest_framework import status
 
@@ -15,7 +16,8 @@ MAX_NEW_FARMERS_PER_AGENT_PER_DAY = 100
 
 
 def agent_orgs(user):
-    return Organisation.objects.filter(memberships__user=user)
+    """Organisations an agent may act for. An FPO that staff have not verified yet cannot add or approve members."""
+    return Organisation.objects.filter(memberships__user=user, verified=True)
 
 
 def on_owner_confirmed(user: User) -> None:
@@ -27,16 +29,19 @@ def on_owner_confirmed(user: User) -> None:
 
 
 @transaction.atomic
-def create_assisted_farmer(agent: User, data: dict, request=None) -> User:
-    orgs = agent_orgs(agent)
-    org = None
-    code = data.get("org_code")
-    if code:
-        org = orgs.filter(code=code).first()
-    elif orgs.count() == 1:
-        org = orgs.first()
+def create_assisted_farmer(agent: User, data: dict, request=None, org: Organisation | None = None) -> User:
+    """`org` is passed only by staff acting for an organisation; agents are limited to their own verified ones."""
     if org is None:
-        raise ApiError("org_required", "Choose which organisation you are adding this farmer for", 400)
+        orgs = agent_orgs(agent)
+        code = data.get("org_code")
+        if code:
+            org = orgs.filter(code=code).first()
+        elif orgs.count() == 1:
+            org = orgs.first()
+        if org is None:
+            if OrgMembership.objects.filter(user=agent).exists() and not orgs.exists():
+                raise ApiError("org_not_verified", "Your organisation is still being verified. You can add farmers once it is approved.", 403)
+            raise ApiError("org_required", "Choose which organisation you are adding this farmer for", 400)
 
     today = timezone.now() - timedelta(hours=24)
     if User.objects.filter(created_by=agent, date_joined__gte=today).count() >= MAX_NEW_FARMERS_PER_AGENT_PER_DAY:
@@ -80,12 +85,20 @@ def request_join(farmer: FarmerProfile, org_code: str, request=None) -> OrgLinkR
     link, created = OrgLinkRequest.objects.get_or_create(farmer=farmer, organisation=org, status=LinkStatus.PENDING)
     if created:
         audit.log("org_join_requested", actor=farmer.user, target=link, request=request, organisation=org.pk)
+        if org.verified and org.auto_approve_members:
+            link.status = LinkStatus.APPROVED
+            link.decided_at = timezone.now()
+            link.save()
+            farmer.organisation = org
+            farmer.org_status = OrgStatus.CONFIRMED
+            farmer.save()
+            audit.log("org_join_auto_approved", actor=farmer.user, target=link, request=request, organisation=org.pk)
     return link
 
 
 @transaction.atomic
 def decide_join(agent: User, link: OrgLinkRequest, approve: bool, request=None) -> OrgLinkRequest:
-    if not OrgMembership.objects.filter(user=agent, organisation=link.organisation).exists():
+    if not link.organisation.verified or not OrgMembership.objects.filter(user=agent, organisation=link.organisation).exists():
         raise ApiError("not_found", "Request not found", 404)
     if link.status != LinkStatus.PENDING:
         raise ApiError("already_decided", "This request was already decided", 409)
@@ -126,3 +139,34 @@ def delete_account(user: User, request=None) -> None:
     user.pin_hash = ""
     user.set_unusable_password()
     user.save()
+
+
+def make_org_code(name: str) -> str:
+    base = slugify(name)[:12].strip("-_") or "fpo"
+    code = base
+    while Organisation.objects.filter(code=code).exists():
+        code = f"{base}{secrets.randbelow(900) + 100}"
+    return code
+
+
+@transaction.atomic
+def register_org(user: User, data: dict, request=None) -> Organisation:
+    """An FPO/NGO signs up by itself. It stays unverified (no powers) until Seedha Bazar staff check it."""
+    org = Organisation.objects.create(
+        name=data["name"], kind=data["kind"], code=make_org_code(data["name"]), district=data.get("district", ""),
+        block=data.get("block", ""), registration_no=data.get("registration_no", ""), contact_name=data.get("contact_name", ""),
+    )
+    OrgMembership.objects.create(user=user, organisation=org, role=OrgMembership.Role.ADMIN)
+    audit.log("org_registered", actor=user, target=org, request=request)
+    return org
+
+
+@transaction.atomic
+def provision_agent(phone: str, org: Organisation, actor: User | None = None, request=None) -> User:
+    """Staff attach an agent to an organisation. The agent still signs in with their own phone code."""
+    user, created = User.objects.get_or_create(phone=phone, defaults={"role": Role.AGENT, "status": UserStatus.ACTIVE})
+    if not created and user.role != Role.AGENT:
+        raise ApiError("phone_in_use", "This number already belongs to a farmer or buyer account. Use a different number for the agent.", 409)
+    OrgMembership.objects.get_or_create(user=user, organisation=org)
+    audit.log("agent_provisioned", actor=actor, target=user, request=request, organisation=org.pk)
+    return user

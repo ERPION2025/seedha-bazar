@@ -1,0 +1,18 @@
+{% extends "web/farmer/base.html" %}{% load web_tags %}
+{% block title %}{% t "Account" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Account" %}</h1>
+<div class="card"><p class="mute" style="margin:0">{% t "Mobile number" %}</p><b>{{ user.phone }}</b></div>
+<div class="card"><h3>{% t "Language" %}</h3><div class="row">{% for code, name in lang_choices %}<a class="btn small {% if code != lang %}ghost{% endif %}" href="?lang={{ code }}">{{ name }}</a>{% endfor %}</div></div>
+<div class="card"><a href="/alerts/">🔔 {% t "My rate alerts" %}</a></div>
+<div class="card"><form method="post" action="/logout/">{% csrf_token %}<button class="btn ghost block">{% t "Sign out" %}</button></form></div>
+<div class="card warn">
+  <h3>{% t "Delete my account" %}</h3>
+  <p>{% t "This removes your personal details and signs you out everywhere. It cannot be undone." %}</p>
+  <form method="post" action="/farmer/account/delete/">{% csrf_token %}
+    <div class="field"><label for="confirm">{% t "Type DELETE to confirm" %}</label><input id="confirm" type="text" name="confirm" autocomplete="off"></div>
+    <button class="btn red block">{% t "Delete my account" %}</button>
+  </form>
+</div>
+{% endblock %}
