@@ -5,6 +5,11 @@ template and keep the {placeholders} in the same order. Keep them short.
 """
 
 TEXTS = {
+    "system_notice": {
+        "en": "Seedha Bazar: {advice}",
+        "hi": "सीधा बाज़ार: {advice}",
+        "mr": "सीधा बाज़ार: {advice}",
+    },
     "advisory": {
         "en": "Seedha Bazar: advice from {centre} for {place}: {advice} More: {link}",
         "hi": "सीधा बाज़ार: {place} के लिए {centre} की सलाह: {advice} और: {link}",

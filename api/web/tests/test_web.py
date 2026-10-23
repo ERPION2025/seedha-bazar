@@ -63,14 +63,14 @@ class PublicPageTests(WebCase):
 
     def test_everything_else_starts_at_sign_in(self):
         self.assertRedirects(self.client.get("/"), "/login/", fetch_redirect_response=False)
-        for path in ("/for-farmers/", "/for-buyers/", "/rates/", "/market/", "/calculator/", "/news/", "/schemes/", "/weather/", "/map/", "/games/", "/storage/"):
+        for path in ("/rates/", "/market/", "/calculator/", "/news/", "/schemes/", "/weather/", "/map/", "/games/", "/storage/"):
             r = self.client.get(path)
             self.assertEqual(r.status_code, 302, path)
             self.assertTrue(r["Location"].startswith("/login/"), path)
 
     def test_no_menu_before_sign_in(self):
         r = self.client.get("/login/?lang=en")
-        for link in ('class="side"', 'class="bnav"', 'href="/rates/"', 'href="/market/"', 'href="/for-farmers/"'):
+        for link in ('class="side"', 'class="bnav"', 'href="/rates/"', 'href="/market/"'):
             self.assertNotContains(r, link)
         for door in ("?as=farmer", "?as=fpo", "?as=buyer"):
             self.assertContains(r, door)

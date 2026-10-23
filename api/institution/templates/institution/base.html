@@ -16,6 +16,7 @@
   <a class="brand" href="/"><i>सी</i>{% t "Seedha Bazar" %}</a>
   <span class="portal-tag">🏛️ {% t "Institution Connect" %}</span>
   <nav class="langs" aria-label="Language">{% for code, name in lang_choices %}<a href="?lang={{ code }}"{% if code == lang %} class="on" aria-current="true"{% endif %}>{{ name }}</a>{% endfor %}</nav>
+  {% if user.is_authenticated %}<a class="bell" href="/notifications/" aria-label="{% t "Notifications" %}{% if inbox_unread %}: {% t "{n} unread" n=inbox_unread %}{% endif %}"><span aria-hidden="true">🔔</span><span class="n" id="bell-n"{% if not inbox_unread %} hidden{% endif %}>{{ inbox_unread }}</span></a>{% endif %}
   {% if user.is_authenticated %}<form method="post" action="/logout/">{% csrf_token %}<button class="link-btn">{% t "Sign out" %}</button></form>{% endif %}
 </div></header>
 <div class="portal-banner"><div class="wrap"><b>{% t "Seedha Bazar – Institution Connect" %}</b> · {% t "The portal for KVKs and research agencies. It is for agriculture experts, not for farmers or FPOs." %}</div></div>
@@ -32,7 +33,7 @@
 {% block after %}{% endblock %}
 </div>
 </div>
-<footer><div class="wrap"><p><b>{% t "Seedha Bazar – Institution Connect" %}</b> — {% t "For KVKs, agricultural universities and research agencies." %}</p></div></footer>
+{% include "web/partials/footer.html" %}
 {% if nav.all %}<nav class="bnav" aria-label="{% t "Menu" %}">
   {% for i in nav.main %}<a href="{{ i.url }}"{% if i.active %} class="on" aria-current="page"{% endif %}><span class="ic" aria-hidden="true">{{ i.icon }}</span><span class="lb">{% t i.label %}</span>{% if i.badge %}<span class="n">{{ i.badge }}</span>{% endif %}</a>{% endfor %}
   <button type="button" class="{% if nav.more_active %}on{% endif %}" id="more-btn" aria-expanded="false" aria-controls="more-sheet"><span class="ic" aria-hidden="true">☰</span><span class="lb">{% t "More" %}</span>{% if nav.more_badge %}<span class="n">{{ nav.more_badge }}</span>{% endif %}</button>
@@ -45,6 +46,14 @@
 function set(o){s.hidden=!o;b.setAttribute("aria-expanded",o);if(o){var f=s.querySelector("a");f&&f.focus();}else b.focus();}
 b.addEventListener("click",function(){set(s.hidden);});c.addEventListener("click",function(){set(false);});
 s.addEventListener("click",function(e){if(e.target===s)set(false);});document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!s.hidden)set(false);});})();</script>{% endif %}
+{% if user.is_authenticated and notify_cfg %}{{ notify_cfg|json_script:"sb-notify" }}
+<div class="np" id="np" hidden role="dialog" aria-labelledby="np-t"><div class="np-card"><b id="np-t">🔔 {% t "Turn on notifications?" %}</b>
+  <p>{% if site_name == "institution" %}{% t "Get problems from farmers, Seedha Bazar notices and alerts on this device, even when the app is closed." %}{% else %}{% t "Get notices from your KVK and Seedha Bazar, weather warnings and order updates on this phone, even when the app is closed." %}{% endif %}</p>
+  <div class="row"><button type="button" class="btn" id="np-yes">{% t "Allow" %}</button><button type="button" class="btn ghost" id="np-no">{% t "Not now" %}</button></div>
+  <p class="hint">{% t "We ask only once. You can change this any time in Notifications, Settings." %}</p></div></div>
+<script src="{% static 'web/notify_prompt.js' %}" defer></script>{% endif %}
+{% include "web/partials/loader.html" %}
+<script src="{% static 'web/loader.js' %}" defer></script>
 {{ voice|json_script:"sb-voice" }}
 <script src="{% static 'web/voice.js' %}" defer></script>
 </body>

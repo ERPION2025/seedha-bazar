@@ -46,7 +46,7 @@ STAFF = [
     ("Farmers", "🧑‍🌾", "/console/farmers/", ["/console/farmers"], ""), ("Listings", "🏷️", "/console/listings/", ["/console/listings"], ""),
     ("Buyers", "🛒", "/console/buyers/", ["/console/buyers"], ""), ("Institutions", "🏛️", "/console/institutions/", ["/console/institutions"], ""),
     ("Rates", "📈", "/console/rates/", ["/console/rates"], ""), ("News", "📰", "/console/news/", ["/console/news"], ""),
-    ("Messages", "💬", "/console/messages/", ["/console/messages"], ""), ("Leads", "📥", "/console/leads/", ["/console/leads"], ""),
+    ("System notices", "📢", "/console/notices/", ["/console/notices"], ""), ("Messages", "💬", "/console/messages/", ["/console/messages"], ""), ("Leads", "📥", "/console/leads/", ["/console/leads"], ""),
     ("Activity", "🕘", "/console/audit/", ["/console/audit"], ""), ("Data feeds", "🔄", "/console/feeds/", ["/console/feeds"], ""), ("Admins", "🔐", "/console/admins/", ["/console/admins"], ""),
     ("Settings", "⚙️", "/console/settings/", ["/console/settings", "/console/sessions"], ""), ("All records", "🗂️", "/admin/", ["/admin"], ""),
 ]

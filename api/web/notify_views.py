@@ -1,4 +1,5 @@
-"""Notification settings, phone notifications (Web Push), the installable app manifest, and the Meta (Messenger) webhook."""
+"""The bell: every notice a person gets, in one list. Also notification settings, the one-time question about phone
+notifications, phone notifications (Web Push), the installable app manifest, and the Meta (Messenger) webhook."""
 import hashlib
 import hmac
 import json
@@ -14,7 +15,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import User
 from notify import push
-from notify.models import Preference, PushSubscription
+from notify.models import InboxItem, Preference, PushSubscription
 
 from .helpers import ok
 from .market_views import base_for
@@ -26,9 +27,70 @@ def _pref(user) -> Preference:
     return Preference.objects.get_or_create(user=user)[0]
 
 
-def page(request):
+def inbox(request):
+    """What the bell opens: newest first, unread marked, with a filter by kind."""
     if not request.user.is_authenticated:
         return redirect("/login/?next=/notifications/")
+    qs = InboxItem.objects.filter(user=request.user)
+    kinds = [(k, label) for k, label in InboxItem.Kind.choices if qs.filter(kind=k).exists()]
+    kind = request.GET.get("kind", "")
+    if kind in InboxItem.Kind.values:
+        qs = qs.filter(kind=kind)
+    return render(request, "web/inbox.html", {"rows": qs[:100], "kinds": kinds, "kind": kind, "base_tpl": base_for(request.user),
+                                              "unread_n": InboxItem.objects.filter(user=request.user, read_at__isnull=True).count()})
+
+
+def open_item(request, pk):
+    item = InboxItem.objects.filter(pk=pk, user=request.user).first() if request.user.is_authenticated else None
+    if item is None:
+        return redirect("/notifications/")
+    if item.read_at is None:
+        item.read_at = timezone.now()
+        item.save(update_fields=["read_at"])
+    url = item.url if item.url.startswith("/") and not item.url.startswith("//") else ""
+    return redirect(url or "/notifications/")
+
+
+@require_POST
+def read_all(request):
+    if request.user.is_authenticated:
+        InboxItem.objects.filter(user=request.user, read_at__isnull=True).update(read_at=timezone.now())
+    return redirect("/notifications/")
+
+
+def unread(request):
+    """For the bell's badge, checked every minute while the app is open; new items can also pop up as phone notifications."""
+    if not request.user.is_authenticated:
+        return JsonResponse({"unread": 0, "items": []})
+    try:
+        after = int(request.GET.get("after", "0"))
+    except ValueError:
+        after = 0
+    qs = InboxItem.objects.filter(user=request.user, read_at__isnull=True)
+    items = [{"id": i.pk, "title": i.title, "text": i.text, "url": f"/notifications/{i.pk}/", "critical": i.critical} for i in qs.filter(pk__gt=after).order_by("pk")[:5]]
+    last = InboxItem.objects.filter(user=request.user).order_by("-pk").values_list("pk", flat=True).first() or 0
+    return JsonResponse({"unread": qs.count(), "items": items, "last": last})
+
+
+@require_POST
+def prompt_answer(request):
+    """The one-time question 'Turn on notifications on this phone?' was answered. It is not asked again."""
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "sign_in"}, status=401)
+    pref = _pref(request.user)
+    answer = request.POST.get("answer", "")
+    pref.prompt_answer = answer if answer in ("yes", "no") else "no"
+    pref.prompted_at = timezone.now()
+    if pref.prompt_answer == "yes":
+        pref.push = True
+    pref.save(update_fields=["prompt_answer", "prompted_at", "push"])
+    return JsonResponse({"ok": True})
+
+
+def page(request):
+    """Notification settings."""
+    if not request.user.is_authenticated:
+        return redirect("/login/?next=/notifications/settings/")
     pref = _pref(request.user)
     if request.method == "POST":
         pref.alarm_sound = request.POST.get("alarm_sound") == "1"
@@ -36,7 +98,7 @@ def page(request):
         pref.sms = request.POST.get("sms") == "1"
         pref.save()
         ok(request, "Saved.")
-        return redirect("/notifications/")
+        return redirect("/notifications/settings/")
     m_link = ""
     if settings.FACEBOOK_PAGE_ID:
         m_link = f"https://m.me/{settings.FACEBOOK_PAGE_ID}?ref=" + signing.dumps(request.user.pk, salt=SALT)

@@ -41,19 +41,29 @@ One codebase and one database serve **two separate sites**. Change this structur
 - No menu is drawn before sign-in; `PUBLIC` in `web/menus.py` is empty.
 - Open without sign-in, and nothing more:
   - the sign-in steps and the privacy notice;
+  - read-only pages for visitors and search engines: For farmers, For FPOs, For NGOs, For buyers, and the marketplace by produce (`/produce/`, `/produce/<crop>/`, sellers shown by first name and village only); these have no menus, and asking or buying still needs sign-in. `sitemap.xml` and `robots.txt` list them;
   - FPO join links (`/join/`);
   - shared ad cards (`/s/`), so WhatsApp and Facebook can show the picture;
   - statement checks for banks (`/verify/`);
   - machine endpoints: `/api/`, `/hooks/`, `/static/`, the manifest, the service worker and `/health/`.
 
-## 4. Menus: one per role, nothing else
+## 4. Notifications: the bell
+
+- After sign-in, every role on both sites has a 🔔 bell in the header with the unread count. It opens `/notifications/`, the one list of everything sent to that person:
+  - notices from their KVK and from Seedha Bazar ("system" notices, sent from Console → System notices);
+  - advice, weather warnings, orders, groups, inputs and problems.
+- Every message to a known person goes to the bell. SMS, WhatsApp and phone notifications are extra channels on top.
+- Seedha Bazar notices use the bell and phone notifications only, never paid SMS.
+- Phone notifications are asked for **once**, after sign-in (never on sign-in screens), through a small card: Allow or Not now. The answer is kept on the account and the device, and can be changed in Notifications → Settings.
+
+## 4a. Menus: one per role, nothing else
 
 Menus are defined in `web/menus.py`. Phones show the first 4 items in the bottom bar and the rest under "More".
 
 - **Farmer:** Home, My book, Sell, Rates, Orders, Messages, Weather, Speak, Ask an expert, Seeds and inputs, Group farming, Group selling, Warehouse loans, Income statement, Insurance, Earn more, News, My district, Games, Map, Calculator, My FPO, Profile, My shared posts, Notifications, Account.
 - **FPO / NGO:** Home, My farmers, Sell, Orders, Group selling, Group farming, Weather, My shared posts, Add farmer, Requests, Messages, Ask an expert, Seeds and inputs, Insurance, Rates, News, Schemes, My district, Map, Notifications.
 - **Buyer:** Home, Marketplace, Find producers, Orders, Messages, Rates, News, Map, Business details, Notifications.
-- **Owner console:** Overview, FPOs and NGOs, Farmers, Listings, Buyers, Institutions, Rates, News, Messages, Leads, Activity, Data feeds, Admins, Settings, All records.
+- **Owner console:** Overview, FPOs and NGOs, Farmers, Listings, Buyers, Institutions, Rates, News, System notices, Messages, Leads, Activity, Data feeds, Admins, Settings, All records.
 - **Institution Connect:** Control centre, Alerts and weather, Farmers (and add), FPOs and NGOs (and add), Active loans, Seeds and inputs, Send a notice, Problems, Group farming, Map, Notifications.
 
 ## 5. Applications (Django apps)
@@ -95,4 +105,6 @@ Menus are defined in `web/menus.py`. Phones show the first 4 items in the bottom
 
 - Every visible string goes through `{% t %}` / `tr()`, with Hindi and Marathi in `web/translations*.py`. A test fails otherwise.
 - A KVK sees a farmer's book only if that farmer said yes (`share_with_extension`). Totals never name anyone.
+- Every page of both sites has the same footer (`web/partials/footer.html`): who it is for, produce links, services, and the company (Vindhyachal Farms LLP, address, email and phone, set in `COMPANY_*` settings and published for search engines as Organization data).
+- Every screen of both sites carries the loader (`web/partials/loader.html`, `web/static/web/loader.js`). It is a small farming scene matched to where the person is going, shown only when a page or form takes more than about a third of a second, and still for people who turn off motion. Scripts doing slow work call `SBLoader.show("rain")` and `SBLoader.hide()`; links or forms that should never show it get `data-no-loader`.
 - Feeds are read gently: `robots.txt` is respected, there are pauses between requests, and nothing behind a captcha is scraped.

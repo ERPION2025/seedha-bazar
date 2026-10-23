@@ -40,8 +40,8 @@ class NotifyTests(TestCase):
         self.c.force_login(self.farmer)
 
     def test_preferences_are_saved(self):
-        self.assertEqual(self.c.get("/notifications/?lang=en").status_code, 200)
-        self.c.post("/notifications/", {"alarm_sound": "", "whatsapp": "1", "sms": "1"})
+        self.assertEqual(self.c.get("/notifications/settings/?lang=en").status_code, 200)
+        self.c.post("/notifications/settings/", {"alarm_sound": "", "whatsapp": "1", "sms": "1"})
         p = Preference.objects.get(user=self.farmer)
         self.assertEqual((p.alarm_sound, p.whatsapp), (False, True))
 

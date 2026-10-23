@@ -1,8 +1,9 @@
 {% extends base_tpl %}{% load static web_tags %}
-{% block title %}{% t "Notifications" %}{% endblock %}
+{% block title %}{% t "Notification settings" %}{% endblock %}
 {% block mainclass %} narrow{% endblock %}
 {% block content %}
-<h1>🔔 {% t "Notifications" %}</h1>
+<p><a href="/notifications/">← {% t "Notifications" %}</a></p>
+<h1>⚙️ {% t "Notification settings" %}</h1>
 <p class="mute">{% t "Choose how Seedha Bazar reaches you about weather, prices, orders and your FPO." %}</p>
 <div class="card"><h3>📱 {% t "Notifications on this phone" %}</h3>
   {% if push_ready %}<p class="mute" style="margin:0 0 8px">{% t "Get alerts even when the app is closed. Your phone will ask for permission." %} {% if devices %}({% t "{n} devices on" n=devices %}){% endif %}</p>

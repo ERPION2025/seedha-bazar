@@ -1,0 +1,10 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "Buy farm produce directly from farmers and FPOs" %}{% endblock %}
+{% block desc %}{% t "Grains, pulses, millets, fresh vegetables and processed goods directly from verified farmers and FPOs in Madhya Pradesh and Maharashtra, with today's mandi price for comparison." %}{% endblock %}
+{% block content %}
+<h1>🛒 {% t "Buy farm produce directly from farmers and FPOs" %}</h1>
+<p class="mute">{% t "{n} lots on sale now. Choose a produce to see what is on offer and today's mandi price." n=total %}</p>
+{% for g in groups %}<h2>{% t g.label %}</h2>
+<div class="produce-grid">{% for r in g.rows %}<a class="produce-tile" href="/produce/{{ r.key }}/"><span aria-hidden="true">{{ r.emoji }}</span><b>{% crop r.key %}</b>{% if r.n %}<small>{% t "{n} on sale" n=r.n %}</small>{% endif %}</a>{% endfor %}</div>{% endfor %}
+<div class="card tint" style="margin-top:20px"><b>{% t "Buying for a shop, mill or hotel?" %}</b><p style="margin:4px 0 10px">{% t "Sign in as a buyer to ask sellers, agree a price and sign the agreement." %}</p><a class="btn" href="/login/?as=buyer&next=/market/">{% t "Sign in as a buyer" %}</a></div>
+{% endblock %}

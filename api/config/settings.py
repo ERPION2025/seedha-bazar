@@ -213,3 +213,9 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Seedha Bazar <no-reply@seedhabazar.in>")
+
+# --- The company behind Seedha Bazar (footer, contact details for search engines) ---
+COMPANY_NAME = os.environ.get("COMPANY_NAME", "Vindhyachal Farms LLP")
+COMPANY_ADDRESS = os.environ.get("COMPANY_ADDRESS", "Plot number 39, Palak Vihar, Near Housing Board Colony, Maharajpur, Adhartal, Jabalpur, Madhya Pradesh")
+COMPANY_EMAIL = os.environ.get("COMPANY_EMAIL", "pranav@erpion.in")
+COMPANY_PHONE = os.environ.get("COMPANY_PHONE", "9770417301")

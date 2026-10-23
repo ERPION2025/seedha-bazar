@@ -68,7 +68,9 @@ class LoginFirstMiddleware:
 
     OPEN = ("/login/", "/logout/", "/auth/facebook/", "/privacy/", "/join/", "/s/", "/verify/", "/static/", "/media/", "/api/", "/admin/",
             "/hooks/", "/manifest.webmanifest", "/sw.js", "/favicon.ico", "/robots.txt", "/health/", "/kvk/",
-            "/console/login/")
+            "/console/login/",
+            # read-only pages for visitors and search engines (no menus; buying and everything else need sign-in)
+            "/for-farmers/", "/for-fpos/", "/for-ngos/", "/for-buyers/", "/produce/", "/sitemap.xml", "/lead/", "/thanks/")
 
     def __init__(self, get_response):
         self.get_response = get_response

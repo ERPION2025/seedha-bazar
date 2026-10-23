@@ -407,6 +407,25 @@ class AdminForm(LangForm):
             raise forms.ValidationError("Enter a valid 10-digit mobile number")
 
 
+class SystemNoticeForm(LangForm):
+    audience = forms.ChoiceField(label="Send to", choices=[("all", "Everyone"), ("farmers", "Farmers"), ("orgs", "FPOs and NGOs"), ("buyers", "Buyers"), ("inst", "KVKs and agencies")])
+    state = forms.ChoiceField(label="State (optional)", choices=[], required=False)
+    title = forms.CharField(label="Title", max_length=120, widget=forms.TextInput(attrs={"placeholder": "New: group farming"}))
+    text = forms.CharField(label="Message", max_length=400, widget=forms.Textarea(attrs={"rows": 3}))
+    url = forms.CharField(label="Page to open (optional, e.g. /farmer/groups/)", max_length=200, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from extension import geo
+        self.fields["state"].choices = [("", "All states")] + [(s, s) for s in geo.states()]
+
+    def clean_url(self):
+        u = (self.cleaned_data.get("url") or "").strip()
+        if u and not (u.startswith("/") and not u.startswith("//")):
+            raise forms.ValidationError("Use a page of this site, starting with /")
+        return u
+
+
 class ConsoleLoginForm(LangForm):
     login = forms.CharField(label="Mobile number or email", max_length=120, widget=forms.TextInput(attrs={"autocomplete": "username"}))
     password = forms.CharField(label="Password", max_length=128, widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}))

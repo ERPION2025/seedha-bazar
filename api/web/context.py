@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.templatetags.static import static
 
 from .i18n import LANG_NAMES, LANGS
 from .voice_strings import voice_config
@@ -17,6 +18,9 @@ def home_for(user, site: str = "main") -> str:
         return settings.INSTITUTION_URL + "/"
     return {"farmer": "/farmer/", "buyer": "/buyer/", "agent": "/fpo/"}.get(user.role, "/")
 
+
+FOOTER_SERVICES = [("Mandi rates", "/rates/"), ("Harvest calculator", "/calculator/"), ("Weather alerts", "/weather/"), ("Warehouse loans", "/storage/"),
+                   ("Crop insurance", "/insurance/"), ("Government schemes", "/schemes/"), ("Farming news", "/news/"), ("Group farming", "/farmer/groups/")]
 
 MAP_TEXT = {"boundaries": "Boundaries: geoBoundaries (ODbL), LGD", "directions": "Directions", "farmers": "Farmers", "fpos": "FPOs", "ngos": "NGOs", "stock": "Stock",
             "issues": "Open problems", "listings": "Listings", "open": "Open", "finding": "Finding you...", "you": "You are here", "none": "No centre on the map yet.",
@@ -63,7 +67,31 @@ def site(request):
         wx_alerts = active_alerts(user)[:3]
         pref = Preference.objects.filter(user=user).first()
         alarm_on = pref.alarm_sound if pref else True
+    inbox_unread, notify_cfg = 0, None
+    if user and user.is_authenticated:
+        from notify import push
+        from notify.models import InboxItem, Preference
+
+        inbox_unread = InboxItem.objects.filter(user=user, read_at__isnull=True).count()
+        pref = Preference.objects.filter(user=user).first()
+        notify_cfg = {"asked": bool(pref and pref.prompt_answer), "vapid": settings.VAPID_PUBLIC_KEY if push.configured() else "",
+                      "last": InboxItem.objects.filter(user=user).order_by("-pk").values_list("pk", flat=True).first() or 0,
+                      "tone": static("web/sounds/notify.wav"), "icon": static("web/icons/icon-192.png")}
+    import json
+
+    from .public_views import FOOTER_PRODUCE
+
+    company = {"name": settings.COMPANY_NAME, "address": settings.COMPANY_ADDRESS, "email": settings.COMPANY_EMAIL, "phone": settings.COMPANY_PHONE}
     return {
+        "company": company,
+        "company_ld": json.dumps({"@context": "https://schema.org", "@type": "Organization", "name": "Seedha Bazar", "legalName": company["name"], "url": settings.SITE_URL,
+                                  "email": company["email"], "telephone": "+91-" + company["phone"],
+                                  "address": {"@type": "PostalAddress", "streetAddress": company["address"].rsplit(", Jabalpur", 1)[0], "addressLocality": "Jabalpur",
+                                              "addressRegion": "Madhya Pradesh", "addressCountry": "IN"}}).replace("</", "<\\/"),
+        "footer_produce": FOOTER_PRODUCE[:10],
+        "footer_services": FOOTER_SERVICES,
+        "inbox_unread": inbox_unread,
+        "notify_cfg": notify_cfg,
         "wx_alerts": wx_alerts,
         "alarm_on": alarm_on,
         "nav": nav,

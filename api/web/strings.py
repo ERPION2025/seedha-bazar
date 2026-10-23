@@ -137,6 +137,15 @@ def form_strings() -> set[str]:
     for choices in (Advisory.Source.choices, Advisory.Kind.choices, Advisory.Severity.choices, CropGroup.Season.choices, CropGroup.Status.choices, Notice.Audience.choices, PRACTICES):
         out.update(label for _, label in choices)
     out.update(GROUP_TEXTS)
+    from notify.models import InboxItem, SystemNotice
+    from notify.service import TITLE_OF
+
+    for choices in (InboxItem.Kind.choices, SystemNotice.Audience.choices):
+        out.update(label for _, label in choices)
+    out.update(TITLE_OF.values())
+    from web.context import FOOTER_SERVICES
+
+    out.update(label for label, _ in FOOTER_SERVICES)
     for choices in (InsPlan.Scheme.choices, InsPlan.Season.choices, InsPlan.Group.choices, InsApp.Status.choices, InsApp.Channel.choices):
         out.update(label for _, label in choices)
     return out

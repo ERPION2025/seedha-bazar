@@ -523,3 +523,43 @@ def feeds(request):
         "runs": FeedRun.objects.all()[:15], "imd_on": settings.IMD_API_ENABLED, "mkisan_on": settings.MKISAN_ENABLED,
         "by_source": list(Advisory.objects.values("source").annotate(n=Count("id"), placed=Count("id", filter=~Q(district=""))).order_by("source")),
     })
+
+
+# ---------- system notices: Seedha Bazar to everyone's bell ----------
+NOTICE_CAP = 20000
+
+
+def notice_recipients(audience: str, state: str = ""):
+    users = User.objects.filter(status=UserStatus.ACTIVE)
+    by = {"farmers": Q(role=Role.FARMER), "orgs": Q(role=Role.AGENT), "buyers": Q(role=Role.BUYER), "inst": Q(role=Role.AGRONOMIST)}
+    users = users.filter(by[audience]) if audience in by else users.filter(role__in=[Role.FARMER, Role.AGENT, Role.BUYER, Role.AGRONOMIST])
+    if state:
+        users = users.filter(Q(farmer_profile__state__iexact=state) | Q(org_memberships__organisation__state__iexact=state) | Q(centre_memberships__centre__state__iexact=state)
+                             | Q(role=Role.BUYER)).distinct()
+    return users
+
+
+@staff_only
+def system_notices(request):
+    """Send a Seedha Bazar notice: it goes to the bell of everyone chosen, and as a phone notification where they allowed it.
+    No SMS is sent for these."""
+    from notify import service as notify
+    from notify.models import SystemNotice
+
+    form = f.SystemNoticeForm(request.POST or None, lang=request.lang)
+    if request.method == "POST" and form.is_valid():
+        d = form.cleaned_data
+        n = SystemNotice.objects.create(title=d["title"], text=d["text"], audience=d["audience"], state=d["state"], url=d["url"], sent_by=request.user)
+        sent = 0
+        for u in notice_recipients(d["audience"], d["state"]).iterator():
+            if sent >= NOTICE_CAP:
+                break
+            notify.tell(u, "system_notice", related=f"system:{n.pk}", title=d["title"], url=d["url"] or "/notifications/", quiet=True, advice=d["text"])
+            sent += 1
+        n.sent = sent
+        n.save(update_fields=["sent"])
+        audit.log("system_notice_sent", actor=request.user, target=n, request=request, sent=sent)
+        ok(request, "Sent to {n} people.", n=sent)
+        return redirect("/console/notices/")
+    return render(request, "web/console/notices.html", {"form": form, "rows": SystemNotice.objects.all()[:30],
+                                                        "counts": {k: notice_recipients(k).count() for k in ("all", "farmers", "orgs", "buyers", "inst")}})
