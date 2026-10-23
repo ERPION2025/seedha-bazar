@@ -7,7 +7,7 @@
 <div class="card" style="margin-top:14px">
   <p style="margin:0"><b>{{ li.quantity|num:2 }} {% t li.unit %}</b> · {{ li.price|inr }} / {% t li.unit %} · {{ li.total_value|inr }}</p>
   <p class="mute" style="margin:4px 0 0">📍 {{ li.district }}, {{ li.state }} · {% t "Listed until {date}" date=li.expires_at|date:"j M Y" %}</p>
-  {% if ref %}<p style="margin:8px 0 0"><span class="pill {% if ref.diff_pct > 8 %}red{% elif ref.diff_pct < -8 %}sun{% endif %}">{% t "Mandi today {price}" price=ref.typical|inr %} · {% if ref.diff_pct > 0 %}+{% endif %}{{ ref.diff_pct|num:1 }}%</span></p>{% endif %}
+  {% if ref %}<p style="margin:8px 0 0"><span class="pill {% if ref.diff_pct > 8 %}red{% elif ref.diff_pct < -8 %}sun{% endif %}">{% if ref.per == "kg" %}{% t "Typical {price} per kg" price=ref.show|inr %}{% else %}{% t "Mandi today {price}" price=ref.show|inr %}{% endif %} · {% if ref.diff_pct > 0 %}+{% endif %}{{ ref.diff_pct|num:1 }}%</span></p>{% endif %}
   <div class="row" style="margin-top:12px">
     <a class="btn small ghost" href="{{ px }}/sell/{{ li.pk }}/edit/">{% t "Edit" %}</a>
     <a class="btn small ghost" href="/market/{{ li.pk }}/">{% t "How buyers see it" %}</a>

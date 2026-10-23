@@ -1,0 +1,9 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Games" %}{% endblock %}
+{% block content %}
+<h1>🎮 {% t "Games" %}</h1>
+<p class="mute">{% t "Free games about farming. Play by touch or by voice." %}</p>
+<div class="game-tiles">{% for g in games %}<a class="game-tile" href="/games/{{ g.slug }}/"><span class="e">{{ g.emoji }}</span><b>{% t g.title %}</b><small>{% t g.line %}</small>{% if g.voice %}<br><small>🎤</small>{% endif %}{% if g.best is not None %}<br><span class="pill">{% t "Your best" %}: {{ g.best }}</span>{% endif %}</a>{% endfor %}</div>
+{% if district %}<div class="card" style="margin-top:16px"><h3>🏆 {% t "This week in your district" %} · {{ district }}</h3>
+  {% for r in board %}<div class="line{% if r.me %} me{% endif %}"><span>{{ forloop.counter }}. {{ r.name }}{% if r.village %} · <span class="mute">{{ r.village }}</span>{% endif %}</span><b>{% t "{n} points" n=r.points %}</b></div>{% empty %}<p class="mute">{% t "No games played yet." %}</p>{% endfor %}</div>{% endif %}
+{% endblock %}

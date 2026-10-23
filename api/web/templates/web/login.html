@@ -2,7 +2,7 @@
 {% block title %}{% t "Sign in" %}{% endblock %}
 {% block mainclass %} narrow{% endblock %}
 {% block content %}
-<h1>{% if door == "fpo" %}{% t "FPO and NGO sign in" %}{% elif door == "buyer" %}{% t "Buyer sign in" %}{% else %}{% t "Farmer sign in" %}{% endif %}</h1>
+<h1>{% if door == "fpo" %}{% t "FPO and NGO sign in" %}{% elif door == "kvk" %}{% t "KVK and research centre sign in" %}{% elif door == "buyer" %}{% t "Buyer sign in" %}{% else %}{% t "Farmer sign in" %}{% endif %}</h1>
 <p class="mute">{% t "Enter your mobile number. We send a 6-digit code. No password needed." %}</p>
 <div class="card tint" style="padding:12px 14px"><b>📍 {% t "Allow location to see rates near you" %}</b>
   <p class="hint" style="margin:2px 0 0">{% t "Optional. We keep only your district, not your exact position." %}</p>

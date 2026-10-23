@@ -1,0 +1,8 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Crop insurance" %}{% endblock %}
+{% block content %}
+<h1>🛡️ {% t "Crop insurance for members" %}</h1>
+<p class="mute">{% t "Prepare insurance for your members, collect their papers and submit together before the last date." %}</p>
+{% if apps %}<div class="card"><h3>{% t "Applications" %}</h3>{% for a in apps %}<a class="line" href="/insurance/{{ a.pk }}/" style="text-decoration:none;color:inherit"><div><b>{{ a.farmer.farmer_profile.name }}</b> · {% crop a.crop %}<br><span class="mute">{{ a.area_ha|num:2 }} ha · {% t "Cover" %} {{ a.sum_insured|inr }} · {% t "Premium" %} {{ a.farmer_premium|inr }}</span></div><span class="pill sun">{% t a.get_status_display %}</span></a>{% endfor %}</div>{% endif %}
+<div class="card"><h3>{% t "Members not insured yet" %}</h3>{% for m in waiting %}<div class="line"><div><b>{{ m.farmer_profile.name|default:m.phone }}</b><br><span class="mute">{{ m.farmer_profile.village }}</span></div><a class="btn small" href="/insurance/compare/?for={{ m.pk }}">{% t "Prepare" %}</a></div>{% empty %}<p class="mute" style="margin:0">{% t "Every member has insurance in progress." %}</p>{% endfor %}</div>
+{% endblock %}

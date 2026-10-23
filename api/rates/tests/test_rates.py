@@ -28,17 +28,18 @@ class CropNameTests(TestCase):
             "Arhar (Tur/Red Gram)(Whole)": "tur", "Green Gram (Moong)(Whole)": "moong", "Black Gram (Urd Beans)(Whole)": "urad",
             "Lentil (Masur)(Whole)": "lentil", "Mustard": "mustard", "Kodo Millet(Kodon)": "kodo", "Jowar(Sorghum)": "jowar",
             "Bajra(Pearl Millet/Cumbu)": "bajra", "Maize": "maize", "Groundnut": "groundnut", "Onion": "onion", "Potato": "potato",
+            "Banana - Green": "banana", "Green Chilli": "green_chilli", "Dry Chillies": "red_chilli", "Ginger(Green)": "ginger", "Bhindi(Ladies Finger)": "okra",
         }
         for name, crop in cases.items():
             self.assertEqual(canonical_crop(name), crop, name)
 
     def test_things_we_do_not_track_are_left_out(self):
-        for name in ("Arhar Dal(Tur Dal)", "Mustard Oil", "Sweet Potato", "Cotton Seed", "Banana", "", "Green Gram Dal (Moong Dal)"):
+        for name in ("Arhar Dal(Tur Dal)", "Mustard Oil", "Sweet Potato", "Cotton Seed", "Ginger(Dry)", "Peas(Dry)", "", "Green Gram Dal (Moong Dal)"):
             self.assertEqual(canonical_crop(name), "", name)
 
     def test_every_rule_points_at_a_known_crop(self):
         from rates.crops import RULES
-        self.assertTrue({k for k, _ in RULES} <= set(CROPS))
+        self.assertTrue({k for k, _ in RULES if k} <= set(CROPS))  # "" marks names we deliberately leave out
 
 
 class SourceTests(TestCase):

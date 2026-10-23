@@ -1,0 +1,9 @@
+{% load web_tags %}<!doctype html><html lang="{{ lang }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SB-{{ d.pk|stringformat:"06d" }}</title>
+<style>body{font:16px/1.6 system-ui,"Noto Sans Devanagari",sans-serif;margin:24px auto;max-width:760px;padding:0 16px;color:#111}pre{white-space:pre-wrap;font:inherit}table{border-collapse:collapse;width:100%}td{border:1px solid #999;padding:6px 10px;vertical-align:top}.hash{font-family:monospace;font-size:.8rem;word-break:break-all}@media print{.no-print{display:none}}</style></head><body>
+<pre>{{ ag.text }}</pre>
+<h3>{% t "Signatures" %}</h3>
+<table><tr><td><b>{% t "Buyer" %}</b><br>{{ ag.terms.buyer.business }}</td><td>{% if ag.buyer_signed_at %}✔ {{ ag.buyer_signed_at|date:"j M Y, H:i" }} · OTP{% if ag.buyer_sign_ip %} · {{ ag.buyer_sign_ip }}{% endif %}{% else %}{% t "not signed yet" %}{% endif %}</td></tr>
+<tr><td><b>{% t "Seller" %}</b><br>{{ ag.terms.seller.name }}</td><td>{% if ag.seller_signed_at %}✔ {{ ag.seller_signed_at|date:"j M Y, H:i" }} · OTP{% if ag.seller_sign_ip %} · {{ ag.seller_sign_ip }}{% endif %}{% else %}{% t "not signed yet" %}{% endif %}</td></tr></table>
+<p class="hash">{% t "Document fingerprint" %} (SHA-256): {{ ag.doc_hash }}</p>
+<p class="no-print"><button onclick="window.print()">🖨️ {% t "Print" %}</button></p>
+</body></html>

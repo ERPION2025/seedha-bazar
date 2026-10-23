@@ -12,8 +12,16 @@
 </div>
 {% endif %}
 
+{% if fp.share_with_extension is None and kvk %}
+<div class="card tint"><h3 style="margin-top:0">🏛️ {% t "Get advice from {centre}" centre=kvk.name %}</h3>
+  <p>{% t "Allow your district's KVK to see your profile, crops and Farmer Book, so their experts can advise you and offer seeds and inputs. You can change this any time in your profile." %}</p>
+  <form method="post" action="/farmer/sharing/" class="row">{% csrf_token %}<button class="btn" name="share" value="1">{% t "Yes, allow" %}</button><button class="btn ghost" name="share" value="0">{% t "No, thank you" %}</button></form></div>
+{% endif %}
+<div class="quick" style="margin-bottom:14px"><a class="btn ghost" href="/help/">🧑‍🔬 {% t "Ask an expert" %}</a><a class="btn ghost" href="/inputs/">🌱 {% t "Seeds and inputs" %}{% if offers_n %} <span class="pill sun">{{ offers_n }}</span>{% endif %}</a><a class="btn ghost" href="/map/">🗺️ {% t "Nearest KVK" %}</a><a class="btn ghost" href="/insights/">📊 {% t "My district" %}</a></div>
+{% if scores %}<a class="door" href="/insights/"><div class="card"><div class="row between"><b>⚡ {% t "Activity" %} {{ scores.activity }}/100</b><b>🏅 {% t "Performance" %} {{ scores.performance }}/100</b></div><div class="scorebar" style="margin-top:8px"><span style="width:{{ scores.activity }}%"></span></div></div></a>{% endif %}
 {% if not loc %}<div class="card tint"><b>📍 {% t "Allow location to see rates near you" %}</b>{% include "web/partials/location_bar.html" with auto="1" reload="1" %}</div>{% endif %}
 {% include "web/partials/rate_strip.html" %}
+{% news_for_home %}
 
 {% if cycle_count %}
 <div class="stats">
@@ -41,7 +49,7 @@
 
 {% if stock %}
 <div class="card"><h3>{% t "Stock at home" %}</h3>
-  {% for s in stock %}<div class="line"><div><b>{% crop s.crop %}</b><br><a class="btn small sun" href="/farmer/sell/new/?cycle={{ s.crop_cycle }}">🏷️ {% t "List for sale" %}</a></div><div>{{ s.stock_quintal|num }} {% t "quintal" %}{% if s.days_left is not None %}<br><span class="mute">{% if s.days_left < 0 %}<span class="neg">{% t "past storage time" %}</span>{% else %}{% t "{n} days left" n=s.days_left %}{% endif %}</span>{% endif %}</div></div>{% endfor %}
+  {% for s in stock %}<div class="line"><div><b>{% if s.product %}{% crop s.product %}{% else %}{% crop s.crop %}{% endif %}</b>{% if s.product %}<br><span class="mute">{% t "made from" %} {% crop s.crop %}</span>{% endif %}<br><a class="btn small sun" href="/farmer/sell/new/?cycle={{ s.crop_cycle }}{% if s.product %}&product={{ s.product }}{% endif %}">🏷️ {% t "List for sale" %}</a></div><div>{{ s.stock_quintal|num }} {% t "quintal" %}{% if s.days_left is not None %}<br><span class="mute">{% if s.days_left < 0 %}<span class="neg">{% t "past storage time" %}</span>{% else %}{% t "{n} days left" n=s.days_left %}{% endif %}</span>{% endif %}</div></div>{% endfor %}
 </div>
 {% endif %}
 

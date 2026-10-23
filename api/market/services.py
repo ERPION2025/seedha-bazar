@@ -11,12 +11,13 @@ from django.utils import timezone
 from accounts import audit
 from accounts.errors import ApiError
 from accounts.models import Role
-from farmerbook.serializers import stock_kg
 from farmerbook.units import to_kg
 from notify import service as notify
 from rates import services as rate_services
+import catalog
 from rates.crops import CROPS
 
+from . import stock
 from .models import LISTING_DAYS, Enquiry, EnquiryMessage, Listing
 
 MAX_MESSAGES_PER_ENQUIRY_PER_HOUR = 30
@@ -25,7 +26,7 @@ NOTIFY_QUIET = timedelta(minutes=30)
 
 def crop_key(name: str) -> str:
     n = (name or "").strip().lower()
-    return n if n in CROPS else n[:60]
+    return n if n in CROPS or n in catalog.PRODUCTS else n[:60]
 
 
 def per_quintal(price: Decimal, quantity: Decimal, quantity_kg: Decimal) -> Decimal:
@@ -40,12 +41,16 @@ def save_listing(seller, data: dict, org=None, instance: Listing | None = None, 
         kg = to_kg(data["quantity"], data["unit"], data.get("bag_weight_kg"))
     except ValueError:
         raise ApiError("bag_weight_required", "Tell us how many kg one bag weighs", 400)
-    cycle = data.get("source_cycle")
+    cycle = data.get("source_cycle") or (instance.source_cycle if instance is not None else None)
+    product = crop_key(data["crop"])
+    if instance is not None and product != instance.crop:
+        raise ApiError("product_fixed", "You cannot change what is being sold. List it again as a new listing.", 400)
+    if cycle is None and instance is None:
+        raise ApiError("stock_required", "You can list only what your Farmer Book shows. Write the harvest in the book first.", 400)
     if cycle is not None:
-        free = stock_kg(cycle)
-        already = sum(Listing.objects.filter(source_cycle=cycle, status__in=["active", "paused"]).exclude(pk=getattr(instance, "pk", None)).values_list("quantity_kg", flat=True))
-        if kg > free - already:
-            raise ApiError("not_enough_stock", "That is more than the stock in your book that is not already listed.", 400, available_kg=str(max(Decimal(0), free - already)))
+        available = stock.free_kg(cycle, product, exclude_listing=instance)
+        if kg > available:
+            raise ApiError("not_enough_stock", "That is more than the stock in your book that is not already listed.", 400, available_kg=str(available))
     li = instance or Listing(seller=seller, organisation=org, source_cycle=cycle)
     for f in ("grade", "state", "district", "village", "variety", "description", "unit"):
         if f in data:
@@ -53,7 +58,20 @@ def save_listing(seller, data: dict, org=None, instance: Listing | None = None, 
     li.bag_weight_kg = data.get("bag_weight_kg") if data["unit"] == "bag" else None
     if data.get("available_from"):
         li.available_from = data["available_from"]
-    li.crop = crop_key(data["crop"])
+    li.crop = product
+    li.form = catalog.kind(product)
+    if li.form == catalog.SEMI:
+        li.packaging = data.get("packaging") or "bulk"
+        if li.packaging == "packed":
+            fssai = re.sub(r"\D", "", data.get("fssai_no") or "")
+            if len(fssai) != 14:
+                raise ApiError("fssai_required", "Packed food needs a 14-digit FSSAI licence or registration number.", 400)
+            li.fssai_no = fssai
+            li.pack_size_g = data.get("pack_size_g")
+            li.brand = (data.get("brand") or "")[:80]
+        else:
+            li.fssai_no, li.pack_size_g, li.brand = "", None, ""
+        li.shelf_life_days = data.get("shelf_life_days")
     li.quantity, li.quantity_kg, li.price = data["quantity"], kg, data["price"]
     li.price_per_quintal = per_quintal(li.price, li.quantity, kg)
     if instance is None:
@@ -64,7 +82,18 @@ def save_listing(seller, data: dict, org=None, instance: Listing | None = None, 
 
 
 def mandi_reference(listing: Listing, memo: dict | None = None) -> dict | None:
-    """How the asking price compares with today's mandi price for the same place. None when we have no rate for it."""
+    """How the asking price compares with a fair reference for the same place. None when we have nothing to compare with.
+
+    Crops and fresh produce use today's mandi price (per quintal). Processed goods use the catalog's estimate or the
+    platform's own live listings (per kg). `typical` is always per quintal so the percentage works; `show` and `per` are for display.
+    """
+    if listing.form == catalog.SEMI:
+        rp = rate_services_catalog_ref(listing.crop, listing.state)
+        if rp is None:
+            return None
+        typical_q = rp["typical"] * 100
+        diff = ((listing.price_per_quintal - typical_q) / typical_q * 100).quantize(Decimal("0.1"))
+        return {"typical": typical_q, "show": rp["typical"], "per": "kg", "source": rp["source"], "n": rp["n"], "as_of": timezone.localdate(), "scope": "state", "demo": False, "diff_pct": diff}
     if listing.crop not in CROPS:
         return None
     key = (listing.crop, listing.state, listing.district)
@@ -77,7 +106,13 @@ def mandi_reference(listing: Listing, memo: dict | None = None) -> dict | None:
     if ref is None:
         return None
     diff = ((listing.price_per_quintal - ref["typical"]) / ref["typical"] * 100).quantize(Decimal("0.1"))
-    return {**ref, "diff_pct": diff}
+    return {**ref, "show": ref["typical"], "per": "quintal", "source": "mandi", "diff_pct": diff}
+
+
+def rate_services_catalog_ref(product: str, state: str):
+    from catalog import services as cat
+
+    return cat.reference_price(product, state)
 
 
 PHONE = re.compile(r"(?<!\w)\+?[0-9०-९](?:[\s\-.]?[0-9०-९]){7,}")
@@ -100,7 +135,7 @@ def _link(enquiry: Enquiry) -> str:
 def crop_name(lang: str, crop: str) -> str:
     from web.i18n import tr  # lazy: the website's wording lives in web/
 
-    return tr(lang, CROPS.get(crop, crop.title()))
+    return tr(lang, catalog.name(crop))
 
 
 def qty_text(lang: str, listing: Listing, quantity) -> str:

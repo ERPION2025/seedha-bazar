@@ -5,20 +5,44 @@ from rest_framework import serializers
 
 from accounts.errors import ApiError
 
-from .models import Activity, CropCycle, Expense, Harvest, Plot, Sale
+from .models import Activity, CropCycle, Expense, Harvest, Plot, Processing, Sale
 from .units import UNITS, to_kg
 
 Q = Decimal("0.001")
 
 
-def stock_kg(cycle, exclude_harvest=None, exclude_sale=None) -> Decimal:
+def stock_kg(cycle, exclude_harvest=None, exclude_sale=None, exclude_processing=None) -> Decimal:
+    """Kg of the crop itself in stock: harvested, less sold as the crop, less what went into processing."""
     h = cycle.harvests.filter(deleted_at__isnull=True)
-    s = cycle.sales.filter(deleted_at__isnull=True)
+    s = cycle.sales.filter(deleted_at__isnull=True, product="")
+    p = cycle.processings.filter(deleted_at__isnull=True)
     if exclude_harvest is not None:
         h = h.exclude(pk=exclude_harvest.pk)
     if exclude_sale is not None:
         s = s.exclude(pk=exclude_sale.pk)
-    return (h.aggregate(t=Sum("quantity_kg"))["t"] or Decimal("0")) - (s.aggregate(t=Sum("quantity_kg"))["t"] or Decimal("0"))
+    if exclude_processing is not None:
+        p = p.exclude(pk=exclude_processing.pk)
+    zero = Decimal("0")
+    return (h.aggregate(t=Sum("quantity_kg"))["t"] or zero) - (s.aggregate(t=Sum("quantity_kg"))["t"] or zero) - (p.aggregate(t=Sum("input_kg"))["t"] or zero)
+
+
+def product_stock_kg(cycle, product: str, exclude_sale=None, exclude_processing=None) -> Decimal:
+    """Kg of a processed product in stock: made in this cycle, less sold."""
+    made = cycle.processings.filter(deleted_at__isnull=True, product=product)
+    sold = cycle.sales.filter(deleted_at__isnull=True, product=product)
+    if exclude_sale is not None:
+        sold = sold.exclude(pk=exclude_sale.pk)
+    if exclude_processing is not None:
+        made = made.exclude(pk=exclude_processing.pk)
+    zero = Decimal("0")
+    return (made.aggregate(t=Sum("quantity_kg"))["t"] or zero) - (sold.aggregate(t=Sum("quantity_kg"))["t"] or zero)
+
+
+def processed_stock(cycle) -> dict:
+    """{product: kg left} for everything made in this cycle that is still in stock."""
+    keys = set(cycle.processings.filter(deleted_at__isnull=True).values_list("product", flat=True))
+    out = {k: product_stock_kg(cycle, k) for k in keys}
+    return {k: v for k, v in out.items() if v > 0}
 
 
 class RecordSerializer(serializers.ModelSerializer):
@@ -136,8 +160,9 @@ class SaleSerializer(QuantityMixin, RecordSerializer):
 
     class Meta:
         model = Sale
-        fields = RecordSerializer.COMMON + ["crop_cycle", "date", "quantity", "unit", "bag_weight_kg", "quantity_kg", "rate", "amount", "channel", "buyer_note"]
+        fields = RecordSerializer.COMMON + ["crop_cycle", "product", "date", "quantity", "unit", "bag_weight_kg", "quantity_kg", "rate", "amount", "channel", "buyer_note"]
         read_only_fields = ["created_at", "updated_at"]
+        extra_kwargs = {"product": {"required": False, "allow_blank": True}}
 
     def validate_rate(self, v):
         if v <= 0 or v > Decimal("10000000"):
@@ -148,9 +173,50 @@ class SaleSerializer(QuantityMixin, RecordSerializer):
         qty, unit, bag, kg = self._kg(a)
         rate = a.get("rate", getattr(self.instance, "rate", None))
         cycle = a.get("crop_cycle", getattr(self.instance, "crop_cycle", None))
-        available = stock_kg(cycle, exclude_sale=self.instance)
+        product = a.get("product", getattr(self.instance, "product", "")) or ""
+        a["product"] = product
+        available = product_stock_kg(cycle, product, exclude_sale=self.instance) if product else stock_kg(cycle, exclude_sale=self.instance)
         if kg > available:
             raise ApiError("insufficient_stock", f"Only {available.quantize(Q)} kg is in stock for this crop. Record the harvest first.", available_kg=str(available.quantize(Q)))
         a["quantity_kg"] = kg
         a["amount"] = (qty * rate).quantize(Decimal("0.01"))
+        return a
+
+
+class ProcessingSerializer(QuantityMixin, RecordSerializer):
+    crop_cycle = serializers.SlugRelatedField(slug_field="client_id", queryset=CropCycle.objects.all())
+    quantity_kg = serializers.DecimalField(max_digits=14, decimal_places=3, read_only=True)
+
+    class Meta:
+        model = Processing
+        fields = RecordSerializer.COMMON + ["crop_cycle", "date", "product", "input_kg", "quantity", "unit", "bag_weight_kg", "quantity_kg", "cost",
+                                            "packaging", "pack_size_g", "shelf_life_days", "note"]
+        read_only_fields = ["created_at", "updated_at"]
+
+    def validate_product(self, v):
+        from catalog import PRODUCTS
+        if v not in PRODUCTS:
+            raise serializers.ValidationError("Choose something from the list")
+        return v
+
+    def validate_input_kg(self, v):
+        if v <= 0:
+            raise serializers.ValidationError("Enter how much you are processing")
+        return v
+
+    def validate_cost(self, v):
+        if v < 0 or v > Decimal("100000000"):
+            raise serializers.ValidationError("Enter a sensible amount")
+        return v
+
+    def validate(self, a):
+        qty, unit, bag, kg = self._kg(a)
+        cycle = a.get("crop_cycle", getattr(self.instance, "crop_cycle", None))
+        input_kg = a.get("input_kg", getattr(self.instance, "input_kg", None))
+        available = stock_kg(cycle, exclude_processing=self.instance)
+        if input_kg > available:
+            raise ApiError("insufficient_stock", f"Only {available.quantize(Q)} kg is in stock for this crop. Record the harvest first.", available_kg=str(available.quantize(Q)))
+        if kg > input_kg * Decimal("1.6"):
+            raise serializers.ValidationError({"quantity": "The product is more than the crop you put in. Check the quantity and unit."})
+        a["quantity_kg"] = kg
         return a

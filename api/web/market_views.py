@@ -1,20 +1,24 @@
 from decimal import Decimal
 from functools import wraps
 
+from django.conf import settings
 from django.contrib import messages
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+import catalog
 from accounts.errors import ApiError
-from accounts.models import Role
-from farmerbook.models import CropCycle
+from accounts.models import Role, User
+from farmerbook.models import CropCycle, Harvest
 from farmerbook.serializers import stock_kg
-from market import services
+from catalog import services as catalog_services
+from market import services, stock
 from market.models import Enquiry, Listing
 from notify import service as notify
-from profiles.models import OrgMembership
+from profiles.models import OrgMembership, OrgStatus
 from rates import services as rate_services
 from rates.crops import CROPS, EMOJI
 
@@ -22,6 +26,7 @@ from . import forms as f
 from . import location
 from .context import home_for
 from .helpers import error_text, ok, role_required, warn
+from .i18n import tr
 
 PAGE = 20
 MARKET_UNITS = ("quintal", "kg", "tonne", "bag")
@@ -66,7 +71,7 @@ def seller_required(view):
 def card(listing, memo):
     """Adds what a listing card needs: the mandi comparison, an emoji and who is selling (never a phone number)."""
     listing.ref = services.mandi_reference(listing, memo)
-    listing.emoji = EMOJI.get(listing.crop, "🌾")
+    listing.emoji = catalog.emoji(listing.crop)
     if listing.organisation_id:
         listing.seller_label, listing.seller_verified, listing.seller_org = listing.organisation.name, listing.organisation.verified, True
     else:
@@ -78,15 +83,24 @@ def card(listing, memo):
 
 
 # ---------- public browse ----------
+KIND_TABS = (("raw", "Grains and pulses"), ("fresh", "Fresh produce"), ("semi", "Processed goods"))
+
+
 def browse(request):
     qs = Listing.live().select_related("organisation", "seller__farmer_profile")
     crop = request.GET.get("crop", "")
+    kind = request.GET.get("kind", "")
     district = (request.GET.get("district") or "").strip()
     sort = request.GET.get("sort", "new")
+    packed = request.GET.get("packed") == "1"
+    if kind in dict(KIND_TABS):
+        qs = qs.filter(form=kind)
     if crop:
         qs = qs.filter(crop=crop)
     if district:
         qs = qs.filter(district__icontains=district)
+    if packed:
+        qs = qs.filter(form="semi", packaging="packed")
     qs = qs.order_by("price_per_quintal" if sort == "cheap" else "-created_at")
     try:
         page = max(1, int(request.GET.get("page", 1)))
@@ -94,9 +108,21 @@ def browse(request):
         page = 1
     rows = list(qs[(page - 1) * PAGE:page * PAGE + 1])
     memo: dict = {}
-    crops_live = sorted(set(Listing.live().values_list("crop", flat=True)))
-    ctx = {"rows": [card(li, memo) for li in rows[:PAGE]], "has_next": len(rows) > PAGE, "page": page, "crop": crop, "district": district, "sort": sort,
-           "crop_chips": [{"crop": c, "emoji": EMOJI.get(c, "🌾")} for c in crops_live]}
+    chip_qs = Listing.live()
+    if kind in dict(KIND_TABS):
+        chip_qs = chip_qs.filter(form=kind)
+    crops_live = sorted(set(chip_qs.values_list("crop", flat=True)))
+    loc = location.current(request)
+    u = request.user
+    fp = getattr(u, "farmer_profile", None) if u.is_authenticated and u.role == Role.FARMER else None
+    state, dist = (fp.state, fp.district) if fp and fp.district else (loc.get("state", ""), loc.get("district", ""))
+    featured = catalog_services.featured_for(state, dist) if not (crop or kind or district or packed or page > 1) else None
+    if featured:
+        featured["emoji"] = catalog.emoji(featured["crop"]) if featured["crop"] else "🌾"
+    spotlight = catalog_services.featured_districts(state or settings.DEFAULT_STATE, 8) if (u.is_authenticated and u.role == Role.BUYER and featured is None and not (crop or kind)) else []
+    ctx = {"rows": [card(li, memo) for li in rows[:PAGE]], "has_next": len(rows) > PAGE, "page": page, "crop": crop, "district": district, "sort": sort, "kind": kind, "packed": packed,
+           "kind_tabs": KIND_TABS, "featured": featured, "spotlight": spotlight, "place": dist,
+           "crop_chips": [{"crop": c, "emoji": catalog.emoji(c)} for c in crops_live]}
     return render(request, "web/market/browse.html", ctx)
 
 
@@ -138,44 +164,39 @@ def enquire(request, pk):
 
 
 # ---------- sellers: farmers and verified FPOs ----------
-def _own_cycle(user, raw):
-    """The farmer's crop for a ?cycle= value, or None. A garbled value is ignored rather than breaking the page."""
+def _stock_owners(request):
+    """Whose book a listing may come out of: the farmer's own, or the books of an FPO's member farmers."""
+    u = request.user
+    if u.role == Role.FARMER:
+        return [u]
+    return list(User.objects.filter(farmer_profile__organisation=request.org).filter(
+        Q(farmer_profile__org_status=OrgStatus.CONFIRMED) | Q(farmer_profile__org_status=OrgStatus.PENDING, farmer_profile__assisted_by__isnull=False)))
+
+
+def _chosen_cycle(request, raw):
+    """The stock line picked with ?cycle= (a farmer's own crop) or ?stock= (a member's crop, for FPOs). None if it is not theirs."""
     import uuid
 
+    owners = _stock_owners(request)
+    qs = CropCycle.objects.filter(owner__in=owners, deleted_at__isnull=True)
+    key = request.GET.get("stock") or request.POST.get("stock")
+    if key and key.isdigit():
+        return qs.filter(pk=int(key)).first()
     try:
         cid = uuid.UUID(str(raw))
     except ValueError:
         return None
-    return CropCycle.objects.filter(owner=user, client_id=cid, deleted_at__isnull=True).first() if user.role == Role.FARMER else None
+    return qs.filter(client_id=cid).first()
 
 
-def _initial_for_new(request):
-    u = request.user
-    g = request.GET
+def _place_for(request, cycle):
     loc = location.current(request)
-    if u.role == Role.FARMER:
-        fp = u.farmer_profile
-        state, district, village = fp.state, fp.district, fp.village
-    else:
-        state, district, village = request.org.state, request.org.district, ""
-    init = {"state": state or loc.get("state", ""), "district": district or loc.get("district", ""), "village": village, "unit": "quintal"}
-    cycle = _own_cycle(u, g.get("cycle")) if g.get("cycle") else None
-    if cycle is not None:
-        init.update(crop=cycle.crop if cycle.crop in CROPS else "other", crop_other="" if cycle.crop in CROPS else cycle.crop,
-                    quantity=max(Decimal(0), (stock_kg(cycle) / 100).quantize(Decimal("0.01"))), unit="quintal")
-    elif g.get("crop"):
-        init.update(crop=g["crop"] if g["crop"] in CROPS else "other", crop_other="" if g["crop"] in CROPS else g["crop"])
-        if g.get("qty"):
-            init["quantity"] = g["qty"]
-        if g.get("unit") in MARKET_UNITS:
-            init["unit"] = g["unit"]
-        if g.get("price"):
-            init["price"] = g["price"]
-    if init.get("crop") in CROPS and not init.get("price"):
-        ref = rate_services.typical_price(init["crop"], init["state"], init["district"])
-        if ref and init.get("unit") in (None, "quintal"):
-            init["price"] = ref["typical"]
-    return init, cycle
+    fp = getattr(cycle.owner, "farmer_profile", None) if cycle else None
+    if request.user.role == Role.FARMER:
+        fp = request.user.farmer_profile
+    state = (fp.state if fp else "") or getattr(getattr(request, "org", None), "state", "") or loc.get("state", "")
+    district = (fp.district if fp else "") or getattr(getattr(request, "org", None), "district", "") or loc.get("district", "")
+    return state, district, (fp.village if fp else "")
 
 
 @seller_required
@@ -184,44 +205,90 @@ def my_listings(request):
     qs = Listing.objects.filter(seller=u).order_by("-created_at")
     rows = list(qs[:100])
     for li in rows:
-        li.emoji = EMOJI.get(li.crop, "🌾")
+        li.emoji = catalog.emoji(li.crop)
         li.new_enquiries = li.enquiries.filter(status="new").count()
         li.total_enquiries = li.enquiries.count()
     return render(request, "web/market/my_listings.html", {"rows": rows, "base_tpl": base_for(u), "px": prefix_for(u)})
 
 
 @seller_required
+def sell_pick(request):
+    """Step one of listing: choose which stock from the Farmer Book to sell. Nothing can be listed that the book does not show."""
+    u = request.user
+    crop = request.GET.get("crop", "")
+    every = stock.lines(_stock_owners(request), crop=crop if crop else "")
+    rows = [r for r in every if r["free_kg"] > 0]
+    for r in rows:
+        r["emoji"] = catalog.emoji(r["product"])
+        r["shelf_end"] = stock.shelf_end(r["cycle"], r["product"])
+    return render(request, "web/market/sell_pick.html", {"rows": rows, "crop": crop, "base_tpl": base_for(u), "px": prefix_for(u), "is_fpo": u.role == Role.AGENT,
+                                                       "all_listed": bool(every) and not rows})
+
+
+@seller_required
 def listing_form(request, pk=None):
     u = request.user
     instance = get_object_or_404(Listing, pk=pk, seller=u) if pk else None
-    cycle = None
     if instance is not None:
-        init = {k: getattr(instance, k) for k in ("grade", "quantity", "unit", "bag_weight_kg", "price", "state", "district", "village", "variety", "description", "available_from")}
-        init.update(crop=instance.crop if instance.crop in CROPS else "other", crop_other="" if instance.crop in CROPS else instance.crop)
         cycle = instance.source_cycle
     else:
-        init, cycle = _initial_for_new(request)
-    form = f.ListingForm(request.POST or None, initial=init, lang=request.lang)
+        cycle = _chosen_cycle(request, request.GET.get("cycle") or request.POST.get("cycle"))
+        if cycle is None:
+            return redirect(f"{prefix_for(u)}/sell/pick/" + (f"?crop={request.GET['crop']}" if request.GET.get("crop") else ""))
+    if instance is not None:
+        crop = instance.crop
+    else:
+        crop = request.GET.get("product") or request.POST.get("product") or cycle.crop
+        if stock.book_kg(cycle, crop) <= 0 or (crop != cycle.crop and crop not in catalog.PRODUCTS):
+            return redirect(f"{prefix_for(u)}/sell/pick/")
+    processed = catalog.kind(crop) == catalog.SEMI
+    free = stock.free_kg(cycle, crop, exclude_listing=instance) if cycle is not None else None
+    if instance is not None:
+        init = {k: getattr(instance, k) for k in ("grade", "quantity", "unit", "bag_weight_kg", "price", "state", "district", "village", "variety", "description", "available_from",
+                                                   "packaging", "pack_size_g", "brand", "fssai_no", "shelf_life_days")}
+    else:
+        state, district, village = _place_for(request, cycle)
+        unit = "kg" if processed else "quintal"
+        init = {"state": state, "district": district, "village": village, "unit": unit, "variety": cycle.variety if not processed else "",
+                "quantity": stock.in_unit(free, unit)}
+        if processed:
+            ref0 = catalog_services.reference_price(crop, state)
+            if ref0:
+                init["price"] = ref0["typical"]
+            made = cycle.processings.filter(deleted_at__isnull=True, product=crop).order_by("-date").first()
+            if made:
+                init.update(packaging=made.packaging, pack_size_g=made.pack_size_g, shelf_life_days=made.shelf_life_days)
+        else:
+            ref0 = rate_services.typical_price(crop, state, district) if crop in CROPS else None
+            if ref0:
+                init["price"] = ref0["typical"]
+            last = Harvest.objects.filter(crop_cycle=cycle, deleted_at__isnull=True).order_by("-date").first()
+            if last and last.grade != "ungraded":
+                init["grade"] = last.grade
+    form = f.ListingForm(request.POST or None, initial=init, lang=request.lang, processed=processed)
     if request.method == "POST" and form.is_valid():
         d = dict(form.cleaned_data)
-        d["crop"] = form.crop_name()
+        d["crop"] = crop
         d["grade"] = d.get("grade") or "ungraded"
-        if cycle is None and request.POST.get("cycle"):
-            cycle = _own_cycle(u, request.POST["cycle"])
         d["source_cycle"] = cycle if instance is None else None
         try:
             li = services.save_listing(u, d, org=request.org, instance=instance, request=request)
         except ApiError as e:
-            form.add_error(None, error_text(request, e))
+            if e.code == "not_enough_stock":
+                form.add_error("quantity", tr(request.lang, "Only {qty} {unit} of this is free in your book.",
+                                              qty=f"{stock.in_unit(Decimal(e.extra['available_kg']), d['unit'], d.get('bag_weight_kg')).normalize():f}", unit=tr(request.lang, d["unit"])))
+            else:
+                form.add_error(None, error_text(request, e))
         else:
             ok(request, "Listing saved. Buyers can see it now.")
             return redirect(f"{prefix_for(u)}/sell/{li.pk}/")
-    ref = None
-    crop = (form.data.get("crop") if form.is_bound else init.get("crop")) or ""
-    if crop in CROPS:
-        ref = rate_services.typical_price(crop, (form.data.get("state") if form.is_bound else init.get("state")) or "", (form.data.get("district") if form.is_bound else init.get("district")) or "")
-    return render(request, "web/market/listing_form.html", {"form": form, "instance": instance, "cycle": cycle or (request.GET.get("cycle") or request.POST.get("cycle")),
-                                                              "ref": ref, "base_tpl": base_for(u), "px": prefix_for(u)})
+    place = (form.data.get("state") if form.is_bound else init.get("state")) or "", (form.data.get("district") if form.is_bound else init.get("district")) or ""
+    ref = catalog_services.reference_price(crop, place[0]) if processed else (rate_services.typical_price(crop, *place) if crop in CROPS else None)
+    owner = getattr(cycle.owner, "farmer_profile", None) if cycle is not None else None
+    return render(request, "web/market/listing_form.html", {
+        "form": form, "instance": instance, "cycle": cycle, "crop": crop, "emoji": catalog.emoji(crop), "ref": ref, "free_kg": free, "processed": processed,
+        "in_book_kg": stock.book_kg(cycle, crop) if cycle is not None else None, "owner_name": owner.name if owner and u.role == Role.AGENT else "",
+        "base_tpl": base_for(u), "px": prefix_for(u)})
 
 
 @seller_required
@@ -272,7 +339,7 @@ def inbox(request):
     qs = qs.filter(buyer=u) if u.role == Role.BUYER else qs.filter(listing__seller=u)
     rows = list(qs.order_by("-created_at")[:100])
     for e in rows:
-        e.emoji = EMOJI.get(e.listing.crop, "🌾")
+        e.emoji = catalog.emoji(e.listing.crop)
         e.last = e.messages.last()
         seen = e.buyer_seen_at if u.role == Role.BUYER else e.seller_seen_at
         e.unseen = seen is None or (e.last is not None and e.last.sender_id != u.pk and e.last.created_at > seen)

@@ -1,0 +1,7 @@
+{% load web_tags %}
+<div class="card sun">
+  <span class="pill sun">{% if a.pinned %}📌 {% endif %}{% t "From Seedha Bazar" %}</span>
+  <h3 style="margin:8px 0 4px">{{ a.title }}</h3>
+  {% if a.body %}<p style="margin:0 0 6px">{{ a.body|linebreaksbr }}</p>{% endif %}
+  {% if a.link %}<a class="btn small" href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{% t "Read more" %} ↗</a>{% endif %}
+</div>

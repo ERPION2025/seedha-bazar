@@ -267,8 +267,8 @@ class StaticTrialCodeTests(TestCase):
         otp.verify_code("9111111111", "123456")
 
     @override_settings(OTP_STATIC_CODE="123456", OTP_BACKEND="accounts.messaging.MemoryBackend")
-    def test_staff_accounts_still_get_a_random_code(self):
-        for role, phone in ((Role.AGENT, "9111111112"), (Role.ADMIN, "9111111113")):
+    def test_admins_and_agronomists_still_get_a_random_code(self):
+        for role, phone in ((Role.AGRONOMIST, "9111111112"), (Role.ADMIN, "9111111113")):
             User.objects.create_user(phone=phone, role=role)
             otp.request_otp(phone, "sms", None)
             self.assertEqual(len(MemoryBackend.outbox), 1)
@@ -278,3 +278,10 @@ class StaticTrialCodeTests(TestCase):
     def test_empty_setting_turns_it_off(self):
         otp.request_otp("9111111114", "sms", None)
         self.assertEqual(len(MemoryBackend.outbox), 1)
+
+    @override_settings(OTP_STATIC_CODE="123456", OTP_BACKEND="accounts.messaging.MemoryBackend")
+    def test_fpo_agents_use_the_fixed_code(self):
+        User.objects.create_user(phone="9111111115", role=Role.AGENT)
+        otp.request_otp("9111111115", "sms", None)
+        self.assertEqual(MemoryBackend.outbox, [])
+        otp.verify_code("9111111115", "123456")

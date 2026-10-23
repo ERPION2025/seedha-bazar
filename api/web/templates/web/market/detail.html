@@ -15,12 +15,19 @@
   {% if li.unit != "quintal" %}<p class="hint" style="margin:10px 0 0">{{ li.price_per_quintal|inr }} {% t "per quintal" %}</p>{% endif %}
 </div>
 
+{% if li.form == "semi" %}
+<div class="card"><h3>📦 {% t "About this product" %}</h3>
+  <p style="margin:0">{% if li.packaging == "packed" %}{% t "Packed for retail" %}{% if li.pack_size_g %} · {{ li.pack_size_g }} {% t "g per pack" %}{% endif %}{% else %}{% t "Loose, in bulk" %}{% endif %}{% if li.brand %} · {{ li.brand }}{% endif %}{% if li.shelf_life_days %} · {% t "Stays good for {n} days" n=li.shelf_life_days %}{% endif %}</p>
+  {% if li.fssai_no %}<p class="mute" style="margin:6px 0 0">FSSAI {{ li.fssai_no }}</p>{% endif %}
+</div>{% endif %}
 {% if ref %}
-<div class="card"><h3>📈 {% t "Compare with the mandi" %}</h3>
-  <p style="margin:0">{% t "Mandi price near here" %}: <b>{{ ref.typical|inr }}</b> {% t "per quintal" %} · {% t "Reported on {date}" date=ref.as_of|date:"j M" %}</p>
-  <p style="margin:6px 0 0"><span class="pill {% if ref.diff_pct > 8 %}red{% elif ref.diff_pct < -8 %}sun{% endif %}">{% if ref.diff_pct > 0 %}+{% endif %}{{ ref.diff_pct|num:1 }}% {% t "compared with the mandi" %}</span>
+<div class="card"><h3>📈 {% if ref.per == "kg" %}{% t "Compare with the usual price" %}{% else %}{% t "Compare with the mandi" %}{% endif %}</h3>
+  {% if ref.per == "kg" %}<p style="margin:0">{% if ref.source == "listings" %}{% t "Typical price on Seedha Bazar" %}{% else %}{% t "Starter estimate" %}{% endif %}: <b>{{ ref.show|inr }}</b> {% t "per kg" %}</p>
+  {% else %}<p style="margin:0">{% t "Mandi price near here" %}: <b>{{ ref.show|inr }}</b> {% t "per quintal" %} · {% t "Reported on {date}" date=ref.as_of|date:"j M" %}</p>{% endif %}
+  <p style="margin:6px 0 0"><span class="pill {% if ref.diff_pct > 8 %}red{% elif ref.diff_pct < -8 %}sun{% endif %}">{% if ref.diff_pct > 0 %}+{% endif %}{{ ref.diff_pct|num:1 }}% {% if ref.per == "kg" %}{% t "compared with the usual price" %}{% else %}{% t "compared with the mandi" %}{% endif %}</span>
   {% if quote and quote.msp %}<span class="pill sun">🏛️ {% t "Govt MSP" %} {{ quote.msp.price|inr }}</span>{% endif %}</p>
   {% if ref.demo %}<p class="err" style="margin-top:8px">{% t "Sample data, not real prices" %}</p>{% endif %}
+  {% if ref.source == "estimate" %}<p class="hint" style="margin-top:8px">{% t "Estimates for processed goods are a starting guide. Real prices appear here as more are listed." %}</p>{% endif %}
 </div>{% endif %}
 
 {% if li.description %}<div class="card"><p style="margin:0">{{ li.description }}</p></div>{% endif %}

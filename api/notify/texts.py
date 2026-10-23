@@ -5,6 +5,36 @@ template and keep the {placeholders} in the same order. Keep them short.
 """
 
 TEXTS = {
+    "input_update": {
+        "en": "Seedha Bazar: {what} ({product}). See: {link}",
+        "hi": "सीधा बाज़ार: {what} ({product})। देखें: {link}",
+        "mr": "सीधा बाज़ार: {what} ({product}). पाहा: {link}",
+    },
+    "issue_alert": {
+        "en": "Seedha Bazar: {what} in {place}. Open: {link}",
+        "hi": "सीधा बाज़ार: {place} में {what}। खोलें: {link}",
+        "mr": "सीधा बाज़ार: {place} मध्ये {what}. उघडा: {link}",
+    },
+    "issue_reply": {
+        "en": "Seedha Bazar: an expert answered your problem. Open: {link}",
+        "hi": "सीधा बाज़ार: विशेषज्ञ ने आपकी समस्या का जवाब दिया। खोलें: {link}",
+        "mr": "सीधा बाज़ार: तज्ज्ञाने तुमच्या समस्येला उत्तर दिले. उघडा: {link}",
+    },
+    "input_offer": {
+        "en": "Seedha Bazar: {centre} offers {item} for {place}. See and request: {link}",
+        "hi": "सीधा बाज़ार: {centre} {place} के लिए {item} दे रहा है। देखें और माँगें: {link}",
+        "mr": "सीधा बाज़ार: {centre} {place} साठी {item} देत आहे. पाहा व मागणी करा: {link}",
+    },
+    "deal_request": {
+        "en": "Seedha Bazar: a buyer asks you for {product} ({qty}). See the offer and reply: {link}",
+        "hi": "सीधा बाज़ार: एक खरीदार आपसे {product} ({qty}) माँग रहा है। प्रस्ताव देखें और जवाब दें: {link}",
+        "mr": "सीधा बाज़ार: एक खरेदीदार तुमच्याकडे {product} ({qty}) मागत आहे. प्रस्ताव पाहा व उत्तर द्या: {link}",
+    },
+    "deal_update": {
+        "en": "Seedha Bazar: {what}. Order for {product}: {link}",
+        "hi": "सीधा बाज़ार: {what}। {product} का ऑर्डर: {link}",
+        "mr": "सीधा बाज़ार: {what}. {product} ची ऑर्डर: {link}",
+    },
     "calc_result": {
         "en": "Seedha Bazar: {crop}, {qty}. At the mandi you get {hand} in hand ({cut} is cut in between). This is an estimate.",
         "hi": "सीधा बाज़ार: {crop}, {qty}। मंडी में हाथ में {hand} आएगा ({cut} बीच में कटेगा)। यह अनुमान है।",

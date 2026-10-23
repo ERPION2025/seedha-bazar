@@ -598,3 +598,17 @@ class VoiceTests(WebCase):
             User.objects.create_user(phone="9222222223", role=Role.ADMIN)
             self.client.post("/login/", {"phone": "9222222223", "channel": "sms"})
             self.assertNotContains(self.client.get("/login/verify/?lang=en"), "123456")
+
+
+class OrgApprovalVisibilityTests(WebCase):
+    def test_new_org_shows_for_staff_in_console_badge_and_django_admin(self):
+        org = Organisation.objects.create(name="Waiting FPO", code="waiting-fpo")
+        self.client.force_login(staff())
+        r = self.client.get("/console/?lang=en")
+        self.assertContains(r, "Waiting FPO")
+        self.assertContains(r, '<span class="n">1</span>')
+        r = self.client.get("/admin/profiles/organisation/")
+        self.assertContains(r, "Waiting FPO")
+        self.client.post("/admin/profiles/organisation/", {"action": "approve", "_selected_action": [org.pk]})
+        org.refresh_from_db()
+        self.assertTrue(org.verified)

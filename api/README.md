@@ -44,7 +44,7 @@ Text lives in `web/translations.py` (English sentence -> Hindi, Marathi). A test
 
 Local runs print OTPs in the server log (`OTP_BACKEND=console`). Production refuses to start with that setting, unless a trial code is set.
 
-**Trial code.** Until an SMS/WhatsApp provider is connected, `OTP_STATIC_CODE` (default `123456`) works for farmers, buyers and numbers not yet registered, and the code page says so. Agents, agronomists and admins always get a real random code. Anyone who knows a farmer's number can sign in as them while this is on, so set `OTP_STATIC_CODE=` (empty) the day a provider goes live.
+**Trial code.** Until an SMS/WhatsApp provider is connected, `OTP_STATIC_CODE` (default `123456`) works for farmers, buyers, FPO agents and numbers not yet registered, and the code page says so. Agronomists and admins always get a real random code. Anyone who knows a farmer's number can sign in as them while this is on, so set `OTP_STATIC_CODE=` (empty) the day a provider goes live.
 
 **Read aloud.** Every page has a "Listen" tab on the right edge (`web/static/web/voice.js`). "Read this screen" speaks the page, "What should I do here?" speaks the fields and buttons, with pause, stop, slow voice and a highlight on what is being read. It uses the phone's own text-to-speech, so Hindi and Marathi need a voice installed on the phone. Mark an element `data-say="..."` to change what is read, `data-voice-skip` to hide it, `data-say-do="..."` to explain a group of buttons in one sentence.
 With Docker: copy `.env.example` to `.env`, then `docker compose up --build`.
@@ -195,3 +195,18 @@ Static files are served by WhiteNoise from the same container. `python manage.py
 - The website cannot work offline yet. The JSON API already supports offline sync for a future app.
 - Reminders are shown on the farmer's home page only. SMS/WhatsApp reminders need a provider (same one as OTP).
 - An agent belongs to one organisation in the website screens (the first one). The JSON API supports several.
+
+## More modules (catalog, knowledge, insurance, orders, KVK portal, games)
+
+| Module | What it does | Setup |
+| --- | --- | --- |
+| `catalog/` | 94 products in three forms (raw, fresh, processed) with Hindi/Marathi names; 48 conversions (e.g. fresh to dried mushroom) with yields and **starter** price estimates; One District One Product list (713 districts, official PM-FME list). | `python manage.py load_odop` |
+| Farmer Book processing | A batch turns crop stock into a product; selling is limited to book stock (crop or processed). | — |
+| `knowledge/` | News engine reading public feeds (ICAR, The Hindu, Google News searches incl. PIB/ministry/KVK sites, DD Kisan videos), tagging by topic/crop/state; 12 scheme summaries; staff announcements. | `python manage.py seed_knowledge`, `fetch_news` (the worker runs it every 6 h) |
+| `insurance/` | National PMFBY/RWBCIS premium rules, state notifications by CSV, compare and opt in, papers checklist, printable summary, loss reports (also sent to the district KVK). No public enrolment API exists: the `manual` connector is used until a partner agreement. | `seed_insurance`, `load_insurance_plans file.csv` |
+| `deals/` | Buyers find producers, ask for produce or processing, negotiate, both sign with a one-time code (hash-fingerprinted agreement), advance and balance payments confirmed by both sides. | — |
+| `extension/`, `issues/` | KVK / research centre logins (`/login/?as=kvk`), district geofence (geoBoundaries ODbL, LGD 2021), control centre, issue desk with speech-to-text and voice notes, input offers, maps (OpenStreetMap + Leaflet, directions via Google Maps links). | Add centres at `/console/centres/` |
+| `engagement/` | 12 games (touch and voice), activity and performance scores, district insights. | — |
+
+Navigation: wide screens get a left-side menu; phones get a bottom bar with four main items and **More**. Menus per role live in `web/menus.py`.
+District boundary files are built with `python tools/build_boundaries.py adm1.geojson adm2.geojson` from geoBoundaries IND ADM1/ADM2.

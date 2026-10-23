@@ -1,0 +1,11 @@
+{% extends "web/kvk/base.html" %}{% load web_tags %}
+{% block title %}{% t "Input offers" %}{% endblock %}
+{% block content %}
+<h1>🌱 {% t "Seeds and inputs for farmers and FPOs" %}</h1>
+<details class="card"{% if form.errors %} open{% endif %}><summary><b>+ {% t "New offer" %}</b>{% if district %} <span class="mute">({{ district }})</span>{% endif %}</summary>
+  <form method="post" style="margin-top:10px">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn">{% t "Publish" %}</button></form></details>
+{% for o in rows %}<a class="door" href="/kvk/offers/{{ o.pk }}/"><div class="card">
+  <div class="row between"><b>{{ o.name }}</b><span class="pill {% if o.is_live %}{% else %}grey{% endif %}">{% if o.is_live %}{% t "Open" %}{% else %}{% t "Closed" %}{% endif %}</span></div>
+  <p class="mute" style="margin:6px 0 0">{% t o.get_kind_display %} · {{ o.left|num }} / {{ o.quantity|num }} {{ o.unit }} {% t "left" %} · {{ o.requests.count }} {% t "requests" %} · {% t "until {date}" date=o.valid_until|date:"j M" %}</p></div></a>
+{% empty %}<p class="mute">{% t "No offers yet." %}</p>{% endfor %}
+{% endblock %}

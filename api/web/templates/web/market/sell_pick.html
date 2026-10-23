@@ -1,0 +1,20 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "What do you want to sell?" %}{% endblock %}
+{% block content %}
+<h1>🏷️ {% t "What do you want to sell?" %}</h1>
+<p class="mute">{% if is_fpo %}{% t "You can list only what your member farmers have in their Farmer Book." %}{% else %}{% t "You can list only what is in your Farmer Book." %}{% endif %}</p>
+{% for r in rows %}
+<a class="door" href="{{ px }}/sell/new/?{% if is_fpo %}stock={{ r.cycle.pk }}{% else %}cycle={{ r.cycle.client_id }}{% endif %}{% if r.processed %}&product={{ r.product }}{% endif %}"><div class="card">
+  <div class="row between"><h3 style="margin:0">{{ r.emoji }} {% crop r.product %}{% if r.processed %} <span class="mute">· {% t "made from" %} {% crop r.crop %}</span>{% elif r.cycle.variety %} <span class="mute">· {{ r.cycle.variety }}</span>{% endif %}</h3>
+    <span class="pill">{% if r.processed %}{{ r.free_kg|num:1 }} {% t "kg" %}{% else %}{{ r.free_quintal|num:3 }} {% t "quintal" %}{% endif %} {% t "free" %}</span></div>
+  <p class="mute" style="margin:6px 0 0">{% if r.owner_name %}{{ r.owner_name }}{% if r.owner_village %} · {{ r.owner_village }}{% endif %} · {% endif %}{{ r.plot }}{% if r.season %} · {% t r.season %}{% endif %}</p>
+  <p class="mute" style="margin:4px 0 0">{% if r.processed %}{% t "In the book: {qty} kg" qty=r.in_book_kg|num:1 %}{% if r.listed_kg %} · {% t "already listed: {qty} kg" qty=r.listed_kg|num:1 %}{% endif %}{% else %}{% t "In the book: {qty} quintal" qty=r.in_book_kg|quintal %}{% if r.listed_kg %} · {% t "already listed: {qty} quintal" qty=r.listed_kg|quintal %}{% endif %}{% endif %}{% if r.shelf_end %} · {% t "sell before {date}" date=r.shelf_end|date:"j M" %}{% endif %}</p>
+</div></a>
+{% empty %}
+{% if all_listed %}<div class="card tint"><h3>{% t "All your stock is already listed" %}</h3><p>{% t "Everything in your book is on offer. Manage your listings, or add a new harvest or processed batch to the book." %}</p><a class="btn" href="{{ px }}/sell/">{% t "My listings" %}</a></div>
+{% else %}<div class="card sun"><h3>{% t "Nothing to sell yet" %}</h3>
+  <p>{% if crop %}{% t "Your book shows no stock of this crop." %} {% endif %}{% t "Write your harvest in the Farmer Book first. Then you can list it here, so buyers only see what you really have." %}</p>
+  {% if is_fpo %}<a class="btn" href="/fpo/farmers/">{% t "My farmers" %}</a>{% else %}<a class="btn" href="/farmer/book/">{% t "Open my Farmer Book" %}</a>{% endif %}
+</div>{% endif %}
+{% endfor %}
+{% endblock %}

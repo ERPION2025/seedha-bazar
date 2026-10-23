@@ -9,6 +9,7 @@
   <div class="card stat"><small>{% t "Business" %}</small><div class="big" style="font-size:1rem">{% if profile.level >= 2 %}✔ {% t "Verified" %}{% else %}{% t "Not verified" %}{% endif %}</div></div></div>
 {% endif %}
 {% include "web/partials/rate_strip.html" %}
+{% news_for_home %}
 <div class="row between"><h2 style="margin:0">{% if near %}{% t "New produce in your state" %}{% else %}{% t "New produce" %}{% endif %}</h2><a href="/market/">{% t "See all" %}</a></div>
 <div class="grid g2" style="margin-top:12px">{% for li in listings %}{% include "web/partials/listing_card.html" %}{% empty %}<div class="card sun" style="grid-column:1/-1"><p style="margin:0">{% t "No listings yet. Farmers and FPOs are adding produce." %}</p></div>{% endfor %}</div>
 {% endblock %}

@@ -201,3 +201,122 @@ def rates_refresh(request):
     audit.log("rates_refresh_started", actor=request.user, request=request)
     ok(request, "Fetching rates now. Reload this page in a minute.")
     return redirect("/console/rates/")
+
+
+# ---------- news engine and announcements ----------
+@staff_only
+def knowledge_status(request):
+    from knowledge.models import Announcement, Article, Scheme, Source, Video
+
+    sources = Source.objects.annotate(n=Count("articles")).order_by("-active", "-trust", "name")
+    recent = Article.objects.order_by("-fetched_at")[:30]
+    return render(request, "web/console/knowledge.html", {
+        "sources": sources, "recent": recent, "articles": Article.objects.filter(hidden=False).count(), "videos": Video.objects.count(),
+        "schemes": Scheme.objects.filter(active=True).count(), "hidden": Article.objects.filter(hidden=True).count(),
+        "last": Source.objects.exclude(last_run=None).order_by("-last_run").values_list("last_run", flat=True).first(),
+        "announcements": Announcement.objects.all()[:20], "form": f.AnnouncementForm(lang=request.lang),
+    })
+
+
+@staff_only
+@require_POST
+def knowledge_refresh(request):
+    import threading
+
+    from django.db import connection
+
+    from knowledge import engine
+
+    def run():
+        try:
+            engine.run_all()
+        finally:
+            connection.close()
+
+    threading.Thread(target=run, daemon=True).start()
+    audit.log("news_refresh_started", actor=request.user, request=request)
+    ok(request, "Reading the news feeds now. Reload this page in a minute.")
+    return redirect("/console/news/")
+
+
+@staff_only
+@require_POST
+def knowledge_toggle(request, what, pk):
+    from knowledge.models import Article, Source, Video
+
+    model = {"source": Source, "article": Article, "video": Video}.get(what)
+    if model is None:
+        return redirect("/console/news/")
+    obj = get_object_or_404(model, pk=pk)
+    if what == "source":
+        obj.active = not obj.active
+        obj.save(update_fields=["active"])
+    else:
+        obj.hidden = not obj.hidden
+        obj.save(update_fields=["hidden"])
+    audit.log(f"{what}_toggled", actor=request.user, target=obj, request=request)
+    ok(request, "Saved.")
+    return redirect("/console/news/")
+
+
+@staff_only
+@require_POST
+def announcement_save(request):
+    from knowledge.models import Announcement
+
+    form = f.AnnouncementForm(request.POST, lang=request.lang)
+    if form.is_valid():
+        a = Announcement.objects.create(created_by=request.user, **form.cleaned_data)
+        audit.log("announcement_posted", actor=request.user, target=a, request=request)
+        ok(request, "Announcement posted.")
+    else:
+        messages.error(request, "; ".join(str(e) for errs in form.errors.values() for e in errs))
+    return redirect("/console/news/")
+
+
+@staff_only
+@require_POST
+def announcement_end(request, pk):
+    from knowledge.models import Announcement
+
+    a = get_object_or_404(Announcement, pk=pk)
+    a.ends_at = timezone.now()
+    a.save(update_fields=["ends_at"])
+    ok(request, "Announcement taken down.")
+    return redirect("/console/news/")
+
+
+# ---------- KVKs and research centres ----------
+@staff_only
+def centres(request):
+    from extension.models import Centre
+
+    form = f.CentreForm(request.POST or None, lang=request.lang)
+    if request.method == "POST" and request.POST.get("form") == "centre" and form.is_valid():
+        d = dict(form.cleaned_data)
+        d["districts"] = [x.strip() for x in d["districts"].split(",") if x.strip()]
+        c = Centre.objects.create(**d)
+        audit.log("centre_created", actor=request.user, target=c, request=request)
+        ok(request, "Saved.")
+        return redirect("/console/centres/")
+    rows = Centre.objects.prefetch_related("members__user").order_by("state", "name")
+    return render(request, "web/console/centres.html", {"rows": rows, "form": form, "staff_form": f.CentreStaffForm(lang=request.lang)})
+
+
+@staff_only
+@require_POST
+def centre_staff(request, pk):
+    from extension import services as ext
+    from extension.models import Centre
+
+    c = get_object_or_404(Centre, pk=pk)
+    form = f.CentreStaffForm(request.POST, lang=request.lang)
+    if form.is_valid():
+        try:
+            ext.provision_staff(form.cleaned_data["phone"], c, form.cleaned_data["role"], form.cleaned_data["speciality"], request.user, request)
+            ok(request, "Saved. They sign in at /login/?as=kvk with their own phone code.")
+        except ApiError as e:
+            messages.error(request, error_text(request, e))
+    else:
+        messages.error(request, "; ".join(str(e) for errs in form.errors.values() for e in errs))
+    return redirect("/console/centres/")

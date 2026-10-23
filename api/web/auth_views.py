@@ -15,9 +15,10 @@ from django.conf import settings
 from . import location
 from .context import home_for
 from .forms import CodeForm, ConsentForm, PhoneForm
+from .i18n import tr
 from .helpers import error_text, ok, warn
 
-ROLE_FOR = {"farmer": Role.FARMER, "buyer": Role.BUYER, "fpo": Role.AGENT}
+ROLE_FOR = {"farmer": Role.FARMER, "buyer": Role.BUYER, "fpo": Role.AGENT, "kvk": Role.AGRONOMIST}
 CHANNELS = ("sms", "whatsapp", "voice")
 STEP_LIFETIME = 15 * 60
 
@@ -50,13 +51,18 @@ def login_view(request):
         channel = request.POST.get("channel", "sms")
         if channel not in settings.OTP_CHANNELS:
             channel = "sms"
-        try:
-            otp.request_otp(form.cleaned_data["phone"], channel, audit.client_ip(request), request.lang)
-        except ApiError as e:
-            form.add_error("phone", error_text(request, e))
+        from accounts.models import User
+
+        if door == "kvk" and not User.objects.filter(phone=form.cleaned_data["phone"], role=Role.AGRONOMIST).exists():
+            form.add_error("phone", tr(request.lang, "This number is not registered for a KVK or research centre. Ask Seedha Bazar to add your centre."))
         else:
-            request.session["login"] = {"phone": form.cleaned_data["phone"], "t": time.time(), "channel": channel}
-            return redirect("/login/verify/")
+            try:
+                sent = otp.request_otp(form.cleaned_data["phone"], channel, audit.client_ip(request), request.lang)
+            except ApiError as e:
+                form.add_error("phone", error_text(request, e))
+            else:
+                request.session["login"] = {"phone": form.cleaned_data["phone"], "t": time.time(), "channel": channel, "dev_code": sent.get("dev_code", "")}
+                return redirect("/login/verify/")
     loc = location.current(request)
     return render(request, "web/login.html", {"form": form, "door": door, "channels": [c for c in CHANNELS if c in settings.OTP_CHANNELS],
                                               "loc": loc, "loc_label": location.label(loc)})
@@ -77,7 +83,8 @@ def verify_view(request):
                 request.session["login"] = {**st, "verified": True, "t": time.time()}
                 return redirect("/login/consent/")
             return _finish(request, st["phone"])
-    return render(request, "web/verify.html", {"form": form, "phone": st["phone"], "trial_code": otp.static_code_for(st["phone"])})
+    return render(request, "web/verify.html", {"form": form, "phone": st["phone"], "trial_code": otp.static_code_for(st["phone"]) or st.get("dev_code", ""),
+                                               "dev": bool(st.get("dev_code"))})
 
 
 @require_POST
@@ -89,8 +96,8 @@ def resend_view(request):
     if channel not in settings.OTP_CHANNELS:
         channel = "sms"
     try:
-        otp.request_otp(st["phone"], channel, audit.client_ip(request), request.lang)
-        request.session["login"] = {**st, "t": time.time(), "channel": channel}
+        sent = otp.request_otp(st["phone"], channel, audit.client_ip(request), request.lang)
+        request.session["login"] = {**st, "t": time.time(), "channel": channel, "dev_code": sent.get("dev_code", "")}
         ok(request, "A new code is on its way.")
     except ApiError as e:
         messages.error(request, error_text(request, e))

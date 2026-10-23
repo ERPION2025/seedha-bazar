@@ -1,0 +1,13 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Orders" %}{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="margin:0">📦 {% t "Orders" %}</h1>{% if is_buyer %}<a class="btn" href="/buyer/producers/">+ {% t "Find producers" %}</a>{% endif %}</div>
+<p class="mute">{% if is_buyer %}{% t "Orders you asked farmers and FPOs for, from request to delivery." %}{% else %}{% t "Buyers asking you for produce or processing. Agree the terms, sign, and deliver." %}{% endif %}</p>
+{% for d in rows %}
+<a class="door" href="/deals/{{ d.pk }}/"><div class="card">
+  <div class="row between"><h3 style="margin:0">{{ d.emoji }} {% crop d.product %}{% if d.unseen %} <span class="pill red">{% t "New" %}</span>{% endif %}</h3><span class="pill {% if d.status == "completed" %}{% elif d.status == "declined" or d.status == "cancelled" %}grey{% else %}sun{% endif %}">{% t d.get_status_display %}</span></div>
+  <p style="margin:6px 0 0"><b>{{ d.quantity|num:3 }} {% t d.unit %}</b> · {{ d.price|inr:2 }} / {% t d.unit %} · {{ d.total|inr }}</p>
+  <p class="mute" style="margin:4px 0 0">{% if is_buyer %}{% if d.organisation %}🏢 {{ d.organisation.name }}{% else %}🧑‍🌾 {{ d.seller.farmer_profile.name|first_name }}{% endif %}{% else %}🛒 {{ d.buyer.buyer_profile.business_name }}{% endif %} · {% t "Deliver by {date}" date=d.delivery_by|date:"j M Y" %}</p>
+</div></a>
+{% empty %}<div class="card sun"><p style="margin:0">{% if is_buyer %}{% t "No orders yet. Find a producer and ask for what you need." %}{% else %}{% t "No orders yet. Buyers find you through your Farmer Book stock and the crops you grow." %}{% endif %}</p></div>{% endfor %}
+{% endblock %}

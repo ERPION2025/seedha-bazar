@@ -1,0 +1,26 @@
+{% extends base_tpl %}{% load static web_tags %}
+{% block title %}{% t "Ask an expert" %}{% endblock %}
+{% block content %}
+<h1>🧑‍🔬 {% t "Ask an expert" %}</h1>
+<p class="mute">{% if centre %}{% t "Your problem goes to {centre}, the agriculture experts for your district." centre=centre.name %}{% else %}{% t "Your problem goes to agriculture experts for your district." %}{% endif %}</p>
+{% if centre %}<div class="card tint"><b>🏛️ {{ centre.name }}</b>{% if centre.phone %} · 📞 <a href="tel:{{ centre.phone }}">{{ centre.phone }}</a>{% endif %}{% if centre.lat %} · <a href="https://www.google.com/maps/dir/?api=1&destination={{ centre.lat }},{{ centre.lon }}" target="_blank" rel="noopener noreferrer">{% t "Directions" %} ↗</a>{% endif %} · <a href="/map/">{% t "See on the map" %}</a></div>{% endif %}
+<form method="post" action="/help/new/" enctype="multipart/form-data" class="card" id="issue-form">{% csrf_token %}
+  <h3>{% t "Tell us the problem" %}</h3>
+  {% if members %}<div class="field"><label>{% t "For which member?" %}</label><select name="farmer"><option value="">{% t "The FPO itself" %}</option>{% for m in members %}<option value="{{ m.pk }}">{{ m.farmer_profile.name|default:m.phone }} · {{ m.farmer_profile.village }}</option>{% endfor %}</select></div>{% endif %}
+  {% include "web/partials/form_body.html" %}
+  <input type="hidden" name="via_voice" value="0"><input type="hidden" name="lat"><input type="hidden" name="lon">
+  <div class="field"><label>{% t "Or record a voice note (up to 60 seconds)" %}</label>
+    <div class="row"><button type="button" class="btn small ghost" data-record>🎙️ {% t "Record" %}</button><span class="mute" data-record-status></span></div>
+    <input type="file" name="voice_note" accept="audio/*" capture data-record-input hidden></div>
+  <div class="field"><label>{% t "Photo of the crop (optional)" %}</label><input type="file" name="photo" accept="image/*" capture="environment"></div>
+  <label class="check-line"><input type="checkbox" data-share-location> {% t "Share my location with the expert for a field visit" %}</label>
+  <p class="hint">{% t "Speaking turns your words into text on your phone (Chrome uses Google's speech service). Voice notes and photos are seen only by you, your FPO and the experts, and are deleted after 180 days." %}</p>
+  <button class="btn block">{% t "Send to the expert" %}</button>
+</form>
+<h2>{% t "My problems" %}</h2>
+{% for i in rows %}<a class="door" href="/help/{{ i.pk }}/"><div class="card">
+  <div class="row between"><b>{% t i.get_category_display %}{% if i.crop %} · {% crop i.crop %}{% endif %}</b><span class="pill {% if i.status == "advised" or i.status == "resolved" %}{% elif i.status == "closed" %}grey{% else %}sun{% endif %}">{% t i.get_status_display %}</span></div>
+  <p style="margin:6px 0 0">{{ i.title }}</p><p class="mute" style="margin:4px 0 0">{{ i.created_at|date:"j M, H:i" }}{% if i.centre %} · {{ i.centre.name }}{% endif %}</p></div></a>
+{% empty %}<p class="mute">{% t "Nothing asked yet." %}</p>{% endfor %}
+<script src="{% static 'web/voice_input.js' %}" defer></script>
+{% endblock %}

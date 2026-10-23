@@ -1,0 +1,17 @@
+{% extends base_tpl %}{% load static web_tags %}
+{% block title %}{% t "Videos" %}{% endblock %}
+{% block content %}
+<h1>🎬 {% t "Videos" %}</h1>
+<p class="mute">{% t "Short videos on farming, schemes and markets. A video loads only when you tap it, so it uses no data until then." %}</p>
+<div class="chip-row" style="margin-top:0">{% for k, label in topic_tabs %}<a class="chip{% if topic == k %} on{% endif %}" href="?{% if k %}topic={{ k }}{% endif %}">{% t label %}</a>{% endfor %}</div>
+<div class="grid g2">{% for v in rows %}
+<div class="card vidcard" data-pk="{{ v.pk }}">
+  {% if v.platform == "youtube" %}
+  <button type="button" class="vid" data-embed="{{ v.embed_url }}" data-title="{{ v.title }}" aria-label="{% t "Play video" %}: {{ v.title }}" style="background-image:url('{{ v.thumbnail }}')"><span class="play">▶</span></button>
+  {% else %}<video controls preload="none" playsinline style="width:100%;border-radius:10px" src="{{ v.file_url }}"></video>{% endif %}
+  <h3 style="margin:10px 0 2px;font-size:1.02rem">{{ v.title }}</h3>
+  <p class="mute" style="margin:0">{{ v.channel }} · {{ v.published_at|date:"j M Y" }}{% if v.watch_url %} · <a href="{{ v.watch_url }}" target="_blank" rel="noopener noreferrer">{% t "Open on YouTube" %} ↗</a>{% endif %}</p>
+</div>{% empty %}
+<div class="card sun" style="grid-column:1/-1"><h3>{% t "No videos yet" %}</h3><p style="margin:0">{% t "Videos appear here after the news reader runs." %}</p></div>{% endfor %}</div>
+<script src="{% static 'web/video.js' %}" defer></script>
+{% endblock %}

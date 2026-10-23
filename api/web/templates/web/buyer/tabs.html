@@ -1,7 +1,1 @@
-{% load web_tags %}<nav class="tabs"><div class="wrap">
-  <a href="/buyer/"{% if request.path == "/buyer/" %} class="on"{% endif %}>{% t "Home" %}</a>
-  <a href="/market/"{% if "/market" in request.path %} class="on"{% endif %}>{% t "Marketplace" %}</a>
-  <a href="/buyer/enquiries/"{% if "/enquir" in request.path %} class="on"{% endif %}>{% t "Messages" %}{% if unread %}<span class="n">{{ unread }}</span>{% endif %}</a>
-  <a href="/rates/"{% if "/rates" in request.path %} class="on"{% endif %}>{% t "Rates" %}</a>
-  <a href="/buyer/profile/"{% if "/buyer/profile" in request.path %} class="on"{% endif %}>{% t "Business details" %}</a>
-</div></nav>
+{# The buyer menu now lives in the shared side menu and bottom bar (web/menus.py). #}

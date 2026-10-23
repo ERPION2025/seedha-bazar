@@ -1,0 +1,7 @@
+{% load web_tags %}
+<a class="door" href="{{ a.url }}" target="_blank" rel="noopener noreferrer"><div class="card">
+  <p class="mute" style="margin:0 0 4px;font-size:.9rem">{{ a.outlet }} · {{ a.published_at|date:"j M" }}{% if a.state %} · 📍 {{ a.state }}{% endif %}</p>
+  <h3 style="margin:0 0 6px;font-size:1.05rem">{{ a.title }}</h3>
+  {% if a.summary %}<p class="mute" style="margin:0 0 6px">{{ a.summary }}</p>{% endif %}
+  <div class="row">{% for t in a.topics|slice:":3" %}<span class="pill grey">{% t t|topic_label %}</span>{% endfor %}{% for c in a.crops|slice:":2" %}<span class="pill">{% crop c %}</span>{% endfor %}<span class="mute" style="margin-left:auto">{% t "Read at the source" %} ↗</span></div>
+</div></a>

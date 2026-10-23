@@ -1,0 +1,38 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Crop insurance" %}{% endblock %}
+{% block content %}
+<p><a href="{% if user.role == "agent" %}/fpo/insurance/{% else %}/insurance/{% endif %}">← {% t "Crop insurance" %}</a></p>
+<div class="row between"><h1 style="margin:0">🛡️ {% crop a.crop %} · {% t a.get_season_display %} {{ a.year }}</h1><span class="pill {% if a.status == "loss" %}red{% elif a.status == "enrolled" %}{% else %}sun{% endif %}">{% t a.get_status_display %}</span></div>
+<p class="mute">{{ a.farmer.farmer_profile.name }} · {{ a.village }} {{ a.district }}, {{ a.state }} · {{ a.area_ha|num:3 }} {% t "hectare" %}</p>
+<div class="card tint"><div class="stats flat">
+  <div class="stat"><small>{% t "You pay" %}</small><div class="big">{{ a.farmer_premium|inr }}</div></div>
+  <div class="stat"><small>{% t "Cover" %}</small><div class="big pos">{{ a.sum_insured|inr }}</div></div>
+  <div class="stat"><small>{% t "Plan" %}</small><div style="font-weight:700">{% if a.plan %}{% t a.plan.get_scheme_display %}{% endif %}</div></div></div>
+  {% if days_left is not None and a.status in "draft ready" %}<p style="margin:10px 0 0"><b class="{% if days_left < 7 %}neg{% endif %}">{% t "Last date in {n} days" n=days_left %}</b></p>{% endif %}</div>
+
+<ol class="steps">
+  <li class="{% if a.status != "draft" %}done{% endif %}"><b>{% t "Get the papers ready" %}</b>
+    {% if a.status == "draft" or a.status == "ready" %}<form method="post" action="papers/">{% csrf_token %}
+      {% for k, label, done in docs %}<label class="check-line"><input type="checkbox" name="ready" value="{{ k }}"{% if done %} checked{% endif %}> {% t label %}</label>{% endfor %}
+      <button class="btn small">{% t "Save" %}</button> <a class="btn small ghost" href="print/" target="_blank">🖨️ {% t "Print the summary to take along" %}</a></form>{% endif %}</li>
+  <li class="{% if a.status in "submitted enrolled loss claim_paid" %}done{% endif %}"><b>{% t "Submit it" %}</b>
+    <p class="mute" style="margin:4px 0">{% if a.loanee %}{% t "Your bank enrols crop-loan holders. Ask the branch to confirm, and get the receipt number." %}{% elif a.channel == "csc" %}{% t "Take the papers to a Common Service Centre. Pay the premium there and keep the receipt." %}{% elif a.channel == "portal" %}{% t "Apply yourself on pmfby.gov.in under Farmer Corner, pay online and save the receipt." %}{% elif a.channel == "fpo" %}{% t "Your FPO will submit it with others. Keep the receipt number they give you." %}{% else %}{% t "Take the papers to your bank branch. Pay the premium there and keep the receipt." %}{% endif %}</p>
+    {% if a.status == "draft" or a.status == "ready" %}<form method="post" action="submitted/" class="row">{% csrf_token %}<input name="application_no" placeholder="{% t "Application or receipt number" %}" style="flex:1;min-width:160px"><button class="btn small">{% t "I have submitted it" %}</button></form>
+    {% elif a.application_no %}<p style="margin:0">{% t "Application number" %}: <b>{{ a.application_no }}</b></p>{% endif %}
+    <p style="margin:6px 0 0"><a href="https://pmfby.gov.in/" target="_blank" rel="noopener noreferrer">pmfby.gov.in ↗</a></p></li>
+  <li class="{% if a.status in "enrolled loss claim_paid" %}done{% endif %}"><b>{% t "Policy confirmed" %}</b>
+    {% if a.status == "submitted" %}<form method="post" action="enrolled/" class="row">{% csrf_token %}<input name="policy_no" placeholder="{% t "Policy number" %}" style="flex:1;min-width:140px"><input name="insurer" placeholder="{% t "Insurance company" %}" style="flex:1;min-width:140px"><button class="btn small">{% t "Save" %}</button></form>
+    {% elif a.policy_no %}<p style="margin:0">{% t "Policy number" %}: <b>{{ a.policy_no }}</b>{% if a.insurer %} · {{ a.insurer }}{% endif %}</p>{% endif %}</li>
+</ol>
+
+{% if a.status in "submitted enrolled loss" %}
+<div class="card {% if a.status == "loss" %}warn{% endif %}"><h3>⚠️ {% t "Report crop loss" %}</h3>
+  <p style="margin:0 0 8px"><b>{% t "Tell the insurer within 72 hours" %}:</b> 📞 14447 · {% t "Crop Insurance app" %} · {% t "your bank" %}</p>
+  {% if a.loss_date %}<p class="mute">{% t "Loss recorded on {date}" date=a.loss_date|date:"j M Y" %} · {% t a.loss_cause|default:"other" %}{% if hours_left is not None %} · <b class="neg">{% t "{n} hours left to report" n=hours_left %}</b>{% endif %}</p>{% endif %}
+  <form method="post" action="loss/">{% csrf_token %}
+    <div class="field"><label>{% t "When did it happen?" %}</label><input type="date" name="loss_date" value="{{ today|date:"Y-m-d" }}" max="{{ today|date:"Y-m-d" }}"></div>
+    <div class="field"><label>{% t "What happened?" %}</label><select name="cause">{% for k, label in causes %}<option value="{{ k }}">{% t label %}</option>{% endfor %}</select></div>
+    <div class="field"><label>{% t "Note (optional)" %}</label><textarea name="note" rows="2" maxlength="500"></textarea></div>
+    <button class="btn">{% t "Save the loss report" %}</button></form>
+  <p class="hint" style="margin-top:8px">{% t "Saving here keeps a record for you and your FPO. It does not inform the insurer: call or use the app as well." %}</p></div>{% endif %}
+{% endblock %}

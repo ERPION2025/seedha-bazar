@@ -1,0 +1,10 @@
+{% extends base_tpl %}{% load static web_tags %}
+{% block title %}{% t "Map" %}{% endblock %}
+{% block content %}
+<h1>🗺️ {% t "KVKs, research centres and FPOs near you" %}</h1>
+{% if centre %}<div class="card tint"><b>🏛️ {% t "Your district's centre" %}: {{ centre.name }}</b>{% if centre.phone %} · 📞 <a href="tel:{{ centre.phone }}">{{ centre.phone }}</a>{% endif %}{% if centre.lat %} · <a href="https://www.google.com/maps/dir/?api=1&destination={{ centre.lat }},{{ centre.lon }}" target="_blank" rel="noopener noreferrer">{% t "Directions" %} ↗</a>{% endif %}</div>{% endif %}
+<div class="row"><button type="button" class="btn small" id="near-me">📍 {% t "Find the nearest KVK" %}</button><span id="near-out" class="mute"></span></div>
+<div id="map" class="mapbox" data-mode="public" data-state="{{ state }}" data-state-file="{{ state_file }}" data-geo-base="{% static 'web/geo/' %}" data-focus='["{{ district }}"]'></div>
+<p class="hint">{% t "Green: KVKs and research centres. Orange: FPOs and NGOs. Farmers are never shown on the map." %} {% t "Directions open in Google Maps." %}</p>
+{% include "web/partials/map_assets.html" %}
+{% endblock %}

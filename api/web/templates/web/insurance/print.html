@@ -1,0 +1,20 @@
+{% load web_tags %}<!doctype html><html lang="{{ lang }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% t "Crop insurance" %} · {{ fp.name }}</title>
+<style>body{font:16px/1.5 system-ui,"Noto Sans Devanagari",sans-serif;margin:24px;color:#111}h1{font-size:1.4rem}table{border-collapse:collapse;width:100%;max-width:640px}td{border:1px solid #999;padding:6px 10px}td:first-child{width:42%;font-weight:600}.no-print{margin-top:16px}@media print{.no-print{display:none}}</style></head><body>
+<h1>{% t "Crop insurance: details for enrolment" %}</h1>
+<table>
+<tr><td>{% t "Farmer" %}</td><td>{{ fp.name }}</td></tr>
+<tr><td>{% t "Mobile number" %}</td><td>{{ a.farmer.phone }}</td></tr>
+<tr><td>{% t "Village" %}</td><td>{{ fp.village }}</td></tr>
+<tr><td>{% t "District" %}</td><td>{{ a.district }}, {{ a.state }}</td></tr>
+<tr><td>{% t "Crop" %}</td><td>{% crop a.crop %}</td></tr>
+<tr><td>{% t "Season" %}</td><td>{% t a.get_season_display %} {{ a.year }}</td></tr>
+<tr><td>{% t "Area sown" %}</td><td>{{ a.area_ha|num:3 }} {% t "hectare" %}</td></tr>
+<tr><td>{% t "Plan" %}</td><td>{% if a.plan %}{% t a.plan.get_scheme_display %}{% endif %}</td></tr>
+<tr><td>{% t "Cover (estimate)" %}</td><td>{{ a.sum_insured|inr }}</td></tr>
+<tr><td>{% t "Premium you pay (estimate)" %}</td><td>{{ a.farmer_premium|inr }}</td></tr>
+<tr><td>{% t "Crop loan / KCC" %}</td><td>{% if a.loanee %}{% t "Yes" %}{% else %}{% t "No" %}{% endif %}</td></tr>
+</table>
+<h2 style="font-size:1.1rem">{% t "Papers to take" %}</h2><ul>{% for k, label in docs %}<li>{% t label %}</li>{% endfor %}</ul>
+<p>{% t "The bank or CSC fills the official proposal form from these details. The final premium and cover are as notified for your district." %}</p>
+<p class="no-print"><button onclick="window.print()">🖨️ {% t "Print" %}</button></p>
+</body></html>

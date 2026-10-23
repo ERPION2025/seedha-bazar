@@ -20,12 +20,12 @@ def _hash(phone: str, code: str) -> str:
 
 
 def static_code_for(phone: str) -> str | None:
-    """The pilot's fixed code, only for farmers, buyers and not-yet-registered numbers. Never for staff accounts."""
+    """The pilot's fixed code, for farmers, buyers, FPO agents and not-yet-registered numbers. Never for admins or agronomists."""
     fixed = settings.OTP_STATIC_CODE
     if not fixed:
         return None
     role = User.objects.filter(phone=phone).values_list("role", flat=True).first()
-    return fixed if role in (None, Role.FARMER, Role.BUYER) else None
+    return fixed if role in (None, Role.FARMER, Role.BUYER, Role.AGENT) else None
 
 
 def request_otp(phone: str, channel: str, ip: str | None, language: str = "hi") -> dict:
@@ -60,7 +60,10 @@ def request_otp(phone: str, channel: str, ip: str | None, language: str = "hi") 
     )
     if not fixed:  # a fixed code is public, so there is nothing to deliver
         messaging.send_otp(phone, code, channel, language)
-    return {"sent": True, "channel": channel, "expires_in": settings.OTP_TTL_SECONDS, "resend_in": settings.OTP_RESEND_COOLDOWN_SECONDS}
+    out = {"sent": True, "channel": channel, "expires_in": settings.OTP_TTL_SECONDS, "resend_in": settings.OTP_RESEND_COOLDOWN_SECONDS}
+    if settings.DEBUG and settings.OTP_BACKEND == "console" and not fixed:
+        out["dev_code"] = code  # local development only: the website shows it, so testers need not read the server log
+    return out
 
 
 def verify_code(phone: str, code: str) -> None:

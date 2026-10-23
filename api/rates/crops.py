@@ -1,20 +1,10 @@
 """The crops Seedha Bazar knows by name, and how mandi commodity names map onto them."""
 
-CROPS = {
-    "wheat": "Wheat", "rice": "Rice", "soybean": "Soybean", "maize": "Maize", "gram": "Gram (chana)",
-    "lentil": "Lentil (masoor)", "mustard": "Mustard", "tur": "Tur (arhar)", "moong": "Moong (green gram)",
-    "urad": "Urad (black gram)", "kodo": "Kodo millet", "kutki": "Kutki millet", "sawa": "Sawa millet",
-    "ragi": "Ragi", "jowar": "Jowar", "bajra": "Bajra", "barley": "Barley", "groundnut": "Groundnut",
-    "sunflower": "Sunflower", "sesame": "Sesame (til)", "safflower": "Safflower", "cotton": "Cotton",
-    "sugarcane": "Sugarcane", "onion": "Onion", "potato": "Potato", "tomato": "Tomato",
-}
+from catalog import FRESH, PRODUCTS, RAW
 
-EMOJI = {
-    "wheat": "🌾", "rice": "🍚", "soybean": "🫘", "maize": "🌽", "gram": "🫘", "lentil": "🫘", "mustard": "🌼",
-    "tur": "🫘", "moong": "🫘", "urad": "🫘", "kodo": "🌾", "kutki": "🌾", "sawa": "🌾", "ragi": "🌾", "jowar": "🌾",
-    "bajra": "🌾", "barley": "🌾", "groundnut": "🥜", "sunflower": "🌻", "sesame": "⚪", "safflower": "🌼",
-    "cotton": "☁️", "sugarcane": "🎋", "onion": "🧅", "potato": "🥔", "tomato": "🍅",
-}
+# Everything that is grown and reported by mandis: raw produce and fresh produce. Processed goods live in the catalog only.
+CROPS = {k: v[0] for k, v in PRODUCTS.items() if v[4] in (RAW, FRESH)}
+EMOJI = {k: v[3] for k, v in PRODUCTS.items() if v[4] in (RAW, FRESH)}
 
 # Order matters: the first rule that matches wins. Patterns are matched against the lower-case commodity name.
 RULES = [
@@ -43,6 +33,31 @@ RULES = [
     ("onion", ("onion",)),
     ("potato", ("potato",)),
     ("tomato", ("tomato",)),
+    # Fresh produce and spices. A "" key means "a commodity we know but keep out" (so dry ginger does not blend into green ginger).
+    ("", ("ginger(dry)", "dry ginger", "peas(dry)", "peas dry", "sweet orange seed", "garlic(dry)", "dry garlic")),
+    ("green_chilli", ("green chilli", "green chillies", "chilly green")),
+    ("red_chilli", ("dry chillies", "dry chilli", "red chilli", "chillies(dry)")),
+    ("garlic", ("garlic",)),
+    ("ginger", ("ginger",)),
+    ("brinjal", ("brinjal", "baingan")),
+    ("cauliflower", ("cauliflower",)),
+    ("cabbage", ("cabbage",)),
+    ("okra", ("bhindi", "ladies finger", "okra")),
+    ("peas", ("green peas", "peas wet", "peas(wet)", "peas (wet)", "peas cod")),
+    ("carrot", ("carrot",)),
+    ("spinach", ("spinach", "palak")),
+    ("mushroom", ("mushroom",)),
+    ("banana", ("banana",)),
+    ("mango", ("mango",)),
+    ("orange", ("orange", "mousambi", "mosambi", "sweet orange")),
+    ("guava", ("guava",)),
+    ("papaya", ("papaya",)),
+    ("pomegranate", ("pomegranate",)),
+    ("lemon", ("lemon",)),
+    ("custard_apple", ("custard apple", "sitaphal")),
+    ("aonla", ("amla", "aonla", "nelli")),
+    ("turmeric", ("turmeric",)),
+    ("coriander", ("coriander seed", "dhania", "coriander(seed)")),
 ]
 
 
@@ -57,5 +72,5 @@ def canonical_crop(commodity: str) -> str:
         return ""
     for key, patterns in RULES:
         if any(p in name for p in patterns):
-            return key
+            return key if key in CROPS else ""
     return ""

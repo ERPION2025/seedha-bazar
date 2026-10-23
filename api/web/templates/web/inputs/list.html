@@ -1,0 +1,16 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Seeds and inputs from your KVK" %}{% endblock %}
+{% block content %}
+<h1>🌱 {% t "Seeds and inputs from your KVK" %}</h1>
+<p class="mute">{% t "Seeds, fertilisers, bio-inputs, saplings and services your district's KVK or research centre is offering now." %}</p>
+{% for o in rows %}
+<div class="card">
+  <div class="row between"><h3 style="margin:0">{{ o.name }}</h3><span class="pill {% if o.price == 0 %}{% else %}grey{% endif %}">{% if o.price == 0 %}{% t "Free" %}{% else %}{{ o.price|inr:2 }} / {{ o.unit }}{% endif %}</span></div>
+  <p class="mute" style="margin:6px 0">{% t o.get_kind_display %}{% if o.crop %} · {% crop o.crop %}{% endif %} · 🏛️ {{ o.centre.name }} · {% t "until {date}" date=o.valid_until|date:"j M" %}</p>
+  {% if o.note %}<p style="margin:0 0 6px">{{ o.note }}</p>{% endif %}
+  <p class="mute" style="margin:0 0 8px">{% t "Left" %}: {{ o.left|num }} {{ o.unit }}{% if o.per_person_limit %} · {% t "up to {n} per person" n=o.per_person_limit|num %}{% endif %}{% if o.pickup %} · 📍 {{ o.pickup }}{% endif %}</p>
+  {% if o.pk in asked %}<span class="pill">✔ {% t "Requested" %}</span>
+  {% else %}<form method="post" action="/inputs/{{ o.pk }}/ask/" class="row">{% csrf_token %}<input name="quantity" inputmode="decimal" placeholder="{% t "How much?" %} ({{ o.unit }})" style="max-width:160px" required><input name="note" maxlength="300" placeholder="{% t "Note (optional)" %}" style="flex:1;min-width:120px"><button class="btn small">{% t "Request" %}</button></form>{% endif %}
+</div>{% empty %}<div class="card sun"><p style="margin:0">{% t "Nothing is on offer in your district right now. You will get an SMS when there is." %}</p></div>{% endfor %}
+{% if mine %}<h2>{% t "My requests" %}</h2>{% for r in mine %}<div class="line card"><div><b>{{ r.offer.name }}</b> · {{ r.quantity|num }} {{ r.offer.unit }}<br><span class="mute">{{ r.offer.centre.name }}{% if r.centre_note %} · {{ r.centre_note }}{% endif %}</span></div><span class="pill sun">{% t r.get_status_display %}</span></div>{% endfor %}{% endif %}
+{% endblock %}

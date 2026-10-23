@@ -1,0 +1,98 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% crop d.product %}{% endblock %}
+{% block content %}
+<p><a href="/deals/">← {% t "Orders" %}</a></p>
+<div class="row between"><h1 style="margin:0">{{ d.product|emoji_of }} {% crop d.product %}</h1><span class="pill {% if d.status == "completed" %}{% elif d.status == "declined" or d.status == "cancelled" %}grey{% else %}sun{% endif %}">{% t d.get_status_display %}</span></div>
+<p class="mute">{% if side == "seller" %}🛒 {{ d.buyer.buyer_profile.business_name }}, {{ d.buyer.buyer_profile.city }}{% else %}{% if d.organisation %}🏢 {{ d.organisation.name }}{% else %}🧑‍🌾 {{ d.seller.farmer_profile.name|first_name }}, {{ d.seller.farmer_profile.village }}{% endif %}{% endif %}{% if d.source_crop %} · {% t "made from" %} {% crop d.source_crop %}{% endif %}</p>
+
+<ol class="track">{% with s=d.status %}
+  <li class="done">{% t "Request" %}</li>
+  <li class="{% if s != "requested" and s != "negotiating" and s != "declined" and s != "cancelled" %}done{% elif s == "negotiating" or s == "requested" %}now{% endif %}">{% t "Terms" %}</li>
+  <li class="{% if s in "signed advance_paid in_progress dispatched delivered completed" %}done{% elif s == "agreed" %}now{% endif %}">{% t "Signed" %}</li>
+  <li class="{% if s in "in_progress dispatched delivered completed" %}done{% elif s == "signed" or s == "advance_paid" %}now{% endif %}">{% t "Advance" %}</li>
+  <li class="{% if s in "dispatched delivered completed" %}done{% elif s == "in_progress" %}now{% endif %}">{% t "Sent" %}</li>
+  <li class="{% if s in "delivered completed" %}done{% elif s == "dispatched" %}now{% endif %}">{% t "Received" %}</li>
+  <li class="{% if s == "completed" %}done{% elif s == "delivered" %}now{% endif %}">{% t "Paid" %}</li>{% endwith %}
+</ol>
+
+{% if contact %}<div class="card tint"><b>📞 {{ contact.name }}</b>{% if contact.business and contact.business != contact.name %} · {{ contact.business }}{% endif %}<br><a href="tel:{{ contact.phone }}">{{ contact.phone }}</a> · <a href="{{ contact.wa }}" target="_blank" rel="noopener">WhatsApp</a> · {{ contact.city }}</div>{% endif %}
+
+<div class="card"><h3>{% t "Terms" %}</h3>
+  <div class="stats flat">
+    <div class="stat"><small>{% t "Quantity" %}</small><div class="big">{{ d.quantity|num:3 }}</div><small>{% t d.unit %}</small></div>
+    <div class="stat"><small>{% t "Price" %}</small><div class="big">{{ d.price|inr:2 }}</div><small>/ {% t d.unit %}</small></div>
+    <div class="stat"><small>{% t "Total" %}</small><div class="big">{{ d.total|inr }}</div></div>
+    <div class="stat"><small>{% t "Advance" %}</small><div class="big">{{ d.advance_pct }}%</div><small>{{ d.advance_amount|inr }}</small></div>
+  </div>
+  <p class="mute" style="margin:10px 0 0">{% t "Deliver by {date}" date=d.delivery_by|date:"j M Y" %}{% if d.delivery_place %} · {{ d.delivery_place }}{% endif %}{% if d.quality %} · {{ d.quality }}{% endif %}{% if d.packaging == "packed" %} · 📦 {% t "Packed for retail" %}{% if d.pack_size_g %} {{ d.pack_size_g }} g{% endif %}{% endif %}</p>
+  {% if need and side == "seller" %}<p class="card sun" style="margin:10px 0 0">⚙️ {% t "To make this you need about {kg} kg of {crop}." kg=need.kg crop=need.crop|crop_name:lang %} {% if need.have is not None %}{% t "Your book has {kg} kg free." kg=need.have|num:0 %}{% endif %} <a href="/value/{{ need.crop }}/">{% t "See the numbers" %}</a></p>{% endif %}
+</div>
+
+{% if d.status == "requested" or d.status == "negotiating" %}
+<div class="card {% if my_turn %}sun{% endif %}">
+  {% if offer %}<p style="margin:0 0 6px"><b>{% if offer.side == side %}{% t "Your offer" %}{% else %}{% t "Their offer" %}{% endif %}:</b> {{ offer.quantity|num:3 }} {% t d.unit %} · {{ offer.price|inr:2 }} / {% t d.unit %} · {% t "Advance" %} {{ offer.advance_pct }}% · {% t "by {date}" date=offer.delivery_by|date:"j M" %}{% if offer.note %}<br><span class="mute">“{{ offer.note }}”</span>{% endif %}</p>{% endif %}
+  {% if my_turn %}
+    <form method="post" action="accept/" style="display:inline">{% csrf_token %}<button class="btn">✔ {% t "Accept these terms" %}</button></form>
+    <details style="margin-top:10px"><summary class="btn small ghost">{% t "Offer other terms" %}</summary>
+      <form method="post" action="counter/" style="margin-top:10px">{% csrf_token %}{% with form=terms_form %}{% include "web/partials/form_body.html" %}{% endwith %}<button class="btn small">{% t "Send my offer" %}</button></form></details>
+  {% else %}<p class="mute" style="margin:0">{% t "Waiting for the other side to reply." %}</p>{% endif %}
+  <form method="post" action="decline/" style="margin-top:10px">{% csrf_token %}<button class="link-btn" style="color:var(--red)">{% if side == "seller" %}{% t "Decline this request" %}{% else %}{% t "Cancel this request" %}{% endif %}</button></form>
+</div>
+{% if offers|length > 1 %}<details class="card"><summary><b>{% t "Earlier offers" %}</b></summary>{% for o in offers %}<p class="mute" style="margin:6px 0 0">{{ o.created_at|date:"j M H:i" }} · {% if o.side == "buyer" %}{% t "Buyer" %}{% else %}{% t "Seller" %}{% endif %}: {{ o.quantity|num:3 }} {% t d.unit %} · {{ o.price|inr:2 }} · {{ o.advance_pct }}%</p>{% endfor %}</details>{% endif %}
+{% endif %}
+
+{% if ag %}
+<div class="card {% if d.status == "agreed" %}sun{% endif %}"><div class="row between"><h3 style="margin:0">✍️ {% t "Agreement" %}</h3><a href="agreement/" target="_blank">{% t "Read the agreement" %} ↗</a></div>
+  <p style="margin:8px 0 0">{% t "Buyer" %}: {% if ag.buyer_signed_at %}<span class="pos">✔ {% t "signed {when}" when=ag.buyer_signed_at|date:"j M H:i" %}</span>{% else %}<span class="mute">{% t "not signed yet" %}</span>{% endif %}<br>
+    {% t "Seller" %}: {% if ag.seller_signed_at %}<span class="pos">✔ {% t "signed {when}" when=ag.seller_signed_at|date:"j M H:i" %}</span>{% else %}<span class="mute">{% t "not signed yet" %}</span>{% endif %}</p>
+  {% if d.status == "agreed" and not i_signed %}
+  <p class="hint">{% t "Read the agreement. To sign, we send a one-time code to your phone. Entering it is your signature." %}</p>
+  <form method="post" action="code/" style="display:inline">{% csrf_token %}<button class="btn small ghost">{% t "Send me the code" %}</button></form>
+  <form method="post" action="sign/" class="row" style="margin-top:10px">{% csrf_token %}<input name="code" inputmode="numeric" maxlength="6" placeholder="{% t "6-digit code" %}" style="max-width:150px" autocomplete="one-time-code"><button class="btn">✍️ {% t "Sign the agreement" %}</button></form>
+  {% endif %}
+</div>{% endif %}
+
+{% if side == "buyer" and d.status == "signed" %}
+<div class="card sun"><h3>💸 {% t "Pay the advance" %}: {{ d.advance_amount|inr }}</h3>
+  <p class="hint">{% t "Pay the seller by UPI or bank transfer, then write the reference number here. The seller confirms when the money arrives." %}</p>
+  <form method="post" action="pay/">{% csrf_token %}<input type="hidden" name="kind" value="advance">
+    <div class="field"><label>{% t "Amount (₹)" %}</label><input name="amount" inputmode="numeric" value="{{ d.advance_amount }}"></div>
+    <div class="field"><label>{% t "Paid by" %}</label><select name="method">{% for k, l in methods %}<option value="{{ k }}">{% t l %}</option>{% endfor %}</select></div>
+    <div class="field"><label>{% t "UTR or reference number" %}</label><input name="reference" maxlength="80"></div>
+    <button class="btn">{% t "I have paid" %}</button></form></div>{% endif %}
+{% if side == "buyer" and d.status == "delivered" and balance > 0 %}
+<div class="card sun"><h3>💸 {% t "Pay the balance" %}: {{ balance|inr }}</h3>
+  <form method="post" action="pay/">{% csrf_token %}<input type="hidden" name="kind" value="balance">
+    <div class="field"><label>{% t "Amount (₹)" %}</label><input name="amount" inputmode="numeric" value="{{ balance }}"></div>
+    <div class="field"><label>{% t "Paid by" %}</label><select name="method">{% for k, l in methods %}<option value="{{ k }}">{% t l %}</option>{% endfor %}</select></div>
+    <div class="field"><label>{% t "UTR or reference number" %}</label><input name="reference" maxlength="80"></div>
+    <button class="btn">{% t "I have paid" %}</button></form></div>{% endif %}
+{% if side == "seller" and pending_payment %}
+<div class="card sun"><h3>💰 {% t "Did you receive {amount}?" amount=pending_payment.amount|inr %}</h3><p class="mute" style="margin:0 0 8px">{% t pending_payment.get_kind_display %} · {% t pending_payment.get_method_display %}{% if pending_payment.reference %} · {{ pending_payment.reference }}{% endif %}</p>
+  <form method="post" action="received/" style="display:inline">{% csrf_token %}<input type="hidden" name="payment" value="{{ pending_payment.pk }}"><button class="btn">✔ {% t "Yes, received" %}</button></form>
+  <form method="post" action="not_received/" style="display:inline">{% csrf_token %}<input type="hidden" name="payment" value="{{ pending_payment.pk }}"><button class="btn ghost">{% t "Not received" %}</button></form></div>{% endif %}
+
+{% if side == "seller" and d.status == "in_progress" %}
+<div class="card"><h3>⚙️ {% t "Work on the order" %}</h3>
+  <form method="post" action="progress/" class="row">{% csrf_token %}<input name="text" maxlength="500" placeholder="{% t "e.g. Drying started, half done" %}" style="flex:1;min-width:180px"><button class="btn small ghost">{% t "Send update" %}</button></form>
+  <form method="post" action="dispatch/" style="margin-top:12px">{% csrf_token %}<div class="field"><label>{% t "Vehicle or note (optional)" %}</label><input name="note" maxlength="300"></div><button class="btn">🚚 {% t "Mark as sent" %}</button></form></div>{% endif %}
+{% if side == "buyer" and d.status == "dispatched" %}
+<div class="card sun"><h3>📦 {% t "Did you receive it?" %}</h3>
+  <form method="post" action="deliver/">{% csrf_token %}
+    <div class="field"><label>{% t "Quantity received" %} ({% t d.unit %})</label><input name="received" inputmode="decimal" value="{{ d.quantity|num:3 }}"></div>
+    <label class="check-line"><input type="radio" name="ok" value="1" checked> {% t "Quality is as agreed" %}</label><label class="check-line"><input type="radio" name="ok" value="0"> {% t "There is a problem" %}</label>
+    <div class="field"><label>{% t "Note (optional)" %}</label><input name="note" maxlength="300"></div>
+    <button class="btn">{% t "Confirm delivery" %}</button></form></div>{% endif %}
+
+{% if d.status == "completed" %}
+<div class="card tint"><h3>✅ {% t "Order completed" %}</h3>
+  {% if sale_url %}<a class="btn small sun" href="{{ sale_url }}">🧾 {% t "Write this sale in my Farmer Book" %}</a>{% endif %}
+  {% if side == "buyer" and not d.buyer_rating or side == "seller" and not d.seller_rating %}<form method="post" action="rate/" class="row" style="margin-top:10px">{% csrf_token %}<span>{% t "How did it go?" %}</span>{% for n in "12345" %}<button class="btn small ghost" name="stars" value="{{ n }}" aria-label="{{ n }}">{{ n }}★</button>{% endfor %}</form>{% endif %}
+</div>{% endif %}
+
+<div class="card"><h3>{% t "Messages and updates" %}</h3>
+  {% for e in events %}<div class="msg {% if e.by_id == user.pk %}me{% elif not e.by_id %}sys{% endif %}"><span class="mute" style="font-size:.85rem">{% if e.kind != "message" %}{% t e.get_kind_display %} · {% endif %}{{ e.created_at|date:"j M H:i" }}</span><br>{% t e.text %}{% if e.masked %}<br><span class="hint">{% t "Phone numbers and links are hidden until both sign." %}</span>{% endif %}</div>{% empty %}<p class="mute">—</p>{% endfor %}
+  {% if d.is_open %}<form method="post" action="message/" class="row" style="margin-top:10px">{% csrf_token %}<input name="text" maxlength="500" placeholder="{% t "Write a message" %}" style="flex:1;min-width:180px"><button class="btn small">{% t "Send" %}</button></form>
+  <form method="post" action="issue/" class="row" style="margin-top:6px">{% csrf_token %}<input name="text" maxlength="500" placeholder="{% t "Describe a problem" %}" style="flex:1;min-width:180px"><button class="btn small ghost">⚠️ {% t "Report a problem" %}</button></form>{% endif %}
+</div>
+{% endblock %}

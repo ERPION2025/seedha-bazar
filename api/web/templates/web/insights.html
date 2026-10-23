@@ -1,0 +1,22 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "My district" %}{% endblock %}
+{% block content %}
+<h1>📊 {% t "My district" %}{% if district %} · {{ district }}{% endif %}</h1>
+{% if activity %}<div class="grid g2">
+  <div class="card"><h3>⚡ {% t "Activity" %}: {{ activity.score }}/100</h3><p class="hint">{% t "How much you use Seedha Bazar in the last 30 days" %}</p>
+    {% for p in activity.parts %}<div style="margin:8px 0"><div class="row between"><span>{% t p.label %} <span class="mute">({{ p.count }})</span></span><b>{{ p.got }}/{{ p.of }}</b></div><div class="scorebar"><span style="width:{% widthratio p.got p.of 100 %}%"></span></div></div>{% endfor %}</div>
+  <div class="card"><h3>🏅 {% t "Performance" %}: {{ performance.score }}/100</h3><p class="hint">{% t "How well your farm does" %}</p>
+    {% for p in performance.parts %}<div style="margin:8px 0"><div class="row between"><span>{% t p.label %} <span class="mute">({{ p.count }})</span></span><b>{{ p.got }}/{{ p.of }}</b></div><div class="scorebar"><span style="width:{% widthratio p.got p.of 100 %}%"></span></div></div>{% endfor %}</div>
+</div>
+{% if mine %}<div class="card"><h3>{% t "Your harvest against the district" %}</h3>{% for m in mine %}<div class="line"><span>{% crop m.crop %}</span><span>{{ m.per_acre|quintal }} q / {% t "acre" %} · {% t "district average" %} {{ m.avg|quintal }} q · <b>{% t "better than {n}% in the district" n=m.pct %}</b></span></div>{% endfor %}</div>{% endif %}
+{% endif %}
+{% if d %}
+{% if odop %}<div class="card sun">⭐ {% t "Known in {district}" district=odop.district %}: <b>{{ odop.product }}</b> · <a href="/value/{{ odop.crops.0 }}/">{% t "What can be made from it" %}</a></div>{% endif %}
+<div class="grid g2">
+  <div class="card"><h3>{% t "What farmers grow here" %}</h3><p class="mute">{% t "{n} farmers on Seedha Bazar" n=d.farmers %}</p>{% for c, n in d.crops %}<div class="line"><span>{% crop c %}</span><span>{{ n }}</span></div>{% empty %}<p class="mute">—</p>{% endfor %}</div>
+  <div class="card"><h3>{% t "Best harvests (per acre)" %}</h3><p class="hint">{% t "From Farmer Books, crops with at least 3 farmers." %}</p>{% for y in d.yields %}<div class="line"><span>{% crop y.crop %}</span><span>{% t "average" %} {{ y.average|quintal }} q · {% t "best" %} <b>{{ y.best|quintal }} q</b></span></div>{% empty %}<p class="mute">{% t "Not enough harvests written yet." %}</p>{% endfor %}</div>
+  <div class="card"><h3>{% t "Prices farmers got here (last 6 months)" %}</h3>{% for p in d.prices %}<div class="line"><span>{% crop p.crop %}</span><span>{{ p.avg|inr }} / q{% if p.mandi %} · {% t "mandi" %} {{ p.mandi|inr }}{% endif %}</span></div>{% empty %}<p class="mute">{% t "Not enough sales written yet." %}</p>{% endfor %}</div>
+</div>
+{% else %}<div class="card sun"><p style="margin:0">{% t "Add your district to your profile, or share your location, to see your district." %}</p></div>{% endif %}
+<div class="row"><a class="btn" href="/games/">🎮 {% t "Games" %}</a><a class="btn ghost" href="/farmer/book/">{% t "Open my Farmer Book" %}</a></div>
+{% endblock %}
