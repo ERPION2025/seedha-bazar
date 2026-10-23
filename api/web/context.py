@@ -1,6 +1,7 @@
 from django.conf import settings
 
 from .i18n import LANG_NAMES, LANGS
+from .voice_strings import voice_config
 
 
 def home_for(user) -> str:
@@ -21,6 +22,7 @@ def site(request):
         unread = unread_for(user)
     return {
         "unread": unread,
+        "voice": voice_config(lang),
         "lang": lang,
         "lang_choices": [(code, LANG_NAMES[code]) for code in LANGS],
         "home_url": home_for(user),

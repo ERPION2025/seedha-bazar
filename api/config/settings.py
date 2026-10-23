@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -90,6 +91,9 @@ REST_FRAMEWORK = {
 OTP_BACKEND = os.environ.get("OTP_BACKEND", "console")  # console | custom dotted path to a backend class
 OTP_CHANNELS = [c for c in os.environ.get("OTP_CHANNELS", "sms,whatsapp,voice").split(",") if c]  # which "send code" choices the website offers
 OTP_LENGTH = 6
+# Pilot only, until an SMS/WhatsApp provider is connected: farmers and buyers (and numbers not yet registered) sign in
+# with this fixed code. Agents, agronomists and admins always get a real random code. Set OTP_STATIC_CODE= (empty) to turn off.
+OTP_STATIC_CODE = "" if "test" in sys.argv else os.environ.get("OTP_STATIC_CODE", "123456")
 OTP_TTL_SECONDS = 300
 OTP_RESEND_COOLDOWN_SECONDS = 30
 OTP_MAX_PER_PHONE_PER_HOUR = 5
@@ -101,7 +105,7 @@ ACCESS_TOKEN_TTL_SECONDS = 15 * 60
 REFRESH_TOKEN_TTL_DAYS = 90
 CONSENT_VERSION = "2026-10-v1"
 
-if not DEBUG and OTP_BACKEND == "console":
+if not DEBUG and OTP_BACKEND == "console" and not OTP_STATIC_CODE:
     raise RuntimeError("OTP_BACKEND=console prints codes to the log. Configure a real provider for production.")
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

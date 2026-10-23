@@ -17,7 +17,7 @@ CALC_STRINGS = [
     "Too many messages today. Try tomorrow.", "Something went wrong. Please try again.", "You will get {crop} rates every day.",
     "Saved. Daily messages start as soon as messaging is switched on.", "Allow location to see rates near you", "Use my location", "Choose place", "Finding your place...",
     "Could not find your place. Choose it from the list.", "Location is blocked. Choose your place from the list.", "Choose your place", "State", "District", "Save",
-    "Choose", "Your place", "Location not set", "quintal", "kg", "tonne", "bag", "Enter a number bigger than zero", "Pick a crop first", "Amount", "OK",
+    "Tap the picture of your crop. If you cannot see it, type its name in the search box.", "Choose", "Your place", "Location not set", "quintal", "kg", "tonne", "bag", "Enter a number bigger than zero", "Pick a crop first", "Amount", "OK",
 ]
 
 

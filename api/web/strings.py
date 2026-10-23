@@ -70,6 +70,9 @@ def form_strings() -> set[str]:
     out.update(label for _, label in Enquiry.Status.choices)
     out.update(label for _, label in Listing.Grade.choices)
     out.update(CALC_STRINGS)
+    from web.voice_strings import VOICE_STRINGS
+
+    out.update(VOICE_STRINGS)
     return out
 
 

@@ -74,7 +74,7 @@
       return '<button class="tile' + (S.crop === c.crop ? " on" : "") + '" data-act="crop" data-v="' + c.crop + '" data-name="' + esc(c.label.toLowerCase()) + '"><span class="e">' + c.emoji + "</span><b>" + esc(c.label) + "</b>" +
         (c.typical ? "<small>" + inr(c.typical) + "</small>" : "") + "</button>";
     }).join("");
-    return "<h2>" + T("Which crop do you want to sell?") + '</h2><input type="search" id="crop-search" placeholder="' + T("Search crop") + '" autocomplete="off"><div class="tiles" id="tiles">' + tiles + "</div>";
+    return "<h2>" + T("Which crop do you want to sell?") + '</h2><input type="search" id="crop-search" placeholder="' + T("Search crop") + '" autocomplete="off"><div class="tiles" id="tiles" data-say-do="' + esc(T("Tap the picture of your crop. If you cannot see it, type its name in the search box.")) + '">' + tiles + "</div>";
   }
 
   var QTY_STEP = { quintal: 1, kg: 10, tonne: 0.5, bag: 1 };
@@ -178,6 +178,7 @@
     wiz.innerHTML = dots() + f();
     $("lead-card").hidden = S.step !== "result";
     if (S.step === "rate" || S.step === "compare") ensureQuote();
+    if (window.sbVoice) window.sbVoice.changed();
   }
 
   function ensureQuote() {
@@ -225,6 +226,7 @@
 
   /* ---------- result actions ---------- */
   function speak() {
+    if (window.sbVoice) { window.sbVoice.say(summary()); return; }
     try {
       speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(summary()); u.lang = D.speech; u.rate = 0.9; speechSynthesis.speak(u);

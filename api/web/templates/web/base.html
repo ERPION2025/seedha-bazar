@@ -31,6 +31,8 @@
   <p><b>{% t "Seedha Bazar" %}</b> — {% t "Direct market, fair price, your farmer brother" %}</p>
   <p><a href="/for-farmers/">{% t "For farmers" %}</a> · <a href="/for-fpos/">{% t "For FPOs and NGOs" %}</a> · <a href="/for-buyers/">{% t "For buyers" %}</a> · <a href="/market/">{% t "Marketplace" %}</a> · <a href="/rates/">{% t "Rates" %}</a> · <a href="/calculator/">{% t "Harvest calculator" %}</a> · <a href="/privacy/">{% t "Privacy" %}</a></p>
 </div></footer>
+{{ voice|json_script:"sb-voice" }}
+<script src="{% static 'web/voice.js' %}" defer></script>
 {% if SUPPORT_WHATSAPP %}<a class="wa" href="https://wa.me/{{ SUPPORT_WHATSAPP }}" data-track="whatsapp_click" rel="noopener">{% t "Help on WhatsApp" %}</a>{% endif %}
 {% if GA4_ID or META_PIXEL_ID %}
 <div class="cc" id="cc" hidden><div class="wrap"><span>{% t "We use cookies to learn which ads bring farmers here. Allow?" %}</span><button class="btn small" id="cc-yes" type="button">{% t "Allow" %}</button><button class="btn small ghost" id="cc-no" type="button">{% t "No thanks" %}</button></div></div>

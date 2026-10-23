@@ -77,7 +77,7 @@ def verify_view(request):
                 request.session["login"] = {**st, "verified": True, "t": time.time()}
                 return redirect("/login/consent/")
             return _finish(request, st["phone"])
-    return render(request, "web/verify.html", {"form": form, "phone": st["phone"]})
+    return render(request, "web/verify.html", {"form": form, "phone": st["phone"], "trial_code": otp.static_code_for(st["phone"])})
 
 
 @require_POST

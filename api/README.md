@@ -42,7 +42,11 @@ Text lives in `web/translations.py` (English sentence -> Hindi, Marathi). A test
     python manage.py runserver
     python manage.py test                       # 81 tests
 
-Local runs print OTPs in the server log (`OTP_BACKEND=console`). Production refuses to start with that setting.
+Local runs print OTPs in the server log (`OTP_BACKEND=console`). Production refuses to start with that setting, unless a trial code is set.
+
+**Trial code.** Until an SMS/WhatsApp provider is connected, `OTP_STATIC_CODE` (default `123456`) works for farmers, buyers and numbers not yet registered, and the code page says so. Agents, agronomists and admins always get a real random code. Anyone who knows a farmer's number can sign in as them while this is on, so set `OTP_STATIC_CODE=` (empty) the day a provider goes live.
+
+**Read aloud.** Every page has a "Listen" tab on the right edge (`web/static/web/voice.js`). "Read this screen" speaks the page, "What should I do here?" speaks the fields and buttons, with pause, stop, slow voice and a highlight on what is being read. It uses the phone's own text-to-speech, so Hindi and Marathi need a voice installed on the phone. Mark an element `data-say="..."` to change what is read, `data-voice-skip` to hide it, `data-say-do="..."` to explain a group of buttons in one sentence.
 With Docker: copy `.env.example` to `.env`, then `docker compose up --build`.
 
 ## Flows

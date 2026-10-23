@@ -4,6 +4,7 @@
 {% block content %}
 <h1>{% t "Enter the code" %}</h1>
 <p class="mute">{% t "We sent a code to {phone}." phone=phone %}</p>
+{% if trial_code %}<p class="mute"><b>{% t "Trial period: SMS is not switched on yet. Use the code {code}." code=trial_code %}</b></p>{% endif %}
 <form method="post" class="card">{% csrf_token %}
   {% include "web/partials/form_body.html" %}
   <button class="btn block">{% t "Continue" %}</button>

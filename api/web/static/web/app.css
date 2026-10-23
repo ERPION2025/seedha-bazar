@@ -147,3 +147,26 @@ footer a{color:#fff}
 .bubble{max-width:85%;background:#f1efe9;border-radius:14px 14px 14px 4px;padding:8px 12px}
 .bubble.me{align-self:flex-end;background:var(--g-soft);border-radius:14px 14px 4px 14px}
 .bubble p{margin:0;word-break:break-word}.bubble small{color:var(--mute)}
+
+/* Read-aloud helper: the same tab on the right of every screen, above the WhatsApp help button */
+.sbv{position:fixed;right:0;bottom:84px;z-index:45;display:flex;flex-direction:column;align-items:flex-end;gap:10px;max-width:100vw}
+.sbv-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;width:62px;min-height:68px;padding:6px 4px;border:0;border-radius:18px 0 0 18px;background:var(--g-dark);color:#fff;font:inherit;cursor:pointer;box-shadow:-2px 4px 14px rgba(0,0,0,.28)}
+.sbv-tab .ic{font-size:1.6rem;line-height:1}
+.sbv-tab .lb{font-size:.78rem;font-weight:700;margin-top:3px}
+.sbv-tab.live{background:var(--sun);color:#000;animation:sbvpulse 1.4s ease-in-out infinite}
+.sbv-tab:focus-visible,.sbv-b:focus-visible,.sbv-x:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.sbv-panel{width:min(300px,calc(100vw - 20px));max-height:calc(100vh - 220px);overflow-y:auto;margin-right:10px;background:#fff;border:2px solid var(--g-dark);border-radius:var(--r);padding:12px;box-shadow:0 8px 28px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:8px}
+.sbv-head{display:flex;justify-content:space-between;align-items:center;color:var(--g-dark);font-size:1.1rem}
+.sbv-x{width:44px;height:44px;border:0;border-radius:50%;background:var(--g-soft);font-size:1.1rem;cursor:pointer}
+.sbv-b{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:8px 12px;border:2px solid var(--g);border-radius:12px;background:#fff;color:var(--g-dark);font:inherit;font-weight:700;font-size:1rem;cursor:pointer}
+.sbv-b.big{min-height:60px;background:var(--g);color:#fff;font-size:1.1rem}
+.sbv-b.big.alt{background:var(--sun);border-color:var(--sun);color:#000}
+.sbv-b.on{background:var(--g-soft)}
+.sbv-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sbv-auto{display:flex;gap:10px;align-items:center;font-size:.95rem;padding:6px 2px}
+.sbv-auto input{width:24px;height:24px;flex:none}
+.sbv-status{margin:0;font-size:.95rem;color:var(--mute);min-height:1.2em}
+.sbv-on{outline:4px solid var(--sun)!important;outline-offset:3px;border-radius:8px;background-color:var(--sun-soft)}
+@keyframes sbvpulse{0%,100%{box-shadow:-2px 4px 14px rgba(0,0,0,.28),0 0 0 0 rgba(245,158,11,.7)}50%{box-shadow:-2px 4px 14px rgba(0,0,0,.28),0 0 0 12px rgba(245,158,11,0)}}
+@media (prefers-reduced-motion:reduce){.sbv-tab.live{animation:none}}
+@media print{.sbv{display:none}}
