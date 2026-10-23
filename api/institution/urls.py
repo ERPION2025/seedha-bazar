@@ -8,7 +8,7 @@ from . import views
 
 urlpatterns = [
     path("health/", health),
-    path("login/", auth_views.login_view),
+    path("login/", views.login_view),
     path("login/verify/", auth_views.verify_view),
     path("login/resend/", auth_views.resend_view),
     path("login/consent/", auth_views.consent_view),

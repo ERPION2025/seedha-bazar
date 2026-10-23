@@ -58,7 +58,7 @@ def field(context, bound, hint="", **attrs):
     label = tr(lang, bound.field.label or bound.name)
     errors = format_html_join("", '<p class="err">{}</p>', ((tr(lang, e),) for e in bound.errors))
     hint_html = format_html('<p class="hint">{}</p>', tr(lang, hint)) if hint else ""
-    kind = "check" if getattr(widget, "input_type", "") == "checkbox" else "field"
+    kind = "check" if getattr(widget, "input_type", "") == "checkbox" and not getattr(widget, "allow_multiple_selected", False) else "field"
     if kind == "check":
         return format_html('<div class="check"><label>{} <span>{}</span></label>{}{}</div>', bound.as_widget(), label, hint_html, errors)
     return format_html('<div class="field"><label for="{}">{}</label>{}{}{}</div>', bound.id_for_label, label, bound.as_widget(), hint_html, errors)

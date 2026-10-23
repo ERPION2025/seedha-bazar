@@ -2,15 +2,17 @@
 {% block title %}{% t "Warehouse receipt loans" %}{% endblock %}
 {% block content %}
 <h1>🏬 {% t "Warehouse receipt loans (e-NWR)" %}</h1>
-{% include "web/storage/explainer.html" %}
+<p class="mute">{% t "Store your crop in a registered warehouse, take a bank loan on the receipt, and sell later at a better price." %}</p>
+<details class="card fold"><summary><b>ℹ️ {% t "How it works" %}</b></summary>{% include "web/storage/explainer.html" %}</details>
 {% if lines %}
 <form method="get" class="card"><h3>{% t "Store or sell now?" %}</h3>
   <div class="field"><label>{% t "Stock" %}</label><select name="line">{% for ln in lines %}<option value="{{ ln.key }}"{% if ln == chosen %} selected{% endif %}>{% crop ln.product %} · {{ ln.free_kg|quintal }} q</option>{% endfor %}</select></div>
-  <div class="grid g2"><div class="field"><label>{% t "Quantity (quintal)" %}</label><input name="qty" inputmode="decimal" value="{{ calc.qty_q|default:"" }}"></div>
-    <div class="field"><label>{% t "Price today (₹ per quintal)" %}</label><input name="price" inputmode="decimal" value="{{ calc.price|default:"" }}"></div>
-    <div class="field"><label>{% t "Months to store" %}</label><input name="months" inputmode="numeric" value="{{ calc.months|default:4 }}"></div>
-    <div class="field"><label>{% t "Storage charge (₹ per quintal per month)" %}</label><input name="storage" inputmode="decimal" value="{{ calc.storage_rate|default:10 }}"></div>
-    <div class="field"><label>{% t "Bank lends (% of value)" %}</label><input name="ltv" inputmode="decimal" value="{{ calc.ltv|default:70 }}"></div></div>
+  <div class="grid g2"><div class="field"><label for="s-qty">{% t "Quantity (quintal)" %}</label><input id="s-qty" type="text" name="qty" inputmode="decimal" value="{{ calc.qty_q|default:"" }}"></div>
+    <div class="field"><label for="s-price">{% t "Price today (₹ per quintal)" %}</label><input id="s-price" type="text" name="price" inputmode="decimal" value="{{ calc.price|default:"" }}"></div></div>
+  <div class="field"><label for="s-months">{% t "Months to store" %}</label><input id="s-months" type="number" name="months" min="1" max="12" value="{{ calc.months|default:4 }}"></div>
+  <details class="fold-inline"><summary>{% t "Change storage charge and loan share" %}</summary><div class="grid g2" style="margin-top:10px">
+    <div class="field"><label for="s-st">{% t "Storage charge (₹ per quintal per month)" %}</label><input id="s-st" type="text" name="storage" inputmode="decimal" value="{{ calc.storage_rate|default:10 }}"></div>
+    <div class="field"><label for="s-ltv">{% t "Bank lends (% of value)" %}</label><input id="s-ltv" type="text" name="ltv" inputmode="decimal" value="{{ calc.ltv|default:70 }}"></div></div></details>
   <button class="btn">{% t "Work it out" %}</button></form>
 {% if calc %}{% if calc.capped %}<div class="card warn">{% t "quintal" as qu %}<p style="margin:0">{% t "Only {qty} {unit} of this is free in your book." qty=calc.free_q|num unit=qu %}</p></div>{% endif %}<div class="card sun"><div class="stats flat">
   <div class="stat"><small>{% t "Value today" %}</small><div class="big">{{ calc.value|inr }}</div></div>
@@ -19,7 +21,7 @@
   <p style="margin:10px 0 0"><b>{% t "Storing pays only if the price later is above {price} per quintal ({pct}% more than today)." price=calc.breakeven_q|inr pct=calc.rise_pct %}</b></p>
   {% if calc.mandi %}<p class="hint" style="margin:6px 0 0">{% t "Today's mandi price used: {price}." price=calc.mandi.typical|inr %}</p>{% endif %}</div>
 <form method="post" action="/storage/plan/" class="card">{% csrf_token %}<h3>{% t "Plan to store this" %}</h3><input type="hidden" name="line" value="{{ chosen.key }}"><input type="hidden" name="qty" value="{{ calc.qty_q }}">
-  <div class="field"><label>{% t "Warehouse" %}</label><select name="warehouse"><option value="">{% t "Not decided yet" %}</option>{% for w in near %}<option value="{{ w.pk }}">{{ w.name }} · {{ w.district }}{% if w.verified %} ✔{% endif %}</option>{% endfor %}{% for w in rest %}<option value="{{ w.pk }}">{{ w.name }} · {{ w.district }}</option>{% endfor %}</select></div>
+  <div class="field"><label>{% t "Warehouse" %}</label><select name="warehouse"><option value="">{% t "Not decided yet" %}</option>{% for w in top %}<option value="{{ w.pk }}">{{ w.label }} · {{ w.place|default:w.district }}</option>{% endfor %}{% for w in near %}{% if w not in top %}<option value="{{ w.pk }}">{{ w.name|title }} · {{ w.district|title }}</option>{% endif %}{% endfor %}</select></div>
   {% if not near and not rest %}<p class="hint">{% t "No warehouses are loaded for your state yet. Find one on the WDRA list." %}</p>{% endif %}
   <p class="hint">{% t "Planned stock is held back from new listings so you do not sell it twice." %}</p>
   <button class="btn">{% t "Save the plan" %}</button></form>{% endif %}
@@ -30,9 +32,6 @@
   {% if p.status == "planned" %}<form method="post" action="/storage/deposit/" class="row">{% csrf_token %}<input type="hidden" name="pledge" value="{{ p.pk }}"><input name="enwr" placeholder="{% t "e-NWR number" %}" required style="flex:1;min-width:120px"><input type="date" name="deposit_date"><select name="repository"><option value="nerl">NERL</option><option value="ccrl">CCRL</option></select><button class="btn small">{% t "Stored" %}</button></form>
   {% elif p.status == "stored" %}<form method="post" action="/storage/loan/" class="row">{% csrf_token %}<input type="hidden" name="pledge" value="{{ p.pk }}"><input name="bank" placeholder="{% t "Bank" %}" style="flex:1;min-width:110px"><input name="amount" inputmode="numeric" placeholder="{% t "Loan amount (₹)" %}" style="width:130px"><input name="rate" inputmode="decimal" value="7" style="width:70px" aria-label="%"><input type="date" name="due_date" aria-label="{% t "Due date" %}"><button class="btn small">{% t "Loan taken" %}</button></form>{% endif %}
   {% if p.status != "closed" %}<form method="post" action="/storage/close/" style="margin-top:6px">{% csrf_token %}<input type="hidden" name="pledge" value="{{ p.pk }}"><button class="link-btn">{% t "Loan repaid or stock sold" %}</button></form>{% endif %}</div>{% endfor %}
-{% if near %}<h2>🏬 {% t "Registered warehouses near you" %}</h2>
-<p class="hint">{% t "From the WDRA public list, refreshed every week. Only WDRA-registered warehouses can issue an e-NWR." %}</p>
-<div class="card scroll"><table class="tbl"><thead><tr><th>{% t "Warehouse" %}</th><th>{% t "Capacity" %}</th><th>{% t "Valid until" %}</th><th>{% t "Contact" %}</th></tr></thead><tbody>
-{% for w in near|slice:":12" %}<tr><td>{{ w.name }}{% if w.wdra_status %} <span class="pill {% if w.wdra_status|lower == "active" %}{% else %}grey{% endif %}">{% if w.wdra_status|lower == "active" %}{% t "Active" %}{% else %}{% t "Inactive" %}{% endif %}</span>{% endif %}<br><span class="mute">{{ w.address|truncatechars:60 }}, {{ w.district }}</span></td>
-  <td>{% if w.capacity_mt %}{{ w.capacity_mt|num:0 }} t{% else %}—{% endif %}</td><td>{{ w.valid_until|date:"j M Y"|default:"—" }}</td><td>{% if w.phone %}<a href="tel:{{ w.phone }}">{{ w.phone }}</a>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+<div class="row between" style="margin-top:22px"><h2 style="margin:0">🏬 {% t "Registered warehouses near you" %}</h2>{% if near_total %}<a href="/storage/warehouses/">{% t "See all {n}" n=near_total %} →</a>{% endif %}</div>
+<div class="wh-list" style="margin-top:10px">{% for w in top %}{% include "web/storage/_warehouse.html" %}{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No registered warehouse found in {district} yet." district=fp.district|default:"—" %} <a href="/storage/warehouses/">{% t "Search other districts" %}</a></p></div>{% endfor %}</div>
 {% endblock %}

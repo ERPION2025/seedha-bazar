@@ -57,7 +57,11 @@ def form_strings() -> set[str]:
             form = cls(lang="en")
         except Exception:
             continue
-        for field in form.fields.values():
+        for fname, field in form.fields.items():
+            if fname in ("districts", "state", "organisation"):  # place names and organisations' own names are not translated
+                if field.label:
+                    out.add(field.label)
+                continue
             if field.label:
                 out.add(field.label)
             for v, label in getattr(field, "choices", []) or []:

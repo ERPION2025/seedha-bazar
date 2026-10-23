@@ -67,7 +67,8 @@ class LoginFirstMiddleware:
     static files, the app manifest and service worker)."""
 
     OPEN = ("/login/", "/logout/", "/auth/facebook/", "/privacy/", "/join/", "/s/", "/verify/", "/static/", "/media/", "/api/", "/admin/",
-            "/hooks/", "/manifest.webmanifest", "/sw.js", "/favicon.ico", "/robots.txt", "/health/", "/kvk/")
+            "/hooks/", "/manifest.webmanifest", "/sw.js", "/favicon.ico", "/robots.txt", "/health/", "/kvk/",
+            "/console/login/")
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -82,6 +83,8 @@ class LoginFirstMiddleware:
 
             from django.shortcuts import redirect
 
+            if request.path.startswith("/console/"):  # the owner console has its own password sign-in
+                return redirect("/console/login/")
             if request.path == "/" or request.method != "GET":
                 return redirect("/login/")
             return redirect(f"/login/?next={quote(request.get_full_path())}")

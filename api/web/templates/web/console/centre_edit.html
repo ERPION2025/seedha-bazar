@@ -1,0 +1,31 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% if c %}{{ c.name }}{% else %}{% t "Add an institution" %}{% endif %}{% endblock %}
+{% block content %}
+<p><a href="/console/institutions/">← {% t "Institutions" %}</a></p>
+<h1>🏛️ {% if c %}{{ c.name }}{% else %}{% t "Add an institution" %}{% endif %}</h1>
+<form method="post" class="card" id="inst-form">{% csrf_token %}<input type="hidden" name="action" value="save">
+  {% include "web/partials/form_body.html" %}
+  <button class="btn">{% if c %}{% t "Save" %}{% else %}{% t "Add the institution" %}{% endif %}</button></form>
+<script>(function(){var f=document.getElementById("inst-form"),s=f&&f.querySelector("select[name=state]");if(!s)return;
+s.addEventListener("change",function(){f.querySelector("input[name=action]").value="reload";f.submit();});})();</script>
+{% if c %}
+<h2>👥 {% t "People who sign in" %}</h2>
+<p class="mute">{% t "They sign in at {url} with a code sent to their mobile or email." url=institution_url %}</p>
+{% for m in members %}<form method="post" class="card staff-row">{% csrf_token %}<input type="hidden" name="member" value="{{ m.pk }}">
+  <div class="grid g2"><div class="field"><label>{% t "Name" %}</label><input type="text" name="name" value="{{ m.name }}"></div>
+    <div class="field"><label>{% t "Mobile number" %}</label><input type="text" value="{{ m.user.phone }}" disabled></div>
+    <div class="field"><label>{% t "Email" %}</label><input type="email" name="email" value="{{ m.user.email|default:"" }}"></div>
+    <div class="field"><label>{% t "Role" %}</label><select name="role">{% for v, l in roles %}<option value="{{ v }}"{% if v == m.role %} selected{% endif %}>{% t l %}</option>{% endfor %}</select></div>
+    <div class="field"><label>{% t "Speciality (optional)" %}</label><input type="text" name="speciality" value="{{ m.speciality }}"></div></div>
+  <div class="row between"><button class="btn small" name="action" value="staff_update">{% t "Save" %}</button>
+    <button class="link-btn neg" name="action" value="staff_remove" onclick="return confirm(this.dataset.q)" data-q="{% t "Remove this person? Their sign-in stops working." %}">{% t "Remove" %}</button></div></form>
+{% empty %}<p class="mute">{% t "Nobody can sign in for this institution yet." %}</p>{% endfor %}
+<details class="card"{% if staff_form.errors %} open{% endif %}><summary><b>+ {% t "Add a person" %}</b></summary>
+  <form method="post" style="margin-top:10px">{% csrf_token %}<input type="hidden" name="action" value="staff_add">{% with form=staff_form %}{% include "web/partials/form_body.html" %}{% endwith %}<button class="btn">{% t "Add" %}</button></form></details>
+<details class="card danger"><summary><b class="neg">{% t "Remove this institution" %}</b></summary>
+  <form method="post" style="margin-top:10px">{% csrf_token %}<input type="hidden" name="action" value="delete">
+  <p>{% t "Its people lose access (unless they belong to another institution), its seed and input offers are deleted, and its problems stay without a centre. This cannot be undone." %}</p>
+  <div class="field"><label for="confirm">{% t "Type the name to confirm" %}: <b>{{ c.name }}</b></label><input id="confirm" type="text" name="confirm" autocomplete="off"></div>
+  <button class="btn danger-btn">{% t "Remove for good" %}</button></form></details>
+{% endif %}
+{% endblock %}

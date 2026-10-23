@@ -14,14 +14,68 @@ from .models import Centre, CentreMember, InputOffer, InputRequest
 from .scope import farmers as farmers_in
 
 
+def _email_free(email: str, user=None) -> str:
+    email = (email or "").strip().lower()
+    if email and User.objects.filter(email__iexact=email).exclude(pk=getattr(user, "pk", None)).exists():
+        raise ApiError("email_in_use", "This email is already used by another account.", 409)
+    return email
+
+
 @transaction.atomic
-def provision_staff(phone: str, centre: Centre, role: str = "expert", speciality: str = "", actor=None, request=None) -> User:
-    user, created = User.objects.get_or_create(phone=phone, defaults={"role": Role.AGRONOMIST, "status": UserStatus.ACTIVE})
-    if not created and user.role != Role.AGRONOMIST:
+def provision_staff(phone: str, centre: Centre, role: str = "expert", speciality: str = "", actor=None, request=None, email: str = "", name: str = "") -> User:
+    """Add a person to an institution. They sign in to Institution Connect with a code on this mobile or this email."""
+    user = User.objects.filter(phone=phone).first()
+    if user is not None and user.role != Role.AGRONOMIST:
         raise ApiError("phone_in_use", "This number already belongs to a farmer or buyer account. Use a different number for the agent.", 409)
-    CentreMember.objects.update_or_create(user=user, centre=centre, defaults={"role": role, "speciality": speciality})
+    email = _email_free(email, user)
+    if user is None:
+        user = User.objects.create_user(phone=phone, role=Role.AGRONOMIST, status=UserStatus.ACTIVE, email=email or None)
+    else:
+        user.status = UserStatus.ACTIVE
+        if email:
+            user.email = email
+        user.save(update_fields=["status", "email"])
+    CentreMember.objects.update_or_create(user=user, centre=centre, defaults={"role": role, "speciality": speciality, "name": name})
     audit.log("centre_staff_added", actor=actor, target=user, request=request, centre=centre.pk)
     return user
+
+
+def update_staff(member: CentreMember, name: str, role: str, speciality: str, email: str, actor=None, request=None) -> CentreMember:
+    member.name, member.role, member.speciality = name[:120], role, speciality[:80]
+    member.save(update_fields=["name", "role", "speciality"])
+    u = member.user
+    u.email = _email_free(email, u) or None
+    u.save(update_fields=["email"])
+    audit.log("centre_staff_updated", actor=actor, target=u, request=request, centre=member.centre_id)
+    return member
+
+
+def _disable_if_alone(user, actor=None, request=None):
+    if user.role == Role.AGRONOMIST and not CentreMember.objects.filter(user=user).exists():
+        user.status = UserStatus.DISABLED
+        user.save(update_fields=["status"])
+        from accounts import sessions
+        for ls in user.login_sessions.filter(ended_at__isnull=True):
+            sessions.end(ls, "removed")
+        audit.log("user_disabled", actor=actor, target=user, request=request)
+
+
+def remove_staff(member: CentreMember, actor=None, request=None) -> None:
+    """Take a person off an institution. With no institution left, their sign-in stops working at once."""
+    user = member.user
+    member.delete()
+    audit.log("centre_staff_removed", actor=actor, target=user, request=request, centre=member.centre_id)
+    _disable_if_alone(user, actor, request)
+
+
+@transaction.atomic
+def delete_centre(centre: Centre, actor=None, request=None) -> None:
+    """Remove an institution: its staff lose access (unless they belong to another), its offers go, problems stay unassigned."""
+    users = [m.user for m in centre.members.select_related("user")]
+    audit.log("centre_deleted", actor=actor, target=centre, request=request, name=centre.name)
+    centre.delete()
+    for u in users:
+        _disable_if_alone(u, actor, request)
 
 
 def place_of(user) -> tuple[str, str, object]:

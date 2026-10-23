@@ -354,6 +354,64 @@ class AnnouncementForm(LangForm):
     pinned = forms.BooleanField(label="Pin to the top", required=False)
 
 
+class InstitutionForm(LangForm):
+    """Add or change an institution. The district list follows the chosen state (the page reloads when the state changes)."""
+
+    name = forms.CharField(label="Institution name", max_length=200, widget=forms.TextInput(attrs={"placeholder": "KVK Rewa"}))
+    kind = forms.ChoiceField(label="Type", choices=[("kvk", "Krishi Vigyan Kendra (KVK)"), ("research", "Research centre / ICAR institute"), ("university", "Agricultural university"), ("department", "Agriculture department office")])
+    state = forms.ChoiceField(label="State", choices=[])
+    districts = forms.MultipleChoiceField(label="Districts it looks after", choices=[], widget=forms.CheckboxSelectMultiple(attrs={"class": "chips"}))
+    host = forms.CharField(label="Host institution (optional)", max_length=200, required=False)
+    address = forms.CharField(label="Address (optional)", max_length=300, required=False)
+    phone = forms.CharField(label="Phone (optional)", max_length=40, required=False)
+    email = forms.EmailField(label="Email (optional)", required=False)
+    website = forms.URLField(label="Website (optional)", required=False)
+    lat = forms.FloatField(label="Latitude (optional)", required=False, min_value=6, max_value=38)
+    lon = forms.FloatField(label="Longitude (optional)", required=False, min_value=68, max_value=98)
+    verified = forms.BooleanField(label="Active: its staff can sign in", required=False, initial=True)
+
+    def __init__(self, *args, state: str = "Madhya Pradesh", **kwargs):
+        super().__init__(*args, **kwargs)
+        from extension import geo
+        self.fields["state"].choices = [(s, s) for s in geo.states()]
+        self.fields["districts"].choices = [(d, d) for d in geo.districts_of(state)]
+
+
+class InstitutionStaffForm(LangForm):
+    name = forms.CharField(label="Name", max_length=120)
+    phone = forms.CharField(label="Mobile number", max_length=20, widget=forms.TextInput(attrs={"inputmode": "tel"}))
+    email = forms.EmailField(label="Email (for email codes, optional)", required=False)
+    role = forms.ChoiceField(label="Role", choices=[("head", "Head / Senior scientist"), ("expert", "Subject matter specialist"), ("staff", "Staff")], initial="expert")
+    speciality = forms.CharField(label="Speciality (optional)", max_length=80, required=False)
+
+    def clean_phone(self):
+        from accounts.phone import InvalidPhone, normalise_phone
+        try:
+            return normalise_phone(self.cleaned_data["phone"])
+        except InvalidPhone:
+            raise forms.ValidationError("Enter a valid 10-digit mobile number")
+
+
+class AdminForm(LangForm):
+    name = forms.CharField(label="Name", max_length=120, required=False)
+    phone = forms.CharField(label="Mobile number", max_length=20, widget=forms.TextInput(attrs={"inputmode": "tel"}))
+    email = forms.EmailField(label="Email")
+    password = forms.CharField(label="Password (at least 10 characters)", min_length=10, max_length=128, widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}))
+    owner = forms.BooleanField(label="Owner rights: can add and remove admins", required=False)
+
+    def clean_phone(self):
+        from accounts.phone import InvalidPhone, normalise_phone
+        try:
+            return normalise_phone(self.cleaned_data["phone"])
+        except InvalidPhone:
+            raise forms.ValidationError("Enter a valid 10-digit mobile number")
+
+
+class ConsoleLoginForm(LangForm):
+    login = forms.CharField(label="Mobile number or email", max_length=120, widget=forms.TextInput(attrs={"autocomplete": "username"}))
+    password = forms.CharField(label="Password", max_length=128, widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}))
+
+
 class CentreForm(LangForm):
     name = forms.CharField(label="Centre name", max_length=200)
     kind = forms.ChoiceField(label="Type", choices=[("kvk", "Krishi Vigyan Kendra (KVK)"), ("research", "Research centre / ICAR institute"), ("university", "Agricultural university"), ("department", "Agriculture department office")])

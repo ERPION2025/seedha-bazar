@@ -251,8 +251,9 @@ class SignInTests(WebCase):
 
 class AccessTests(WebCase):
     def test_anonymous_goes_to_login(self):
-        for path in ("/farmer/", "/farmer/book/", "/fpo/", "/console/", "/buyer/"):
+        for path in ("/farmer/", "/farmer/book/", "/fpo/", "/buyer/"):
             self.assertRedirects(self.client.get(path), f"/login/?next={path}", fetch_redirect_response=False)
+        self.assertRedirects(self.client.get("/console/"), "/console/login/", fetch_redirect_response=False)  # the owner console signs in with a password
 
     def test_wrong_role_goes_home(self):
         web_login(self.client)

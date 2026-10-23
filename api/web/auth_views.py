@@ -94,7 +94,7 @@ def verify_view(request):
                 request.session["login"] = {**st, "verified": True, "t": time.time()}
                 return redirect("/login/consent/")
             return _finish(request, st["phone"])
-    return render(request, "web/verify.html", {"form": form, "phone": st["phone"], "trial_code": otp.static_code_for(st["phone"]) or st.get("dev_code", ""),
+    return render(request, "web/verify.html", {"form": form, "phone": st.get("sent_to") or st["phone"], "trial_code": otp.static_code_for(st["phone"]) or st.get("dev_code", ""),
                                                "dev": bool(st.get("dev_code"))})
 
 
@@ -104,7 +104,7 @@ def resend_view(request):
     if st is None:
         return redirect("/login/")
     channel = request.POST.get("channel", st.get("channel", "sms"))
-    if channel not in settings.OTP_CHANNELS:
+    if channel not in settings.OTP_CHANNELS and not (channel == "email" and st.get("channel") == "email"):
         channel = "sms"
     try:
         sent = otp.request_otp(st["phone"], channel, audit.client_ip(request), request.lang)

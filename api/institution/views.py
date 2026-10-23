@@ -10,6 +10,7 @@ from django.db.models import Count, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 
 import catalog
@@ -31,6 +32,68 @@ from web.helpers import error_text, ok, warn
 
 from . import services as inst
 from .models import Notice
+
+
+class SignInForm(LangForm):
+    by = forms.ChoiceField(label="Get the code by", choices=[("mobile", "Mobile (SMS)"), ("email", "Email")], initial="mobile", required=False,
+                           widget=forms.RadioSelect(attrs={"class": "chips"}))
+    phone = forms.CharField(label="Mobile number", max_length=20, required=False, widget=forms.TextInput(attrs={"inputmode": "tel", "autocomplete": "tel", "placeholder": "98XXXXXXXX"}))
+    email = forms.EmailField(label="Email", required=False, widget=forms.EmailInput(attrs={"autocomplete": "email", "placeholder": "name@kvk.org.in"}))
+
+    def clean(self):
+        from accounts.phone import InvalidPhone, normalise_phone
+        d = super().clean()
+        d["by"] = d.get("by") or "mobile"
+        if d["by"] == "email":
+            if not d.get("email"):
+                self.add_error("email", "Enter your email address.")
+        else:
+            try:
+                d["phone"] = normalise_phone(d.get("phone") or "")
+            except InvalidPhone:
+                self.add_error("phone", "Enter a valid 10-digit Indian mobile number")
+        return d
+
+
+def _mask_email(e: str) -> str:
+    name, _, domain = e.partition("@")
+    return (name[:2] + "•••" if len(name) > 2 else name[:1] + "•••") + "@" + domain
+
+
+@ensure_csrf_cookie
+def login_view(request):
+    """Institution Connect sign-in: a code by SMS to the registered mobile, or by email to the registered address."""
+    import time
+
+    from accounts import audit, otp
+    from web.context import home_for
+
+    if request.user.is_authenticated:
+        return redirect(home_for(request.user, "institution"))
+    if request.GET.get("next") is not None:
+        from web.auth_views import _safe_next
+        request.session["login_next"] = _safe_next(request, request.GET["next"])
+    request.session["login_as"] = "kvk"
+    form = SignInForm(request.POST or None, lang=request.lang, initial={"by": "email" if request.GET.get("by") == "email" else "mobile"})
+    if request.method == "POST" and form.is_valid():
+        d = form.cleaned_data
+        staff = User.objects.filter(Q(role=Role.AGRONOMIST) | Q(is_staff=True)).exclude(status__in=["disabled", "deleted"])
+        user = staff.filter(email__iexact=d["email"]).first() if d["by"] == "email" else staff.filter(phone=d["phone"]).first()
+        if user is None:
+            form.add_error("email" if d["by"] == "email" else "phone",
+                           "This email is not registered for a KVK or research centre. Ask Seedha Bazar to add it." if d["by"] == "email"
+                           else "This number is not registered for a KVK or research centre. Ask Seedha Bazar to add your centre.")
+        else:
+            channel = "email" if d["by"] == "email" else "sms"
+            try:
+                sent = otp.request_otp(user.phone, channel, audit.client_ip(request), request.lang)
+            except ApiError as e:
+                form.add_error(None, error_text(request, e))
+            else:
+                request.session["login"] = {"phone": user.phone, "t": time.time(), "channel": channel, "dev_code": sent.get("dev_code", ""),
+                                            "sent_to": _mask_email(user.email) if channel == "email" else user.phone}
+                return redirect("/login/verify/")
+    return render(request, "institution/login.html", {"form": form})
 
 
 def kvk_only(view):

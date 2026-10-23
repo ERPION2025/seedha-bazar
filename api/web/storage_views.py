@@ -63,8 +63,49 @@ def hub(request):
             calc = services.store_or_sell(qty_q * 100, price, max(1, min(months, 12)), rate_q, ltv)
             calc.update(price=price, qty_q=qty_q, months=months, storage_rate=rate_q, ltv=ltv, mandi=ref, capped=capped, free_q=free_q)
     near, rest = services.warehouses_near(fp.state, fp.district)
-    return render(request, "web/storage/hub.html", {"lines": lines, "chosen": chosen, "calc": calc, "near": near, "rest": rest,
+    top = list(services.warehouse_list(fp.state, fp.district, near=[fp.village, fp.block])[:3])
+    for w in top:
+        w.label, w.place = services.tidy(w.name), services.locality(w)
+    return render(request, "web/storage/hub.html", {"lines": lines, "chosen": chosen, "calc": calc, "near": near, "rest": rest, "top": top, "fp": fp,
+                                                    "near_total": services.warehouse_list(fp.state, fp.district).count(),
                                                     "pledges": Pledge.objects.filter(farmer=u).select_related("warehouse"), "base_tpl": base_for(u)})
+
+
+PAGE = 20
+
+
+def warehouses(request):
+    """Registered warehouses, filtered by district and place, as simple cards. Default: the person's own district."""
+    u = request.user
+    from extension import geo
+    from extension.services import place_of
+
+    state, district, org = place_of(u)
+    near = []
+    if u.role == Role.FARMER:
+        near = [u.farmer_profile.village, u.farmer_profile.block]
+    elif org is not None:
+        near = [org.block]
+    state = request.GET.get("state") or state or "Madhya Pradesh"
+    if state not in geo.states():
+        state = "Madhya Pradesh"
+    districts = services.warehouse_districts(state)
+    district = request.GET["district"] if "district" in request.GET else next((d for d in districts if geo.same_district(d, district or "")), "")
+    q = (request.GET.get("q") or "").strip()[:60]
+    active_only = request.GET.get("all") != "1"
+    qs = services.warehouse_list(state, district, q, active_only, near)
+    total = qs.count()
+    try:
+        page = max(1, int(request.GET.get("page", "1")))
+    except ValueError:
+        page = 1
+    rows = list(qs[: page * PAGE])
+    for w in rows:
+        w.label, w.place, w.owner = services.tidy(w.name), services.locality(w), services.tidy(w.operator)
+        w.active = (w.wdra_status or "").lower() == "active"
+    return render(request, "web/storage/warehouses.html", {"rows": rows, "total": total, "more": total > len(rows), "next_page": page + 1, "state": state,
+                                                           "states": geo.states(), "districts": districts, "district": district, "q": q, "active_only": active_only,
+                                                           "base_tpl": base_for(u)})
 
 
 @require_POST

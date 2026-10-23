@@ -84,5 +84,6 @@ def site(request):
         "SITE_URL": settings.SITE_URL,
         "map_text": map_text(lang),
         "map_cfg": {"provider": "google" if settings.MAP_PROVIDER == "google" and settings.GOOGLE_MAPS_API_KEY else "osm",
-                    "google_key": settings.GOOGLE_MAPS_API_KEY if settings.MAP_PROVIDER == "google" else "", "tiles": settings.MAP_TILE_URL},
+                    "google_key": settings.GOOGLE_MAPS_API_KEY if settings.MAP_PROVIDER == "google" else "", "tiles": settings.MAP_TILE_URL,
+                    "attribution": settings.MAP_TILE_ATTRIBUTION},
     }

@@ -1,0 +1,19 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Registered warehouses" %}{% endblock %}
+{% block content %}
+<p><a href="/storage/">← {% t "Warehouse receipt loans" %}</a></p>
+<h1>🏬 {% t "Registered warehouses" %}</h1>
+<p class="mute">{% t "Only WDRA-registered warehouses can give an e-NWR receipt for a bank loan." %}</p>
+<form method="get" class="card filters">
+  <div class="filters-row">
+    <div class="field"><label for="f-district">{% t "District" %}</label><select id="f-district" name="district" onchange="this.form.submit()"><option value="">{% t "All districts" %}</option>{% for d in districts %}<option{% if d == district %} selected{% endif %}>{{ d }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="f-q">{% t "Village or area" %}</label><input id="f-q" type="search" name="q" value="{{ q }}" placeholder="{% t "e.g. Gurh, Mauganj" %}"></div>
+  </div>
+  <div class="row between"><label class="check-inline"><input type="checkbox" name="all" value="1"{% if not active_only %} checked{% endif %} onchange="this.form.submit()"> {% t "Show inactive too" %}</label>
+    <input type="hidden" name="state" value="{{ state }}"><button class="btn small">{% t "Search" %}</button></div>
+</form>
+<p class="count"><b>{{ total }}</b> {% t "warehouses" %}{% if district %} · {{ district }}{% endif %}{% if q %} · “{{ q }}”{% endif %}</p>
+<div class="wh-list">{% for w in rows %}{% include "web/storage/_warehouse.html" %}{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No warehouse matches. Try another district or clear the search." %}</p></div>{% endfor %}</div>
+{% if more %}<p style="text-align:center"><a class="btn ghost" href="?district={{ district|urlencode }}&q={{ q|urlencode }}&state={{ state|urlencode }}{% if not active_only %}&all=1{% endif %}&page={{ next_page }}">{% t "Show more" %}</a></p>{% endif %}
+<p class="hint">{% t "From the WDRA public list, refreshed every week." %}</p>
+{% endblock %}

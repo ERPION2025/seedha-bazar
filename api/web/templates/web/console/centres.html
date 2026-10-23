@@ -1,12 +1,14 @@
 {% extends "web/console/base.html" %}{% load web_tags %}
-{% block title %}{% t "KVKs and research centres" %}{% endblock %}
+{% block title %}{% t "Institutions" %}{% endblock %}
 {% block content %}
-<h1>🏛️ {% t "KVKs and research centres" %}</h1>
-<details class="card"{% if form.errors %} open{% endif %}><summary><b>+ {% t "Add a centre" %}</b></summary>
-  <form method="post" style="margin-top:10px">{% csrf_token %}<input type="hidden" name="form" value="centre">{% include "web/partials/form_body.html" %}<button class="btn">{% t "Save" %}</button></form></details>
-{% for c in rows %}<div class="card"><div class="row between"><h3 style="margin:0">{{ c.name }}</h3><span class="pill grey">{{ c.get_kind_display }}</span></div>
-  <p class="mute" style="margin:4px 0">{{ c.state }} · {{ c.districts|join:", " }}{% if c.phone %} · {{ c.phone }}{% endif %}{% if not c.lat %} · <span class="neg">{% t "No map location" %}</span>{% endif %}</p>
-  {% for m in c.members.all %}<span class="pill">{{ m.user.phone }} · {{ m.get_role_display }}{% if m.speciality %} · {{ m.speciality }}{% endif %}</span> {% endfor %}
-  <form method="post" action="/console/centres/{{ c.pk }}/staff/" class="row" style="margin-top:10px">{% csrf_token %}{% for bf in staff_form %}{{ bf }}{% endfor %}<button class="btn small">{% t "Add staff" %}</button></form></div>
-{% empty %}<p class="mute">{% t "No centres yet." %}</p>{% endfor %}
+<div class="row between"><h1 style="margin:0">🏛️ {% t "Institutions" %}</h1><a class="btn" href="/console/institutions/new/">+ {% t "Add an institution" %}</a></div>
+<p class="mute">{% t "KVKs, research centres, universities and agriculture offices that use Institution Connect. Open one to change it, manage its people or remove it." %}</p>
+<form method="get" class="card filters"><div class="filters-row">
+  <div class="field"><label for="c-q">{% t "Search" %}</label><input id="c-q" type="search" name="q" value="{{ q }}" placeholder="{% t "Name or district" %}"></div>
+  <div class="field"><label for="c-s">{% t "State" %}</label><select id="c-s" name="state" onchange="this.form.submit()"><option value="">{% t "All states" %}</option>{% for s in states %}<option{% if s == state %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+</div><button class="btn small">{% t "Search" %}</button></form>
+<div class="card scroll"><table class="tbl"><thead><tr><th>{% t "Institution" %}</th><th>{% t "State" %}</th><th>{% t "Districts" %}</th><th>{% t "People" %}</th><th>{% t "Status" %}</th><th></th></tr></thead><tbody>
+{% for c in rows %}<tr><td><b>{{ c.name }}</b><br><span class="mute">{{ c.get_kind_display }}</span></td><td>{{ c.state }}</td><td>{{ c.districts|join:", " }}</td><td>{{ c.staff }}</td>
+  <td>{% if c.verified %}<span class="pill">{% t "Active" %}</span>{% else %}<span class="pill grey">{% t "Paused" %}</span>{% endif %}</td><td><a class="btn small ghost" href="/console/institutions/{{ c.pk }}/">{% t "Open" %}</a></td></tr>
+{% empty %}<tr><td colspan="6" class="mute">{% t "No institutions yet." %}</td></tr>{% endfor %}</tbody></table></div>
 {% endblock %}

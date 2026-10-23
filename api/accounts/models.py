@@ -25,6 +25,7 @@ class UserStatus(models.TextChoices):
     PENDING = "pending", "Pending owner confirmation"
     ACTIVE = "active", "Active"
     DELETED = "deleted", "Deleted"
+    DISABLED = "disabled", "Disabled by Seedha Bazar"
 
 
 class UserManager(BaseUserManager):
@@ -48,9 +49,11 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    """The phone number is the account. No email, no password for farmers."""
+    """The phone number is the account. No password for farmers; institution staff may also get codes by email;
+    the owner and admins of the console sign in with a password."""
 
     phone = models.CharField(max_length=20, unique=True)
+    email = models.EmailField(null=True, blank=True, unique=True, help_text="Optional. KVK and agency staff, and Seedha Bazar admins, can get sign-in codes by email.")
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.FARMER)
     language = models.CharField(max_length=2, choices=Language.choices, default=Language.HINDI)
     status = models.CharField(max_length=20, choices=UserStatus.choices, default=UserStatus.PENDING)
@@ -69,7 +72,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def is_active(self):  # Django auth hook
-        return self.status != UserStatus.DELETED
+        return self.status not in (UserStatus.DELETED, UserStatus.DISABLED)
 
     def __str__(self):
         return f"{self.phone} ({self.role})"

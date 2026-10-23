@@ -1,0 +1,13 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Admins" %}{% endblock %}
+{% block content %}
+<h1>🔐 {% t "Admins" %}</h1>
+<p class="mute">{% t "People who run this console. They sign in at /console/login/ with their mobile number or email and a password." %}</p>
+<div class="card scroll"><table class="tbl"><thead><tr><th>{% t "Mobile number" %}</th><th>{% t "Email" %}</th><th>{% t "Rights" %}</th><th>{% t "Last sign-in" %}</th><th></th></tr></thead><tbody>
+{% for u in rows %}<tr><td>{{ u.phone }}</td><td>{{ u.email|default:"—" }}</td><td>{% if u.is_superuser %}<span class="pill">{% t "Owner" %}</span>{% else %}{% t "Admin" %}{% endif %}</td><td>{{ u.last_login|date:"j M Y H:i"|default:"—" }}</td>
+  <td>{% if owner and u.pk != user.pk %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="remove"><input type="hidden" name="user" value="{{ u.pk }}"><button class="link-btn neg" onclick="return confirm(this.dataset.q)" data-q="{% t "Remove this admin?" %}">{% t "Remove" %}</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% if owner %}<details class="card"{% if form.errors %} open{% endif %}><summary><b>+ {% t "Add an admin" %}</b></summary>
+<form method="post" style="margin-top:10px">{% csrf_token %}<input type="hidden" name="action" value="add">{% include "web/partials/form_body.html" %}<button class="btn">{% t "Add" %}</button></form></details>
+{% else %}<p class="hint">{% t "Only an owner can add or remove admins." %}</p>{% endif %}
+<div class="card tint"><b>🗂️ {% t "All records" %}</b><p style="margin:4px 0 0">{% t "Every record in Seedha Bazar (farmers, FPOs, buyers, listings, orders, institutions, warehouses, advisories...) can be searched, changed or removed in All records. Use it with care: changes there skip the checks of these pages." %}</p><a class="btn small ghost" href="/admin/" style="margin-top:8px">{% t "Open All records" %}</a></div>
+{% endblock %}

@@ -1,4 +1,5 @@
 from django.urls import path, re_path
+from django.views.generic import RedirectView
 
 from . import group_views, notify_views, pool_views, share_views, social, voice_views, statement_views, storage_views, weather_views
 from . import auth_views, buyer_views, catalog_views, console_views, deals_views, engage_views, farmer_views, fpo_views, help_views, inputs_views, insurance_views, knowledge_views, location, market_views, public_views, rates_views
@@ -111,6 +112,7 @@ urlpatterns = [
     path("farmer/pools/", pool_views.farmer_pools),
     path("farmer/pools/<str:action>/", pool_views.farmer_act),
     path("storage/", storage_views.hub),
+    path("storage/warehouses/", storage_views.warehouses),
     path("storage/<str:action>/", storage_views.act),
     path("statement/", statement_views.page),
     path("statement/new/", statement_views.make),
@@ -136,8 +138,12 @@ urlpatterns = [
     path("console/feeds/", console_views.feeds),
     path("console/sessions/", console_views.login_sessions),
     path("console/sessions/<int:pk>/end/", console_views.end_session),
-    path("console/centres/", console_views.centres),
-    path("console/centres/<int:pk>/staff/", console_views.centre_staff),
+    path("console/login/", console_views.console_login),
+    path("console/institutions/", console_views.centres),
+    path("console/institutions/new/", console_views.centre_edit),
+    path("console/institutions/<int:pk>/", console_views.centre_edit),
+    path("console/centres/", RedirectView.as_view(url="/console/institutions/")),
+    path("console/admins/", console_views.admins),
     path("buyer/producers/", deals_views.producers),
     path("producers/<str:kind>/<int:pk>/", deals_views.producer),
     path("deals/", deals_views.my_deals),

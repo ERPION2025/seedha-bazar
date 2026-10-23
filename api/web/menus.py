@@ -44,10 +44,11 @@ KVK = [  # Institution Connect (its own site): only what a KVK or research agenc
 STAFF = [
     ("Overview", "📊", "/console/", ["=/console/"], ""), ("FPOs and NGOs", "🏢", "/console/orgs/", ["/console/orgs"], "waiting_orgs"),
     ("Farmers", "🧑‍🌾", "/console/farmers/", ["/console/farmers"], ""), ("Listings", "🏷️", "/console/listings/", ["/console/listings"], ""),
-    ("Buyers", "🛒", "/console/buyers/", ["/console/buyers"], ""), ("KVKs", "🏛️", "/console/centres/", ["/console/centres"], ""),
+    ("Buyers", "🛒", "/console/buyers/", ["/console/buyers"], ""), ("Institutions", "🏛️", "/console/institutions/", ["/console/institutions"], ""),
     ("Rates", "📈", "/console/rates/", ["/console/rates"], ""), ("News", "📰", "/console/news/", ["/console/news"], ""),
     ("Messages", "💬", "/console/messages/", ["/console/messages"], ""), ("Leads", "📥", "/console/leads/", ["/console/leads"], ""),
-    ("Activity", "🕘", "/console/audit/", ["/console/audit"], ""), ("Data feeds", "🔄", "/console/feeds/", ["/console/feeds"], ""), ("Settings", "⚙️", "/console/settings/", ["/console/settings", "/console/sessions"], ""),
+    ("Activity", "🕘", "/console/audit/", ["/console/audit"], ""), ("Data feeds", "🔄", "/console/feeds/", ["/console/feeds"], ""), ("Admins", "🔐", "/console/admins/", ["/console/admins"], ""),
+    ("Settings", "⚙️", "/console/settings/", ["/console/settings", "/console/sessions"], ""), ("All records", "🗂️", "/admin/", ["/admin"], ""),
 ]
 PUBLIC: list = []  # nothing before sign-in: the sign-in page comes first
 MAIN = 4  # items in the phone's bottom bar before "More"

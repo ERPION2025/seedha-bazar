@@ -233,7 +233,7 @@ class NavigationTests(CentreCase):
         sc.force_login(staff())
         bc = Client()
         bc.force_login(make_buyer())
-        for c, home, item in ((self.fc, "/farmer/", "Ask an expert"), (self.kc, "/", "Problems"), (bc, "/buyer/", "Find producers"), (sc, "/console/", "KVKs")):
+        for c, home, item in ((self.fc, "/farmer/", "Ask an expert"), (self.kc, "/", "Problems"), (bc, "/buyer/", "Find producers"), (sc, "/console/", "Institutions")):
             page = c.get(f"{home}?lang=en").content.decode()
             self.assertIn('class="side"', page)
             self.assertIn('class="bnav"', page)

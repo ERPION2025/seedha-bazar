@@ -165,6 +165,9 @@ META_VERIFY_TOKEN = os.environ.get("META_VERIFY_TOKEN", "")
 MAP_PROVIDER = os.environ.get("MAP_PROVIDER", "osm")
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
 MAP_TILE_URL = os.environ.get("MAP_TILE_URL", "https://tile.openstreetmap.org/{z}/{x}/{y}.png")
+# OSM's own tile servers are for light use only and need a Referer (map.js sends our origin). For real traffic use a provider
+# with a key, e.g. MAP_TILE_URL=https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=... and its attribution below.
+MAP_TILE_ATTRIBUTION = os.environ.get("MAP_TILE_ATTRIBUTION", "")
 # Optional server-side speech to text (Bhashini, Government of India)
 BHASHINI_USER_ID = os.environ.get("BHASHINI_USER_ID", "")
 BHASHINI_API_KEY = os.environ.get("BHASHINI_API_KEY", "")
@@ -199,3 +202,14 @@ WDRA_LIST_URL = os.environ.get("WDRA_LIST_URL", "https://wdra.gov.in/registered-
                                "&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view&_in_gov_wdra_warehouse_publiclist_portlet_WarehousePubliclistPortlet_INSTANCE_faio_javax.portlet.action=processWarehouseListReport")
 WDRA_REFRESH_DAYS = int(os.environ.get("WDRA_REFRESH_DAYS", "7"))
 WDRA_STATES_PER_RUN = int(os.environ.get("WDRA_STATES_PER_RUN", "6"))  # spread the 37 states over the week, gently
+
+# --- Email (sign-in codes for Institution Connect staff who choose email; console notices) ---
+# Development prints mail to the server log. In production set EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
+# (e.g. Amazon SES, Zoho, Google Workspace SMTP relay), EMAIL_PORT=587, EMAIL_USE_TLS=1 and DEFAULT_FROM_EMAIL.
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend" if not os.environ.get("EMAIL_HOST") else "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Seedha Bazar <no-reply@seedhabazar.in>")
