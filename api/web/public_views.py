@@ -16,6 +16,10 @@ MAX_LEADS_PER_IP_PER_HOUR = 10
 
 
 def home(request):
+    if request.user.is_authenticated:
+        from .context import home_for
+
+        return redirect(home_for(request.user))
     from .rates_views import rate_context
 
     from market.models import Listing
@@ -79,3 +83,9 @@ def join_page(request, code):
     request.session["join_code"] = org.code
     request.session["login_as"] = "farmer"
     return render(request, "web/public/join.html", {"org": org})
+
+
+def institution_moved(request, rest=""):
+    from django.conf import settings
+
+    return redirect(f"{settings.INSTITUTION_URL}/{rest}")

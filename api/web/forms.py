@@ -74,7 +74,8 @@ class FarmerProfileForm(LangForm):
     name = forms.CharField(label="Your name", max_length=120)
     village = forms.CharField(label="Village", max_length=120)
     block = forms.CharField(label="Block (tehsil)", max_length=80, required=False)
-    district = forms.CharField(label="District", max_length=80)
+    state = forms.ChoiceField(label="State", choices=[])
+    district = forms.CharField(label="District", max_length=80, widget=forms.TextInput(attrs={"list": "district-list", "autocomplete": "off"}))
     land_acres = forms.DecimalField(label="Land you farm (acres)", min_value=Decimal("0.01"), max_value=Decimal("100000"), decimal_places=2, widget=forms.NumberInput(attrs={"step": "0.01", "inputmode": "decimal"}))
     crops = forms.MultipleChoiceField(label="What do you grow?", choices=list(CROPS.items()), required=False, widget=forms.CheckboxSelectMultiple(attrs={"class": "chips"}))
     other_crops = forms.CharField(label="Other crops (separate with commas)", max_length=120, required=False)
@@ -85,14 +86,24 @@ class FarmerProfileForm(LangForm):
     def from_profile(cls, fp, lang):
         known = [c for c in fp.crops if c in CROPS]
         other = ", ".join(c for c in fp.crops if c not in CROPS)
-        return cls(lang=lang, initial={"name": fp.name, "village": fp.village, "block": fp.block, "district": fp.district,
+        return cls(lang=lang, initial={"name": fp.name, "village": fp.village, "block": fp.block, "district": fp.district, "state": fp.state,
                                        "land_acres": fp.land_acres, "crops": known, "other_crops": other, "discoverable": fp.discoverable,
                                        "share_with_extension": bool(fp.share_with_extension)})
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from extension import geo
+        self.fields["state"].choices = [(s, s) for s in geo.states()] or [("Madhya Pradesh", "Madhya Pradesh")]
 
     def clean(self):
         data = super().clean()
         if not split_crops(data.get("crops") or [], data.get("other_crops")):
             self.add_error("crops", "Pick at least one crop")
+        from extension import geo
+        if data.get("state") and data.get("district"):
+            ok_, other = geo.check_place(data["state"], data["district"])
+            if not ok_:
+                self.add_error("district", tr(self.lang, "This district is not in {state}.", state=data["state"]) + (" " + tr(self.lang, "Did you mean {state}?", state=other) if other else ""))
         return data
 
 
@@ -368,3 +379,9 @@ class CentreStaffForm(LangForm):
             return normalise_phone(self.cleaned_data["phone"])
         except InvalidPhone:
             raise forms.ValidationError("Enter a valid 10-digit mobile number")
+
+
+class PolicyForm(LangForm):
+    max_sessions = forms.IntegerField(label="Devices one person can be signed in on at once", min_value=1, max_value=10, initial=2)
+    session_days = forms.IntegerField(label="Days before signing in again", min_value=1, max_value=365, initial=30)
+    facebook_login = forms.BooleanField(label="Allow 'Continue with Facebook'", required=False)

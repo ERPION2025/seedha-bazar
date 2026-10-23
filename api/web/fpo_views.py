@@ -93,6 +93,8 @@ def dashboard(request):
         "share_link": link, "share_text": text, "wa_url": wa,
         **rate_context(request),
     }
+    from farming.services import org_summary
+    ctx["groups"] = org_summary(org)
     return render(request, "web/fpo/dashboard.html", ctx)
 
 

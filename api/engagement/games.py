@@ -62,7 +62,7 @@ UI = [
     "Which is the right total?", "Lives", "Tap now!", "Saved to your points.", "Sign in to save your points.", "Games", "Free games about farming. Play by touch or by voice.",
     "This week in your district", "Your best", "No games played yet.", "Play", "{n} points", "Friends of the farmer", "Pests", "Moves", "Pairs found",
     "Catch grain, dodge stones", "Say the name of this crop", "I heard: {text}", "Try again", "Rain", "Sun", "Scores", "Activity", "Performance",
-    "How much you use Seedha Bazar in the last 30 days", "How well your farm does", "No mandi price is available for this crop today.",
+    "How much you use Seedha Bazar in the last 30 days", "How well your farm does", "No mandi price is available for this crop today.", "Share my score",
 ]
 
 

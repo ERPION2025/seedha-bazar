@@ -3,28 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#14532d">
-<title>{% block title %}{% t "Seedha Bazar" %}{% endblock %} · {% t "Seedha Bazar" %}</title>
+<meta name="theme-color" content="{% if portal == "kvk" %}#1e3a8a{% else %}#14532d{% endif %}">
+<title>{% block title %}{% t "Seedha Bazar" %}{% endblock %} · {% if portal == "kvk" %}{% t "Seedha Bazar – Institution Connect" %}{% else %}{% t "Seedha Bazar" %}{% endif %}</title>
 <meta name="description" content="{% block desc %}{% t "Direct market, fair price, your farmer brother" %}{% endblock %}">
 <link rel="stylesheet" href="{% static 'web/app.css' %}">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="{% static 'web/icons/icon-192.png' %}">
+<link rel="apple-touch-icon" href="{% static 'web/icons/icon-192.png' %}">
 {% block head %}{% endblock %}
 </head>
-<body class="has-nav">
+<body class="{% if nav.all %}has-nav{% else %}no-nav{% endif %}{% if portal %} portal-{{ portal }}{% endif %}">
 <header class="top"><div class="wrap">
   <a class="brand" href="/"><i>सी</i>{% t "Seedha Bazar" %}</a>
+  {% if portal == "kvk" %}<span class="portal-tag">🏛️ {% t "Institution Connect" %}</span>{% endif %}
   <nav class="langs" aria-label="Language">{% for code, name in lang_choices %}<a href="?lang={{ code }}"{% if code == lang %} class="on" aria-current="true"{% endif %}>{{ name }}</a>{% endfor %}</nav>
   {% if user.is_authenticated %}
     <a class="login" href="{{ home_url }}">{% t "My page" %}</a>
     <form method="post" action="/logout/">{% csrf_token %}<button class="link-btn">{% t "Sign out" %}</button></form>
-  {% else %}
-    <a class="login" href="/login/">{% t "Sign in" %}</a>
   {% endif %}
 </div></header>
+{% if portal == "kvk" %}<div class="portal-banner"><div class="wrap"><b>{% t "Seedha Bazar – Institution Connect" %}</b> · {% t "The portal for KVKs and research agencies. It is for agriculture experts, not for farmers or FPOs." %}</div></div>{% endif %}
 <div class="shell">
-<aside class="side" aria-label="{% t "Menu" %}"><nav>
+{% if nav.all %}<aside class="side" aria-label="{% t "Menu" %}"><nav>
   {% for i in nav.all %}<a href="{{ i.url }}"{% if i.active %} class="on" aria-current="page"{% endif %}><span class="ic" aria-hidden="true">{{ i.icon }}</span><span>{% t i.label %}</span>{% if i.badge %}<span class="n">{{ i.badge }}</span>{% endif %}</a>{% endfor %}
-</nav></aside>
+</nav></aside>{% endif %}
 <div class="shell-main">
+{% if wx_alerts %}{% include "web/partials/wx_banner.html" %}{% endif %}
 {% block subnav %}{% endblock %}
 {% block hero %}{% endblock %}
 <main class="wrap{% block mainclass %}{% endblock %}">
@@ -36,16 +40,16 @@
 </div>
 <footer><div class="wrap">
   <p><b>{% t "Seedha Bazar" %}</b> — {% t "Direct market, fair price, your farmer brother" %}</p>
-  <p><a href="/for-farmers/">{% t "For farmers" %}</a> · <a href="/for-fpos/">{% t "For FPOs and NGOs" %}</a> · <a href="/for-buyers/">{% t "For buyers" %}</a> · <a href="/market/">{% t "Marketplace" %}</a> · <a href="/rates/">{% t "Rates" %}</a> · <a href="/calculator/">{% t "Harvest calculator" %}</a> · <a href="/value/">{% t "Earn more" %}</a> · <a href="/news/">{% t "News" %}</a> · <a href="/schemes/">{% t "Government schemes" %}</a> · <a href="/insurance/">{% t "Crop insurance" %}</a> · <a href="/videos/">{% t "Videos" %}</a> · <a href="/map/">{% t "Map" %}</a> · <a href="/games/">{% t "Games" %}</a> · <a href="/login/?as=kvk">{% t "KVK sign in" %}</a> · <a href="/privacy/">{% t "Privacy" %}</a></p>
+  <p>{% if user.is_authenticated %}<a href="{{ home_url }}">{% t "My page" %}</a> · {% endif %}<a href="/privacy/">{% t "Privacy" %}</a></p>
 </div></footer>
-<nav class="bnav" aria-label="{% t "Menu" %}">
+{% if nav.all %}<nav class="bnav" aria-label="{% t "Menu" %}">
   {% for i in nav.main %}<a href="{{ i.url }}"{% if i.active %} class="on" aria-current="page"{% endif %}><span class="ic" aria-hidden="true">{{ i.icon }}</span><span class="lb">{% t i.label %}</span>{% if i.badge %}<span class="n">{{ i.badge }}</span>{% endif %}</a>{% endfor %}
   <button type="button" class="{% if nav.more_active %}on{% endif %}" id="more-btn" aria-expanded="false" aria-controls="more-sheet"><span class="ic" aria-hidden="true">☰</span><span class="lb">{% t "More" %}</span>{% if nav.more_badge %}<span class="n">{{ nav.more_badge }}</span>{% endif %}</button>
 </nav>
 <div class="more-sheet" id="more-sheet" hidden><div class="more-panel" role="dialog" aria-modal="true" aria-label="{% t "More" %}">
   <div class="row between"><b>{% t "More" %}</b><button type="button" class="sbv-x" id="more-close" aria-label="{% t "Close" %}">✕</button></div>
   <div class="more-grid">{% for i in nav.more %}<a href="{{ i.url }}"{% if i.active %} class="on"{% endif %}><span class="ic" aria-hidden="true">{{ i.icon }}</span><span>{% t i.label %}</span>{% if i.badge %}<span class="n">{{ i.badge }}</span>{% endif %}</a>{% endfor %}</div>
-</div></div>
+</div></div>{% endif %}
 <script>(function(){var b=document.getElementById("more-btn"),s=document.getElementById("more-sheet"),c=document.getElementById("more-close");if(!b)return;
 function set(o){s.hidden=!o;b.setAttribute("aria-expanded",o);if(o){var f=s.querySelector("a");f&&f.focus();}else b.focus();}
 b.addEventListener("click",function(){set(s.hidden);});c.addEventListener("click",function(){set(false);});

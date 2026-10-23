@@ -1,0 +1,11 @@
+{% extends "institution/scoped.html" %}{% load web_tags %}
+{% block title %}{{ o.name }}{% endblock %}
+{% block content %}
+<p><a href="/orgs/">← {% t "FPOs and NGOs" %}</a></p>
+<h1>🏢 {{ o.name }}</h1>
+<p class="mute">{{ o.get_kind_display }} · {{ o.district }}{% if o.block %} · {{ o.block }}{% endif %}{% if o.contact_name %} · {{ o.contact_name }}{% endif %}{% if o.lat %} · <a href="https://www.google.com/maps/dir/?api=1&destination={{ o.lat }},{{ o.lon }}" target="_blank" rel="noopener noreferrer">{% t "Directions" %} ↗</a>{% endif %}</p>
+<div class="stats4"><div class="card stat"><small>{% t "Members" %}</small><div class="big">{{ c.members }}</div></div><div class="card stat"><small>{% t "Listings" %}</small><div class="big">{{ listings }}</div></div><div class="card stat"><small>{% t "Orders" %}</small><div class="big">{{ deals }}</div></div><div class="card stat"><small>{% t "Problems" %}</small><div class="big">{{ issues }}</div></div></div>
+{% if c.groups.groups %}<div class="card tint"><b>👥 {% t "Group farming" %}</b><p style="margin:4px 0 0">{% t "{g} crop groups: {n} farmers on {acres} acres grow the same way and sell as one lot." g=c.groups.groups n=c.groups.farmers acres=c.groups.acres|num:0 %}</p></div>{% endif %}
+{% if c.stock %}<div class="card"><h3>{% t "Members' stock in total" %}</h3>{% for k, kg in c.stock.items %}<div class="line"><span>{% crop k %}</span><b>{{ kg|quintal }} {% t "quintal" %}</b></div>{% endfor %}</div>{% endif %}
+<div class="card"><h3>{% t "Members" %}</h3>{% for m in members %}<div class="line"><span>{{ m.name|default:"—" }} · {{ m.village }}</span>{% if m.share_with_extension %}<a href="/farmers/{{ m.user_id }}/">{% t "Open" %}</a>{% else %}<span class="mute">🔒</span>{% endif %}</div>{% endfor %}</div>
+{% endblock %}

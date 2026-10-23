@@ -51,3 +51,26 @@ def wa_link(text: str, phone: str = "") -> str:
 
 def sms_link(text: str, phone: str = "") -> str:
     return f"sms:{phone}?body={quote(text)}"
+
+
+def tell(user, template: str, related: str = "", title: str = "Seedha Bazar", url: str = "/", critical: bool = False, **params) -> dict:
+    """Reach a person on every channel they have allowed: phone notification, Messenger (inside Meta's 24-hour window),
+    WhatsApp (if they agreed), and SMS. Returns what was tried. Never raises."""
+    from datetime import timedelta
+
+    from . import push
+    from .models import Preference
+
+    pref = Preference.objects.filter(user=user).first()
+    lang = getattr(user, "language", "hi")
+    text = texts.render(template, lang, params)
+    out = {"push": 0, "messenger": None, "whatsapp": None, "sms": None}
+    if pref is None or pref.push:
+        out["push"] = push.send(user, title, text, url, tag=related, critical=critical)
+    if pref and pref.messenger_psid and pref.messenger_last_in and timezone.now() - pref.messenger_last_in < timedelta(hours=23):
+        out["messenger"] = send("messenger", pref.messenger_psid, template, lang, user=user, related=related, **params).status
+    if pref and pref.whatsapp:
+        out["whatsapp"] = send("whatsapp", user.phone, template, lang, user=user, related=related, **params).status
+    if pref is None or pref.sms or not any(out.values()):
+        out["sms"] = send("sms", user.phone, template, lang, user=user, related=related, **params).status
+    return out

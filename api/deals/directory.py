@@ -27,7 +27,7 @@ def farmer_card(fp: FarmerProfile, with_stock: bool = True) -> dict:
     growing = [{"crop": c.crop, "area": c.plot.area_acres, "harvest": c.expected_harvest_date} for c in cycles if c.status == "active"]
     return {"kind": "farmer", "id": u.pk, "name": _first(fp.name), "village": fp.village, "district": fp.district, "state": fp.state, "grows": grows,
             "makes": makes, "stock": dict(have), "growing": growing, "verified": fp.level >= 2, "level": fp.level, "land": fp.land_acres,
-            "org": fp.organisation.name if fp.organisation_id and fp.org_status == OrgStatus.CONFIRMED else ""}
+            "org": fp.organisation.name if fp.organisation_id and fp.org_status == OrgStatus.CONFIRMED else "", "groups": _farmer_groups(u)}
 
 
 def fpo_card(org: Organisation, with_stock: bool = True) -> dict:
@@ -44,7 +44,17 @@ def fpo_card(org: Organisation, with_stock: bool = True) -> dict:
     makes = sorted(set(Processing.objects.filter(owner__in=users, deleted_at__isnull=True).values_list("product", flat=True)))
     return {"kind": "fpo", "id": org.pk, "name": org.name, "village": org.block, "district": org.district, "state": org.state, "members": len(users),
             "grows": [c for c, _ in sorted(grows.items(), key=lambda kv: -kv[1])], "makes": makes, "stock": dict(have), "verified": org.verified,
-            "org_kind": org.get_kind_display()}
+            "org_kind": org.get_kind_display(), "groups": _org_groups(org)}
+
+
+def _farmer_groups(user) -> list:
+    from farming.services import farmer_summary
+    return farmer_summary(user)
+
+
+def _org_groups(org) -> dict:
+    from farming.services import org_summary
+    return org_summary(org)
 
 
 def search(crop: str = "", district: str = "", kind: str = "", state: str = "", limit: int = 40) -> list[dict]:

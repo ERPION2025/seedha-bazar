@@ -50,7 +50,16 @@ class RatesWebCase(TestCase):
         self.client = Client()
 
 
+def viewer(client):
+    """Everything is behind sign-in now; a buyer is the plainest signed-in visitor."""
+    client.force_login(User.objects.create_user("9800000001", role=Role.BUYER, status=UserStatus.ACTIVE, consent_version="2026-10-v1"))
+
+
 class LocationTests(RatesWebCase):
+    def setUp(self):
+        super().setUp()
+        viewer(self.client)
+
     def resolve(self, client=None, lat=24.5362, lon=81.3037):
         return (client or self.client).post("/location/resolve/", json.dumps({"lat": lat, "lon": lon}), content_type="application/json")
 
@@ -111,15 +120,9 @@ class LocationTests(RatesWebCase):
         self.client.force_login(farmer_user(district="Rewa"))
         self.assertContains(self.client.get("/rates/?lang=en"), "Rewa, Madhya Pradesh")
 
-    def test_a_place_shared_before_signing_in_lands_on_the_new_profile(self):
-        rate()
-        self.client.get("/login/?as=farmer&lang=en")
-        self.client.post("/location/choose/", json.dumps({"state": "Madhya Pradesh", "district": "Rewa"}), content_type="application/json")
-        web_login(self.client)
-        self.assertEqual(User.objects.get(phone=FARMER).farmer_profile.district, "Rewa")
-
-    def test_login_page_asks_for_location(self):
-        self.assertContains(self.client.get("/login/?lang=en"), "Allow location to see rates near you")
+    def test_location_needs_sign_in(self):
+        self.assertEqual(Client().post("/location/resolve/", json.dumps({"lat": 24.5, "lon": 81.3}), content_type="application/json").status_code, 302)
+        self.assertNotContains(Client().get("/login/?lang=en"), "Allow location to see rates near you")
 
 
 class LoginNextTests(RatesWebCase):
@@ -140,6 +143,10 @@ class LoginNextTests(RatesWebCase):
 
 @override_settings(RATES_SHOW_DEMO=True)
 class RatesPageTests(RatesWebCase):
+    def setUp(self):
+        super().setUp()
+        viewer(self.client)
+
     def test_page_shows_prices_msp_and_the_sample_warning(self):
         rate(source="demo", modal=2450)
         MspPrice.objects.create(crop="wheat", name="Wheat", season="RMS 2027-28", price_per_quintal=2610, announced_on=TODAY)
@@ -160,7 +167,7 @@ class RatesPageTests(RatesWebCase):
 
     def test_home_strip_and_json_endpoints(self):
         rate(modal=2450)
-        self.assertContains(self.client.get("/?lang=en"), "₹2,450")
+        self.assertContains(self.client.get("/rates/?lang=en"), "₹2,450")
         q = self.client.get("/rates/quote/", {"crop": "wheat", "state": "Madhya Pradesh", "district": "Rewa"}).json()
         self.assertEqual((q["typical"], q["scope"]), (2450, "district"))
         self.assertEqual(self.client.get("/rates/quote/", {"crop": "nope"}).status_code, 400)
@@ -257,6 +264,7 @@ class CalculatorTests(RatesWebCase):
 
     def test_page_carries_crops_prices_and_translations(self):
         rate(modal=2450)
+        viewer(self.client)
         r = self.client.get("/calculator/?lang=hi&crop=wheat&qty=12&unit=kg")
         data = json.loads(r.content.decode().split('id="calc-data" type="application/json">')[1].split("</script>")[0])
         wheat = next(c for c in data["crops"] if c["crop"] == "wheat")
@@ -264,10 +272,11 @@ class CalculatorTests(RatesWebCase):
         self.assertEqual(data["preset"], {"crop": "wheat", "qty": "12", "unit": "kg"})
         self.assertEqual(data["strings"]["Your result"], "आपका नतीजा")
         self.assertEqual(data["speech"], "hi-IN")
-        self.assertFalse(data["user"]["in"])
+        self.assertTrue(data["user"]["in"])
 
     def test_sending_needs_a_signed_in_phone(self):
-        self.assertEqual(self.send(self.client).status_code, 401)
+        r = self.send(self.client)
+        self.assertEqual((r.status_code, r["Location"]), (302, "/login/"))
 
     def test_message_uses_server_side_numbers_not_the_browsers(self):
         self.client.force_login(farmer_user())

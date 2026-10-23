@@ -3,8 +3,14 @@
 {% block mainclass %} narrow{% endblock %}
 {% block content %}
 <h1>{% t "My profile" %}</h1>
+{% if groups %}<a class="door" href="/farmer/groups/"><div class="card tint"><b>👥 {% t "Farms in a group" %}</b>{% for g in groups %}<p style="margin:4px 0 0">{% crop g.crop %}: {% t "{n} farmers, {acres} acres together" n=g.members acres=g.acres|num %}</p>{% endfor %}<p class="hint" style="margin:6px 0 0">{% t "Buyers see this on your profile." %}</p></div></a>{% endif %}
 <form method="post" class="card">{% csrf_token %}
   {% include "web/partials/form_body.html" %}
   <button class="btn block">{% t "Save" %}</button>
 </form>
+<datalist id="district-list"></datalist>
+{{ district_index|json_script:"district-index" }}
+<script>(function(){var idx=JSON.parse(document.getElementById("district-index").textContent),s=document.getElementById("id_state"),dl=document.getElementById("district-list");
+function fill(){dl.innerHTML="";(idx[s.value]||[]).forEach(function(d){var o=document.createElement("option");o.value=d;dl.appendChild(o);});}
+if(s){s.addEventListener("change",fill);fill();}})();</script>
 {% endblock %}

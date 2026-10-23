@@ -43,9 +43,14 @@ def store_or_sell(quantity_kg: D, price_now_q: D, months: int, storage_rate_q_mo
 
 
 def warehouses_near(state: str, district: str):
-    qs = Warehouse.objects.filter(state__iexact=state)
-    near = list(qs.filter(Q(district__iexact=district) | Q(district__istartswith=(district or "").split("(")[0].strip())))
-    rest = [w for w in qs.exclude(pk__in=[w.pk for w in near])[:20]]
+    """WDRA-registered warehouses in the district (active ones first, biggest first), then a few more from the state."""
+    from django.db.models import Case, IntegerField, Value, When
+
+    qs = (Warehouse.objects.filter(state__iexact=state).exclude(wdra_status__in=["Not listed", "Cancelled", "Surrendered"])
+          .annotate(rank=Case(When(wdra_status__iexact="Active", then=Value(0)), When(wdra_status="", then=Value(1)), default=Value(2), output_field=IntegerField()))
+          .order_by("rank", "-capacity_mt"))
+    near = list(qs.filter(Q(district__iexact=district) | Q(district__istartswith=(district or "").split("(")[0].strip()))[:60])
+    rest = list(qs.exclude(pk__in=[w.pk for w in near])[:20])
     return near, rest
 
 

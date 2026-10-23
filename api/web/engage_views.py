@@ -84,7 +84,7 @@ def score(request, slug):
     value = max(0, min(value, 10000))
     state, district = _place(request)
     p = GamePlay.objects.create(user=request.user, game=slug, score=value, points=min(value, G.CAP[slug]), used_voice=bool(body.get("voice")), state=state, district=district)
-    return JsonResponse({"points": p.points})
+    return JsonResponse({"points": p.points, "id": p.pk})
 
 
 def insights(request):

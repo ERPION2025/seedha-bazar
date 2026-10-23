@@ -1,0 +1,14 @@
+{% extends "web/farmer/base.html" %}{% load web_tags %}
+{% block title %}{% t "Group farming" %}{% endblock %}
+{% block content %}
+<h1>👥 {% t "Group farming" %}</h1>
+<div class="card tint"><b>{% t "Grow the same crop with your neighbours, the same way." %}</b>
+  <p style="margin:6px 0 0">{% t "One seed variety, sown the same week, inputs bought together, produce sold as one big lot. Buyers pay more for a large, even lot, dealers give a bulk rate, and your KVK can guide the whole group. Your group also counts in your performance score." %}</p></div>
+<h2>{% t "My groups" %}</h2>
+<div class="grid g2">{% for g in mine %}{% include "web/groups/_card.html" with base="/farmer/groups/" %}{% empty %}<p class="mute">{% t "You are not in a group yet." %}</p>{% endfor %}</div>
+<h2>{% t "Groups near you" %}</h2>
+{% if not fp.district %}<p class="mute">{% t "Add your district to your profile first." %} <a href="/farmer/profile/">{% t "Edit profile" %}</a></p>{% endif %}
+<div class="grid g2">{% for g in near %}{% include "web/groups/_card.html" with base="/farmer/groups/" %}{% empty %}{% if fp.district %}<p class="mute">{% t "No group in {district} yet. Start one below." district=fp.district %}</p>{% endif %}{% endfor %}</div>
+{% if fp.district %}<details class="card"{% if form.errors %} open{% endif %}><summary><b>➕ {% t "Start a group" %}</b></summary>
+<form method="post" style="margin-top:10px">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn">{% t "Start the group" %}</button></form></details>{% endif %}
+{% endblock %}

@@ -32,6 +32,9 @@ INSTALLED_APPS = [
     "engagement",
     "weather",
     "storage",
+    "advisory",
+    "farming",
+    "institution",
     "market",
     "web",
 ]
@@ -40,13 +43,16 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "web.middleware.SiteMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "accounts.sessions.SessionGuardMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "web.middleware.LanguageMiddleware",
     "web.middleware.AttributionMiddleware",
+    "web.middleware.LoginFirstMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -141,6 +147,27 @@ RATES_STATES = [s for s in os.environ.get("RATES_STATES", "").split(",") if s]  
 RATES_REFRESH_HOURS = int(os.environ.get("RATES_REFRESH_HOURS", "24"))
 RATES_SHOW_DEMO = os.environ.get("RATES_SHOW_DEMO", "1" if DEBUG else "0") == "1"  # sample rows are for local trials only
 DEFAULT_STATE = os.environ.get("DEFAULT_STATE", "Madhya Pradesh")
+FACEBOOK_APP_ID = os.environ.get("FACEBOOK_APP_ID", "")
+FACEBOOK_APP_SECRET = os.environ.get("FACEBOOK_APP_SECRET", "")
+FACEBOOK_GRAPH_VERSION = os.environ.get("FACEBOOK_GRAPH_VERSION", "v21.0")
+# Notifications on phones (Web Push). Make keys with: python manage.py make_vapid_keys
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
+VAPID_EMAIL = os.environ.get("VAPID_EMAIL", "mailto:support@seedhabazar.in")
+# WhatsApp Business Cloud API and Facebook Messenger (Meta)
+WHATSAPP_TOKEN = os.environ.get("WHATSAPP_TOKEN", "")
+WHATSAPP_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "")
+WHATSAPP_TEMPLATE = os.environ.get("WHATSAPP_TEMPLATE", "seedha_update")  # an approved utility template with one body variable {{1}}
+FACEBOOK_PAGE_ID = os.environ.get("FACEBOOK_PAGE_ID", "")
+FACEBOOK_PAGE_TOKEN = os.environ.get("FACEBOOK_PAGE_TOKEN", "")
+META_VERIFY_TOKEN = os.environ.get("META_VERIFY_TOKEN", "")
+# Maps: "osm" (OpenStreetMap, free, default) or "google" (needs GOOGLE_MAPS_API_KEY)
+MAP_PROVIDER = os.environ.get("MAP_PROVIDER", "osm")
+GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+MAP_TILE_URL = os.environ.get("MAP_TILE_URL", "https://tile.openstreetmap.org/{z}/{x}/{y}.png")
+# Optional server-side speech to text (Bhashini, Government of India)
+BHASHINI_USER_ID = os.environ.get("BHASHINI_USER_ID", "")
+BHASHINI_API_KEY = os.environ.get("BHASHINI_API_KEY", "")
 WEATHER_API_KEY = os.environ.get("WEATHER_API_KEY", "")  # Open-Meteo is free for non-commercial use; commercial use needs their key
 WEATHER_LOOKUP_VILLAGES = os.environ.get("WEATHER_LOOKUP_VILLAGES", "1") == "1"
 NEWS_REFRESH_HOURS = int(os.environ.get("NEWS_REFRESH_HOURS", "6"))
@@ -149,7 +176,26 @@ GEOCODER_USER_AGENT = os.environ.get("GEOCODER_USER_AGENT", "SeedhaBazar/1.0 (+h
 
 # --- SMS / WhatsApp connectors (see notify/backends.py) ---
 NOTIFY_BACKENDS = {"sms": os.environ.get("NOTIFY_SMS_BACKEND", "notify.backends.LogBackend"),
-                   "whatsapp": os.environ.get("NOTIFY_WHATSAPP_BACKEND", "notify.backends.LogBackend")}
+                   "whatsapp": os.environ.get("NOTIFY_WHATSAPP_BACKEND", "notify.backends.WhatsAppCloudBackend" if os.environ.get("WHATSAPP_TOKEN") else "notify.backends.LogBackend"),
+                   "messenger": os.environ.get("NOTIFY_MESSENGER_BACKEND", "notify.backends.MessengerBackend" if os.environ.get("FACEBOOK_PAGE_TOKEN") else "notify.backends.LogBackend")}
 NOTIFY_WEBHOOK_URL = os.environ.get("NOTIFY_WEBHOOK_URL", "")
 NOTIFY_WEBHOOK_SECRET = os.environ.get("NOTIFY_WEBHOOK_SECRET", "")
 NOTIFY_MAX_PER_PHONE_PER_DAY = int(os.environ.get("NOTIFY_MAX_PER_PHONE_PER_DAY", "10"))
+
+# --- Institution Connect: the KVK / research agency application, on its own address ---
+# The same database, a different site: its own sign-in, its own sessions (cookies are per host), its own menus and pages.
+INSTITUTION_HOSTS = [h for h in os.environ.get("INSTITUTION_HOSTS", "connect.localhost,connect.testserver").split(",") if h]
+INSTITUTION_URL = os.environ.get("INSTITUTION_URL", "http://connect.localhost:8000").rstrip("/")
+ALLOWED_HOSTS += [h for h in INSTITUTION_HOSTS if h not in ALLOWED_HOSTS]
+
+# --- Feeds: district advisories and registered warehouses ---
+MKISAN_ENABLED = os.environ.get("MKISAN_ENABLED", "1") == "1"
+MKISAN_ADVISORY_URL = os.environ.get("MKISAN_ADVISORY_URL", "https://mkisan.gov.in/Home/Advisory")
+ADVISORY_REFRESH_HOURS = float(os.environ.get("ADVISORY_REFRESH_HOURS", "6"))
+IMD_API_ENABLED = os.environ.get("IMD_API_ENABLED", "0") == "1"  # only after IMD whitelists this server's IP
+IMD_WARNINGS_URL = os.environ.get("IMD_WARNINGS_URL", "https://mausam.imd.gov.in/api/warnings_district_api.php")
+WDRA_ENABLED = os.environ.get("WDRA_ENABLED", "1") == "1"
+WDRA_LIST_URL = os.environ.get("WDRA_LIST_URL", "https://wdra.gov.in/registered-wh-public?p_p_id=in_gov_wdra_warehouse_publiclist_portlet_WarehousePubliclistPortlet_INSTANCE_faio"
+                               "&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view&_in_gov_wdra_warehouse_publiclist_portlet_WarehousePubliclistPortlet_INSTANCE_faio_javax.portlet.action=processWarehouseListReport")
+WDRA_REFRESH_DAYS = int(os.environ.get("WDRA_REFRESH_DAYS", "7"))
+WDRA_STATES_PER_RUN = int(os.environ.get("WDRA_STATES_PER_RUN", "6"))  # spread the 37 states over the week, gently

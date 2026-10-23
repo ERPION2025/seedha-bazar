@@ -1,0 +1,18 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Data feeds" %}{% endblock %}
+{% block content %}
+<h1>🔄 {% t "Data feeds" %}</h1>
+<div class="card"><h3>🏬 {% t "Registered warehouses (WDRA)" %}</h3>
+  <p class="mute">{% t "Read from wdra.gov.in state by state by the worker; each state is refreshed every {d} days." d=refresh_days %} {% t "Total" %}: <b>{{ wdra_total }}</b> · {% t "Active" %}: <b>{{ wdra_active }}</b></p>
+  <form method="post" class="row">{% csrf_token %}<input type="hidden" name="feed" value="wdra"><select name="state">{% for s in states %}<option>{{ s }}</option>{% endfor %}</select><button class="btn small">{% t "Refresh this state now" %}</button></form>
+  <p class="hint">{% t "WDRA's site is slow: one state can take a minute or more." %}</p>
+  <div class="scroll"><table class="tbl"><thead><tr><th>{% t "State" %}</th><th>{% t "Warehouses" %}</th><th>{% t "Active" %}</th><th>{% t "Active capacity" %}</th><th>{% t "Last read" %}</th></tr></thead><tbody>
+  {% for r in wdra %}<tr><td>{{ r.state }}</td><td>{{ r.n }}</td><td>{{ r.active }}</td><td>{{ r.cap|num:0 }} t</td><td>{% if r.last %}{{ r.last.started_at|date:"j M H:i" }} {% if r.last.ok %}✔ +{{ r.last.added }} / {{ r.last.updated }}{% if r.last.gone %} / −{{ r.last.gone }}{% endif %}{% else %}<span class="neg">✖ {{ r.last.error|truncatechars:60 }}</span>{% endif %}{% else %}—{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="5" class="mute">{% t "Not read yet. The worker starts with the states never read." %}</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="card"><h3>📢 {% t "District advisories" %}</h3>
+  {% for s in by_source %}<div class="line"><span>{{ s.source }}</span><span>{{ s.n }} · {% t "with a district" %}: {{ s.placed }}</span></div>{% empty %}<p class="mute">—</p>{% endfor %}
+  <p style="margin:10px 0 4px"><b>mKisan</b>: {% if mkisan_on %}{% t "On" %}{% else %}{% t "Off" %}{% endif %} · <b>IMD</b>: {% if imd_on %}{% t "On" %}{% else %}{% t "Off until IMD whitelists our server's IP address" %}{% endif %}</p>
+  <form method="post">{% csrf_token %}<input type="hidden" name="feed" value="mkisan"><button class="btn small">{% t "Read mKisan now" %}</button></form>
+  <div class="scroll"><table class="tbl"><thead><tr><th>{% t "Feed" %}</th><th>{% t "When" %}</th><th>{% t "Read" %}</th><th>{% t "New" %}</th><th></th></tr></thead><tbody>
+  {% for r in runs %}<tr><td>{{ r.feed }}</td><td>{{ r.started_at|date:"j M H:i" }}</td><td>{{ r.fetched }}</td><td>{{ r.saved }}</td><td>{% if r.ok %}✔{% else %}<span class="neg">{{ r.error|truncatechars:60 }}</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

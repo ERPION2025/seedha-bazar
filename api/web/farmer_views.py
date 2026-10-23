@@ -73,6 +73,9 @@ def home(request):
     ctx["wx"] = home_alert(request.user)
     from market.models import PoolShare
     ctx["pool_asks"] = PoolShare.objects.filter(farmer=request.user, status="proposed").count()
+    from farming import services as farming
+    ctx["my_groups"] = farming.farmer_summary(request.user)
+    ctx["groups_near"] = len(farming.near(request.user)) if not ctx["my_groups"] else 0
     from engagement import scores
     ctx["scores"] = {"activity": scores.activity(request.user)["score"], "performance": scores.performance(request.user)["score"]}
     return render(request, "web/farmer/home.html", ctx)
@@ -84,7 +87,7 @@ def profile(request):
     form = f.FarmerProfileForm(request.POST, lang=request.lang) if request.method == "POST" else f.FarmerProfileForm.from_profile(fp, request.lang)
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
-        for k in ("name", "village", "block", "district", "land_acres"):
+        for k in ("name", "village", "block", "state", "district", "land_acres"):
             setattr(fp, k, d[k])
         fp.crops = f.split_crops(d["crops"], d["other_crops"])
         fp.discoverable = d.get("discoverable", False)
@@ -93,7 +96,10 @@ def profile(request):
         audit.log("farmer_profile_updated", actor=request.user, target=fp, request=request, via="web")
         ok(request, "Profile saved.")
         return redirect("/farmer/")
-    return render(request, "web/farmer/profile.html", {"form": form, "fp": fp})
+    from extension import geo
+    from farming.services import farmer_summary
+    return render(request, "web/farmer/profile.html", {"form": form, "fp": fp, "district_index": {s: geo.districts_of(s) for s in geo.states()},
+                                                       "groups": farmer_summary(request.user)})
 
 
 @farmer_only

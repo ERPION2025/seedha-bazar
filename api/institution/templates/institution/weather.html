@@ -1,0 +1,30 @@
+{% extends "institution/scoped.html" %}{% load web_tags %}
+{% block title %}{% t "Alerts and weather" %}{% endblock %}
+{% block content %}
+<h1>🌦️ {% t "Alerts and weather" %}</h1>
+<div class="grid g2">
+<div class="card"><h3>{% t "Weather alerts sent to farmers" %}</h3><p class="hint">{% t "From each farm's forecast and crop stage. Number of farmers per alert." %}</p>
+  {% for a in alerts %}<div class="line"><span><span class="pill {% if a.severity == "critical" %}red{% else %}sun{% endif %}">{% if a.severity == "critical" %}{% t "Critical" %}{% else %}{% t "Warning" %}{% endif %}</span> {{ a.day|date:"j M" }} · {% crop a.crop %} · {{ a.district }}</span><b>{{ a.n }}</b></div>
+  {% empty %}<p class="mute">{% t "No weather alerts for your districts now." %}</p>{% endfor %}</div>
+<div class="card"><h3>{% t "Forecast" %}</h3>
+  {% for f in forecasts %}<p style="margin:6px 0 2px"><b>{{ f.district }}</b></p>
+    {% for d in f.days %}<div class="line"><span>{{ d.date|date:"D j M" }}</span><span>{{ d.tmin|num:0 }}–{{ d.tmax|num:0 }}°C · 🌧 {{ d.rain_mm|num:0 }} mm{% if d.wind %} · 💨 {{ d.wind|num:0 }} km/h{% endif %}</span></div>
+    {% empty %}<p class="mute">{% t "Forecast not available right now." %}</p>{% endfor %}
+  {% endfor %}
+  <p class="hint">{% t "Source: Open-Meteo." %} {% if imd_on %}{% t "IMD district warnings are on." %}{% else %}{% t "IMD district warnings switch on when IMD allows our server." %}{% endif %}</p></div>
+</div>
+
+<div class="card tint"><h3>📢 {% t "Publish advice for farmers" %}</h3><p class="hint">{% t "Farmers and FPOs of the district see it on their weather page and get a notification." %}</p>
+<form method="post">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn">{% t "Publish" %}</button></form></div>
+
+<h2>{% t "Advisories for your districts" %}</h2>
+{% for a in advisories %}<a class="door" href="/advisories/{{ a.pk }}/"><div class="card{% if a.severity == "critical" %} warn{% endif %}">
+  <div class="row between"><b>{{ a.issuer|default:a.get_source_display }}</b><span class="mute">{{ a.published_at|date:"j M Y" }}</span></div>
+  <p style="margin:4px 0">{% if a.title %}<b>{{ a.title }}</b> · {% endif %}{{ a.text|truncatechars:220 }}</p>
+  <div class="row"><span class="pill grey">{% t a.get_source_display %}</span><span class="pill grey">{% t a.get_kind_display %}</span>{% if a.district %}<span class="pill grey">{{ a.district }}</span>{% endif %}{% for c in a.crops %}<span class="pill grey">{% crop c %}</span>{% endfor %}</div></div></a>
+{% empty %}<p class="mute">{% t "No advisories for your districts yet." %}</p>{% endfor %}
+
+{% if national %}<h2>{% t "From KVKs across India (mKisan)" %}</h2>
+<p class="hint">{% t "These posts do not say which district they are for, so farmers do not see them." %}{% if feed %} {% t "Last read" %}: {{ feed.started_at|date:"j M H:i" }}{% endif %}</p>
+{% for a in national %}<div class="card"><div class="row between"><b>{{ a.author }}</b><span class="mute">{{ a.published_at|date:"j M Y" }}</span></div><p style="margin:4px 0 0">{{ a.text|truncatechars:240 }}</p></div>{% endfor %}{% endif %}
+{% endblock %}

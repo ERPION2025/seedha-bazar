@@ -47,6 +47,8 @@ class Alert(models.Model):
     crop = models.CharField(max_length=60)
     stage = models.CharField(max_length=12)
     kind = models.CharField(max_length=8, choices=Kind.choices)
+    severity = models.CharField(max_length=8, default="warning", choices=[("critical", "Critical"), ("warning", "Warning")], db_index=True)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
     day = models.DateField()
     advice = models.CharField(max_length=300, help_text="English sentence key; shown translated")
     value = models.CharField(max_length=40, blank=True, help_text="The reading behind it, e.g. 42 mm, 3°C")

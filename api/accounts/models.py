@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 
 
@@ -118,3 +119,55 @@ class AuditEvent(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class SitePolicy(models.Model):
+    """User policies staff can change in the console. There is one row; `current()` creates it with the defaults."""
+
+    max_sessions = models.PositiveSmallIntegerField(default=2, help_text="Most devices a person can be signed in on at once. Signing in on one more signs out the oldest.")
+    session_days = models.PositiveSmallIntegerField(default=30, help_text="Days before a person must sign in again")
+    facebook_login = models.BooleanField(default=False, help_text="Show 'Continue with Facebook' on the sign-in page (needs FACEBOOK_APP_ID and FACEBOOK_APP_SECRET)")
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def current(cls) -> "SitePolicy":
+        obj = cls.objects.order_by("pk").first()
+        return obj or cls.objects.create()
+
+
+class LoginSession(models.Model):
+    """One signed-in browser or phone. Kept after sign-out for the record."""
+
+    class Method(models.TextChoices):
+        OTP = "otp", "Phone code"
+        FACEBOOK = "facebook", "Facebook"
+        EXISTING = "existing", "Signed in before session records began"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="login_sessions")
+    session_key = models.CharField(max_length=64, db_index=True)
+    method = models.CharField(max_length=10, choices=Method.choices, default=Method.OTP)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    last_seen = models.DateTimeField(default=timezone.now)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    end_reason = models.CharField(max_length=20, blank=True, help_text="logout, limit (too many devices), staff, expired")
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class SocialLogin(models.Model):
+    """A Facebook (or later another provider) account linked to a Seedha Bazar user."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="social_logins")
+    provider = models.CharField(max_length=20, default="facebook")
+    uid = models.CharField(max_length=64)
+    name = models.CharField(max_length=160, blank=True)
+    email = models.EmailField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    last_login = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["provider", "uid"], name="uniq_social_uid")]

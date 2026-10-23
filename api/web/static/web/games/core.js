@@ -70,7 +70,10 @@
         speak(T("Your score") + " " + score);
         if (!cfg.signed_in) { saved.textContent = T("Sign in to save your points."); return; }
         fetch("/games/" + cfg.slug + "/score/", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CSRFToken": csrf() },
-          body: JSON.stringify({ score: score, voice: usedVoice }) }).then(function (r) { return r.json(); }).then(function (d) { if (d.points != null) saved.textContent = T("Saved to your points.") + " +" + d.points; }).catch(function () {});
+          body: JSON.stringify({ score: score, voice: usedVoice }) }).then(function (r) { return r.json(); }).then(function (d) {
+          if (d.points != null) saved.textContent = T("Saved to your points.") + " +" + d.points;
+          if (d.id) { var sh = el("button", "btn sun", "📣 " + T("Share my score")); sh.type = "button"; sh.setAttribute("data-share", ""); sh.setAttribute("data-kind", "score"); sh.setAttribute("data-ref", d.id); box.insertBefore(sh, again); }
+        }).catch(function () {});
       }
     };
     function start() {

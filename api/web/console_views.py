@@ -320,3 +320,87 @@ def centre_staff(request, pk):
     else:
         messages.error(request, "; ".join(str(e) for errs in form.errors.values() for e in errs))
     return redirect("/console/centres/")
+
+
+# ---------- settings: user policies, integrations, sessions ----------
+@staff_only
+def site_settings(request):
+    from accounts.models import SitePolicy
+
+    from . import integrations
+
+    policy = SitePolicy.current()
+    form = f.PolicyForm(request.POST or None, lang=request.lang, initial={"max_sessions": policy.max_sessions, "session_days": policy.session_days,
+                                                                         "facebook_login": policy.facebook_login})
+    if request.method == "POST" and form.is_valid():
+        for k, v in form.cleaned_data.items():
+            setattr(policy, k, v)
+        policy.updated_by = request.user
+        policy.save()
+        audit.log("policy_changed", actor=request.user, target=policy, request=request, **{k: str(v) for k, v in form.cleaned_data.items()})
+        if request.POST.get("apply_now"):
+            from accounts import sessions
+            from accounts.models import LoginSession
+            for uid in set(LoginSession.objects.filter(ended_at__isnull=True).values_list("user_id", flat=True)):
+                sessions.enforce(User.objects.get(pk=uid), policy.max_sessions)
+        ok(request, "Saved.")
+        return redirect("/console/settings/")
+    return render(request, "web/console/settings.html", {"form": form, "policy": policy, "integrations": integrations.status()})
+
+
+@staff_only
+def login_sessions(request):
+    from accounts.models import LoginSession
+
+    q = (request.GET.get("q") or "").strip()
+    rows = LoginSession.objects.select_related("user")
+    if q:
+        rows = rows.filter(user__phone__icontains=q)
+    if request.GET.get("active"):
+        rows = rows.filter(ended_at__isnull=True)
+    return render(request, "web/console/sessions.html", {"rows": rows[:300], "q": q, "active": request.GET.get("active", "")})
+
+
+@staff_only
+@require_POST
+def end_session(request, pk):
+    from accounts import sessions
+    from accounts.models import LoginSession
+
+    ls = get_object_or_404(LoginSession, pk=pk, ended_at__isnull=True)
+    sessions.end(ls, "staff")
+    audit.log("session_ended_by_staff", actor=request.user, target=ls.user, request=request)
+    ok(request, "Signed out.")
+    return redirect(request.POST.get("back") if (request.POST.get("back") or "").startswith("/console/") else "/console/sessions/")
+
+
+# ---------- data feeds: WDRA warehouses, mKisan advisories, IMD warnings ----------
+@staff_only
+def feeds(request):
+    from django.conf import settings
+
+    from advisory.models import Advisory, FeedRun
+    from storage import wdra
+    from storage.models import Warehouse
+
+    if request.method == "POST":
+        what = request.POST.get("feed")
+        if what == "mkisan":
+            from advisory import mkisan
+            out = mkisan.sync()
+            ok(request, "Read {n} posts, {m} new.", n=out["fetched"], m=out["saved"])
+        elif what == "wdra" and request.POST.get("state"):
+            runs = wdra.sync_states([request.POST["state"]], pause=0)
+            r = runs[0] if runs else None
+            if r and r.ok:
+                ok(request, "Read {n} warehouses, {m} new.", n=r.rows, m=r.added)
+            else:
+                messages.error(request, (r.error if r else "Unknown state") or "Failed")
+        return redirect("/console/feeds/")
+    from django.db.models import Count
+    return render(request, "web/console/feeds.html", {
+        "wdra": wdra.status(), "wdra_total": Warehouse.objects.filter(source="wdra").count(), "wdra_active": Warehouse.objects.filter(source="wdra", wdra_status__iexact="Active").count(),
+        "states": __import__("extension.geo", fromlist=["states"]).states(), "refresh_days": settings.WDRA_REFRESH_DAYS,
+        "runs": FeedRun.objects.all()[:15], "imd_on": settings.IMD_API_ENABLED, "mkisan_on": settings.MKISAN_ENABLED,
+        "by_source": list(Advisory.objects.values("source").annotate(n=Count("id"), placed=Count("id", filter=~Q(district=""))).order_by("source")),
+    })

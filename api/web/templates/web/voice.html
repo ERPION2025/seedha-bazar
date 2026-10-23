@@ -1,0 +1,36 @@
+{% extends base_tpl %}{% load static web_tags %}
+{% block title %}{% t "Speak" %}{% endblock %}
+{% block content %}
+<h1>🎙️ {% t "Speak to Seedha Bazar" %}</h1>
+{% if not consent %}
+<div class="card tint"><h3>{% t "Before you use the microphone" %}</h3>
+  <ul style="padding-left:20px;margin:0 0 10px">
+    <li>{% t "We use the microphone only while you press the button. Your phone will also ask for permission." %}</li>
+    <li>{% t "Your words are turned into text on your phone (Chrome uses Google's speech service). We keep the text so we can show you news, schemes and advice about what you talk about." %}</li>
+    <li>{% t "Keeping the recording is your choice. Recordings are deleted after 180 days." %}</li>
+    <li>{% t "You can delete everything and withdraw at any time on this page." %}</li></ul>
+  <form method="post" action="/voice/agree/">{% csrf_token %}<label class="check-line"><input type="checkbox" name="keep_audio" value="1"> {% t "Also keep my recordings (helps experts hear exactly what I said)" %}</label>
+    <button class="btn">{% t "I agree, use the microphone" %}</button></form></div>
+{% else %}
+<div class="card" id="voice-box" data-keep="{% if consent.keep_audio %}1{% endif %}">
+  <div class="field"><label for="vlang">{% t "Language I will speak" %}</label><select id="vlang">{% for code, name in languages %}<option value="{{ code }}"{% if code == default_lang %} selected{% endif %}>{{ name }}</option>{% endfor %}</select></div>
+  <button type="button" class="btn block mic-hold" id="vrec">🎙️ {% t "Tap and speak" %}</button>
+  <p class="big-text" id="vtext" aria-live="polite"></p>
+  <p class="hint" id="vstatus"></p>
+</div>
+{% if fy.interests.topics or fy.interests.crops %}<div class="card sun"><h3>{% t "You talk most about" %}</h3><div class="chip-row" style="margin-top:0">
+  {% for t, n in fy.interests.topics %}<a class="chip" href="/news/?topic={{ t }}">{% t t|topic_label %} · {{ n }}</a>{% endfor %}{% for c, n in fy.interests.crops %}<a class="chip" href="/value/{{ c }}/">{% crop c %} · {{ n }}</a>{% endfor %}</div></div>
+<h2>{% t "For you" %}</h2>
+<div class="grid g2">{% for a in fy.news %}{% include "web/partials/article_card.html" %}{% endfor %}</div>
+{% for s in fy.schemes %}<a class="door" href="/schemes/{{ s.slug }}/"><div class="card"><b>🏛️ {{ s.name }}</b><br><span class="mute">{{ s.short }}</span></div></a>{% endfor %}
+{% for c in fy.crops %}<a class="btn small ghost" href="/rates/?crop={{ c }}">📈 {% crop c %}</a> {% endfor %}{% endif %}
+<h2>{% t "What I said" %}</h2>
+{% for v in notes %}<div class="card"><p style="margin:0">{{ v.text|default:"(voice note)" }}</p>
+  <p class="mute" style="margin:6px 0">{{ v.created_at|date:"j M, H:i" }} · {{ v.language }}{% for t in v.topics %} · {% t t|topic_label %}{% endfor %}{% if v.audio %} · 🔊{% endif %}</p>
+  <div class="row"><form method="post" action="/voice/{{ v.pk }}/expert/">{% csrf_token %}<button class="btn small">🧑‍🔬 {% t "Ask an expert about this" %}</button></form>
+    <form method="post" action="/voice/{{ v.pk }}/delete/">{% csrf_token %}<button class="link-btn" style="color:var(--red)">{% t "Delete" %}</button></form></div></div>
+{% empty %}<p class="mute">{% t "Nothing yet. Tap the button and say what is on your mind: your crop, a pest, prices, a scheme." %}</p>{% endfor %}
+<form method="post" action="/voice/withdraw/" style="margin-top:16px">{% csrf_token %}<button class="link-btn" style="color:var(--red)">{% t "Delete all my voice notes and stop using the microphone" %}</button></form>
+<script src="{% static 'web/voice_note.js' %}" defer></script>
+{% endif %}
+{% endblock %}

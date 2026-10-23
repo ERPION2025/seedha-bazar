@@ -125,9 +125,9 @@ class MaskingTests(TestCase):
 
 
 class BrowseTests(MarketCase):
-    def test_public_can_browse_but_not_see_who_the_seller_is(self):
+    def test_buyers_can_browse_but_not_see_who_the_seller_is(self):
         self.listing(description="Sharbati, clean.")
-        page = Client().get("/market/?lang=en").content.decode()
+        page = self.bc.get("/market/?lang=en").content.decode()
         self.assertIn("Wheat", page)
         self.assertIn("Ramesh", page)  # first name and village only
         self.assertNotIn(SELLER, page)
@@ -136,9 +136,9 @@ class BrowseTests(MarketCase):
     def test_filters_and_sorting(self):
         self.listing(price=Decimal("2600"))
         self.listing(crop="gram", price=Decimal("5600"), district="Satna")
-        self.assertNotContains(Client().get("/market/?crop=gram&lang=en"), "Wheat</h3>")
-        self.assertContains(Client().get("/market/?district=satn&lang=en"), "Satna")
-        rows = Client().get("/market/?sort=cheap&lang=en").context["rows"]
+        self.assertNotContains(self.bc.get("/market/?crop=gram&lang=en"), "Wheat</h3>")
+        self.assertContains(self.bc.get("/market/?district=satn&lang=en"), "Satna")
+        rows = self.bc.get("/market/?sort=cheap&lang=en").context["rows"]
         self.assertEqual([r.crop for r in rows], ["wheat", "gram"])
 
     def test_hidden_expired_and_paused_listings_are_not_listed(self):
@@ -146,15 +146,15 @@ class BrowseTests(MarketCase):
         Listing.objects.filter(pk=a.pk).update(status="hidden")
         Listing.objects.filter(pk=b.pk).update(status="paused")
         Listing.objects.filter(pk=c.pk).update(expires_at=timezone.now() - timedelta(days=1))
-        self.assertEqual(len(Client().get("/market/").context["rows"]), 0)
-        self.assertEqual(Client().get(f"/market/{a.pk}/").status_code, 404)  # hidden: gone for the public
-        self.assertContains(Client().get(f"/market/{b.pk}/?lang=en"), "paused this listing")  # paused: visible but not buyable
+        self.assertEqual(len(self.bc.get("/market/").context["rows"]), 0)
+        self.assertEqual(self.bc.get(f"/market/{a.pk}/").status_code, 404)  # hidden: gone for the public
+        self.assertContains(self.bc.get(f"/market/{b.pk}/?lang=en"), "paused this listing")  # paused: visible but not buyable
         self.assertEqual(self.sc.get(f"/market/{a.pk}/").status_code, 200)  # the seller still sees their own hidden listing
 
     def test_detail_shows_the_mandi_comparison_and_value(self):
         rate(modal=2400)
         li = self.listing(price=Decimal("2520"))
-        page = Client().get(f"/market/{li.pk}/?lang=en").content.decode()
+        page = self.bc.get(f"/market/{li.pk}/?lang=en").content.decode()
         self.assertIn("₹25,200", page)
         self.assertIn("+5% compared with the mandi", page)
 
@@ -271,7 +271,7 @@ class SellerWebTests(MarketCase):
 
     def test_buyers_and_anonymous_cannot_sell(self):
         self.assertRedirects(self.bc.get("/farmer/sell/new/"), "/buyer/", fetch_redirect_response=False)
-        self.assertRedirects(Client().get("/farmer/sell/"), "/login/", fetch_redirect_response=False)
+        self.assertRedirects(Client().get("/farmer/sell/"), "/login/?next=/farmer/sell/", fetch_redirect_response=False)
 
     def test_the_sold_listing_cannot_be_enquired_about(self):
         li = self.listing()
@@ -312,7 +312,7 @@ class FpoSellingTests(MarketCase):
         li = Listing.objects.get()
         self.assertRedirects(r, f"/fpo/sell/{li.pk}/", fetch_redirect_response=False)
         self.assertEqual(li.organisation, self.org)
-        page = Client().get(f"/market/{li.pk}/?lang=en").content.decode()
+        page = self.bc.get(f"/market/{li.pk}/?lang=en").content.decode()
         self.assertIn("Naigarhi FPO", page)
         self.assertIn("Verified", page)
 
@@ -501,10 +501,10 @@ class ConsoleMarketTests(MarketCase):
     def test_admin_can_hide_and_restore_a_listing(self):
         li = self.listing()
         self.ac.post(f"/console/listings/{li.pk}/visibility/", {"hide": "1"})
-        self.assertEqual(len(Client().get("/market/").context["rows"]), 0)
+        self.assertEqual(len(self.bc.get("/market/").context["rows"]), 0)
         self.assertContains(self.sc.get(f"/farmer/sell/{li.pk}/?lang=en"), "has hidden this listing")
         self.ac.post(f"/console/listings/{li.pk}/visibility/", {"hide": "0"})
-        self.assertEqual(len(Client().get("/market/").context["rows"]), 1)
+        self.assertEqual(len(self.bc.get("/market/").context["rows"]), 1)
 
     def test_admin_verifies_a_buyer_and_sellers_see_the_badge(self):
         bp = self.buyer.buyer_profile
@@ -547,7 +547,3 @@ class BuyerHomeTests(MarketCase):
         c = Client()
         c.force_login(make_buyer("9866666666", complete=False))
         self.assertContains(c.get("/buyer/?lang=en"), "Tell us about your business")
-
-    def test_home_page_shows_fresh_listings(self):
-        self.listing()
-        self.assertContains(Client().get("/?lang=en"), "Fresh from farmers")

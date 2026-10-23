@@ -14,6 +14,7 @@
   <div class="card stat"><small>{% t "Acres" %}</small><div class="big">{{ acres|num:1 }}</div></div>
 </div>
 
+<a class="door" href="/fpo/groups/"><div class="card tint"><b>👥 {% t "Group farming" %}</b>{% if groups.groups %}<p style="margin:4px 0 0">{% t "{g} crop groups: {n} farmers on {acres} acres grow the same way and sell as one lot." g=groups.groups n=groups.farmers acres=groups.acres|num:0 %}</p>{% else %}<p style="margin:4px 0 0">{% t "Start a crop group: members who grow the same crop buy and sell together at a better rate. Buyers see it on your profile." %}</p>{% endif %}</div></a>
 {% if requests %}<div class="card sun"><b>{% t "{n} farmers want to join." n=requests %}</b> <a class="btn small" href="/fpo/requests/">{% t "Review" %}</a></div>{% endif %}
 {% if waiting %}<div class="card"><b>{% t "{n} farmers have not entered their code yet." n=waiting %}</b> <a href="/fpo/farmers/">{% t "See who" %}</a></div>{% endif %}
 

@@ -33,11 +33,15 @@ def page(request):
     crops, alerts = [], []
     if u.is_authenticated and u.role == Role.FARMER and days:
         crops = services.crop_rows(u)
-        alerts = services.alerts_for(u, days)
+        alerts = sorted(services.alerts_for(u, days), key=lambda a: (a["severity"] != "critical", a["day"]))
     members_alerts = []
     if u.is_authenticated and u.role == Role.AGENT and org is not None:
         members_alerts = Alert.objects.filter(farmer__farmer_profile__organisation=org, day__gte=timezone.localdate()).select_related("farmer__farmer_profile")[:50]
+    from advisory.services import for_place
+    my_crops = list(getattr(getattr(u, "farmer_profile", None), "crops", None) or []) if u.is_authenticated else []
+    advisories = for_place(state, district, my_crops, limit=8) if district else []
     return render(request, "web/weather.html", {"place": place, "days": days, "crops": crops, "alerts": alerts, "members_alerts": members_alerts, "district": district,
+                                                "advisories": advisories,
                                                 "village": village, "base_tpl": base_for(u) if u.is_authenticated else "web/base.html"})
 
 
@@ -54,3 +58,15 @@ def home_alert(user):
     order = ["frost", "rain", "wind", "heat", "disease", "dry"]
     rows.sort(key=lambda a: (a["day"], order.index(a["kind"])))
     return {"alert": rows[0] if rows else None, "today": days[0] | {"icon": ICONS.get(days[0].get("code"), "🌡️")}}
+
+
+def seen(request):
+    """The farmer has seen the warning: stop showing the banner for these alerts."""
+    from django.shortcuts import redirect
+    from django.views.decorators.http import require_POST  # noqa: F401 - POST checked below
+
+    if request.method == "POST" and request.user.is_authenticated:
+        ids = [int(x) for x in request.POST.getlist("alert") if x.isdigit()]
+        Alert.objects.filter(farmer=request.user, pk__in=ids).update(acknowledged_at=timezone.now())
+    back = request.META.get("HTTP_REFERER", "/farmer/")
+    return redirect(back if back.startswith(request.build_absolute_uri("/")) else "/farmer/")

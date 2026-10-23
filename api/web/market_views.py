@@ -33,7 +33,7 @@ MARKET_UNITS = ("quintal", "kg", "tonne", "bag")
 
 
 def base_for(user) -> str:
-    return {"farmer": "web/farmer/base.html", "agent": "web/fpo/base.html", "buyer": "web/buyer/base.html"}.get(user.role, "web/base.html")
+    return {"farmer": "web/farmer/base.html", "agent": "web/fpo/base.html", "buyer": "web/buyer/base.html", "agronomist": "institution/base.html"}.get(user.role, "web/base.html")
 
 
 def prefix_for(user) -> str:

@@ -36,14 +36,21 @@ def _safe_next(request, target):
     return target if ok else ""
 
 
+def _site(request) -> str:
+    return getattr(request, "site", "main")
+
+
 @ensure_csrf_cookie
 def login_view(request):
+    institution = _site(request) == "institution"
     if request.user.is_authenticated:
-        return redirect(_safe_next(request, request.GET.get("next")) or home_for(request.user))
+        return redirect(_safe_next(request, request.GET.get("next")) or home_for(request.user, _site(request)))
+    if request.GET.get("as") == "kvk" and not institution:  # KVKs and agencies have their own site
+        return redirect(settings.INSTITUTION_URL + "/login/")
     if request.GET.get("next") is not None:
         request.session["login_next"] = _safe_next(request, request.GET["next"])
-    door = request.GET.get("as") or request.session.get("login_as") or "farmer"
-    if door not in ROLE_FOR:
+    door = "kvk" if institution else request.GET.get("as") or request.session.get("login_as") or "farmer"
+    if door not in ROLE_FOR or (door == "kvk" and not institution):
         door = "farmer"
     request.session["login_as"] = door
     form = PhoneForm(request.POST or None, lang=request.lang)
@@ -55,6 +62,8 @@ def login_view(request):
 
         if door == "kvk" and not User.objects.filter(phone=form.cleaned_data["phone"], role=Role.AGRONOMIST).exists():
             form.add_error("phone", tr(request.lang, "This number is not registered for a KVK or research centre. Ask Seedha Bazar to add your centre."))
+        elif door != "kvk" and User.objects.filter(phone=form.cleaned_data["phone"], role=Role.AGRONOMIST).exists():
+            form.add_error("phone", tr(request.lang, "This number belongs to Institution Connect. Sign in there: {url}", url=settings.INSTITUTION_URL))
         else:
             try:
                 sent = otp.request_otp(form.cleaned_data["phone"], channel, audit.client_ip(request), request.lang)
@@ -63,9 +72,11 @@ def login_view(request):
             else:
                 request.session["login"] = {"phone": form.cleaned_data["phone"], "t": time.time(), "channel": channel, "dev_code": sent.get("dev_code", "")}
                 return redirect("/login/verify/")
-    loc = location.current(request)
+    if institution:
+        return render(request, "institution/login.html", {"form": form, "door": door})
+    from . import social
     return render(request, "web/login.html", {"form": form, "door": door, "channels": [c for c in CHANNELS if c in settings.OTP_CHANNELS],
-                                              "loc": loc, "loc_label": location.label(loc)})
+                                              "facebook": social.enabled(), "linking_facebook": request.session.get("link_facebook")})
 
 
 def verify_view(request):
@@ -115,7 +126,9 @@ def consent_view(request):
 
 
 def _finish(request, phone):
-    door = request.session.get("login_as", "farmer")
+    door = "kvk" if _site(request) == "institution" else request.session.get("login_as", "farmer")
+    if door == "kvk" and _site(request) != "institution":
+        door = "farmer"
     lang = request.lang
     try:
         user, is_new = signin.open_account(phone, ROLE_FOR.get(door, Role.FARMER), lang, request)
@@ -126,6 +139,15 @@ def _finish(request, phone):
     request.session.pop("login", None)
     login(request, user)
     request.session.update(keep)
+    from accounts import sessions
+    fb = request.session.pop("link_facebook", None)
+    sessions.start(request, user, "facebook" if fb else "otp")
+    if is_new:
+        from .share_views import credit_signup
+        credit_signup(request, user)
+    if fb:
+        from . import social
+        social.link(user, fb, request)
     audit.log("login_success", actor=user, target=user, request=request, method="otp-web")
     if door == "fpo" and user.role != Role.AGENT:
         warn(request, "This number is already a farmer or buyer account. To register an FPO, use a different number.")
@@ -136,7 +158,7 @@ def _finish(request, phone):
     if loc:  # a place shared before signing in goes onto an empty farmer profile
         location.remember(request, loc.get("state", ""), loc.get("district", ""), loc.get("src", "gps"))
     nxt = _safe_next(request, request.session.pop("login_next", ""))
-    return redirect(nxt or home_for(user))
+    return redirect(nxt or home_for(user, _site(request)))
 
 
 def _join_from_link(request, user, code):
@@ -157,6 +179,8 @@ def logout_view(request):
     if request.user.is_authenticated:
         audit.log("logout", actor=request.user, target=request.user, request=request, method="web")
     lang = request.session.get("lang")
+    from accounts import sessions
+    sessions.end_current(request, "logout")
     logout(request)
     if lang:
         request.session["lang"] = lang
@@ -164,4 +188,4 @@ def logout_view(request):
 
 
 def go_view(request):
-    return redirect(home_for(request.user))
+    return redirect(home_for(request.user, _site(request)))

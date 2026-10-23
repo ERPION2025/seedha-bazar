@@ -55,7 +55,7 @@ class PledgeTests(TestCase):
         self.assertEqual(Pledge.objects.count(), 0)
 
     def test_pages_render(self):
-        for c in (self.c, Client()):
+        for c in (self.c,):
             for lang in ("hi", "mr", "en"):
                 self.assertEqual(c.get(f"/storage/?lang={lang}").status_code, 200)
 

@@ -4,12 +4,18 @@ from .i18n import LANG_NAMES, LANGS
 from .voice_strings import voice_config
 
 
-def home_for(user) -> str:
+def home_for(user, site: str = "main") -> str:
+    """Where a person lands. Institution Connect is its own site: there, everything starts at "/"; on the main site,
+    KVK and research staff are sent to it."""
     if not user or not user.is_authenticated:
         return "/login/"
+    if site == "institution":
+        return "/"
     if user.is_staff or user.role == "admin":
         return "/console/"
-    return {"farmer": "/farmer/", "buyer": "/buyer/", "agent": "/fpo/", "agronomist": "/kvk/"}.get(user.role, "/")
+    if user.role == "agronomist":
+        return settings.INSTITUTION_URL + "/"
+    return {"farmer": "/farmer/", "buyer": "/buyer/", "agent": "/fpo/"}.get(user.role, "/")
 
 
 MAP_TEXT = {"boundaries": "Boundaries: geoBoundaries (ODbL), LGD", "directions": "Directions", "farmers": "Farmers", "fpos": "FPOs", "ngos": "NGOs", "stock": "Stock",
@@ -46,19 +52,37 @@ def site(request):
         kvk_open = Issue.objects.filter(centre__members__user=user, status="open").distinct().count()
     from .menus import menu
 
+    site_name = getattr(request, "site", "main")
     nav = menu(request, {"unread": unread, "deal_unread": deal_unread, "waiting_orgs": waiting_orgs, "kvk_open": kvk_open})
+    portal = "kvk" if site_name == "institution" else ""
+    wx_alerts, alarm_on = [], True
+    if user and user.is_authenticated and user.role == "farmer":
+        from notify.models import Preference
+        from weather.services import active_alerts
+
+        wx_alerts = active_alerts(user)[:3]
+        pref = Preference.objects.filter(user=user).first()
+        alarm_on = pref.alarm_sound if pref else True
     return {
+        "wx_alerts": wx_alerts,
+        "alarm_on": alarm_on,
         "nav": nav,
+        "portal": portal,
+        "site_name": site_name,
+        "base_template": "institution/base.html" if site_name == "institution" else "web/base.html",
+        "INSTITUTION_URL": settings.INSTITUTION_URL,
         "unread": unread,
         "deal_unread": deal_unread,
         "waiting_orgs": waiting_orgs,
         "voice": voice_config(lang),
         "lang": lang,
         "lang_choices": [(code, LANG_NAMES[code]) for code in LANGS],
-        "home_url": home_for(user),
+        "home_url": home_for(user, site_name),
         "GA4_ID": settings.GA4_ID,
         "META_PIXEL_ID": settings.META_PIXEL_ID,
         "SUPPORT_WHATSAPP": settings.SUPPORT_WHATSAPP,
         "SITE_URL": settings.SITE_URL,
         "map_text": map_text(lang),
+        "map_cfg": {"provider": "google" if settings.MAP_PROVIDER == "google" and settings.GOOGLE_MAPS_API_KEY else "osm",
+                    "google_key": settings.GOOGLE_MAPS_API_KEY if settings.MAP_PROVIDER == "google" else "", "tiles": settings.MAP_TILE_URL},
     }

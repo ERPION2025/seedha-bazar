@@ -8,7 +8,8 @@
   var mode = el.getAttribute("data-mode"), stateFile = el.getAttribute("data-state-file"), state = el.getAttribute("data-state");
   var focus = JSON.parse(el.getAttribute("data-focus") || "[]").map(function (s) { return s.toLowerCase(); });
   var map = L.map(el, { zoomControl: true, attributionControl: true }).setView([22.5, 79], 5);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18,
+  var MC = JSON.parse((document.getElementById("map-cfg") || { textContent: "{}" }).textContent);
+  L.tileLayer(MC.tiles || "https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · ' + T.boundaries }).addTo(map);
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
   var dir = function (lat, lon) { return '<a href="https://www.google.com/maps/dir/?api=1&destination=' + lat + "," + lon + '" target="_blank" rel="noopener noreferrer">' + esc(T.directions) + " ↗</a>"; };
@@ -43,7 +44,7 @@
   }
 
   if (mode === "kvk") {
-    fetch("/kvk/map/data/", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (d) {
+    fetch("/map/data/", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (d) {
       stats = d.districts || {};
       return drawBoundaries().then(function () {
         if (d.centre && d.centre.lat) dot(d.centre.lat, d.centre.lon, "#14532d", "<b>🏛️ " + esc(d.centre.name) + "</b>");
@@ -54,6 +55,14 @@
   } else {
     drawBoundaries().then(function () {
       return fetch("/map/data/?state=" + encodeURIComponent(state)).then(function (r) { return r.json(); });
+    }).then(function (d) {
+      if (!d) return;
+      if (!(d.centres || []).length && !(d.orgs || []).length) {
+        // Nothing mapped in this state yet: say so, and show centres from the whole country instead.
+        var note = document.getElementById("map-empty"); if (note) note.hidden = false;
+        return fetch("/map/data/").then(function (r) { return r.json(); });
+      }
+      return d;
     }).then(function (d) {
       if (!d) return;
       var centres = d.centres || [];

@@ -28,6 +28,12 @@ class Warehouse(models.Model):
     storage_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Rupees per quintal per month, if known")
     phone = models.CharField(max_length=40, blank=True)
     verified = models.BooleanField(default=False, help_text="Checked against the WDRA list")
+    wdra_status = models.CharField(max_length=30, blank=True, db_index=True, help_text="As WDRA lists it: Active, Inactive, Cancelled... 'Not listed' once it drops off")
+    remarks = models.CharField(max_length=200, blank=True, help_text="WDRA's remark, e.g. insufficient insurance")
+    registered_on = models.DateField(null=True, blank=True)
+    valid_until = models.DateField(null=True, blank=True)
+    source = models.CharField(max_length=8, default="manual", help_text="wdra: read from the WDRA public list; manual: added by hand or CSV")
+    last_seen_at = models.DateTimeField(null=True, blank=True, help_text="Last time the WDRA list showed it")
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -36,6 +42,24 @@ class Warehouse(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class WarehouseSync(models.Model):
+    """One read of one state's page of the WDRA public list of registered warehouses."""
+
+    state = models.CharField(max_length=60, db_index=True)
+    state_code = models.CharField(max_length=4)
+    started_at = models.DateTimeField(default=timezone.now)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    ok = models.BooleanField(default=False)
+    rows = models.PositiveIntegerField(default=0)
+    added = models.PositiveIntegerField(default=0)
+    updated = models.PositiveIntegerField(default=0)
+    gone = models.PositiveIntegerField(default=0)
+    error = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["-started_at"]
 
 
 class Pledge(models.Model):

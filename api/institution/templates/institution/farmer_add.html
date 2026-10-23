@@ -1,0 +1,9 @@
+{% extends "institution/scoped.html" %}{% load web_tags %}
+{% block title %}{% t "Add a farmer" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<p><a href="/farmers/">← {% t "Farmers" %}</a></p>
+<h1>➕ {% t "Add a farmer" %}</h1>
+<p class="mute">{% t "For farmers your centre works with. The farmer gets a code on their phone and confirms it; until then the account waits." %}</p>
+<form method="post" class="card">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn block">{% t "Add farmer" %}</button></form>
+{% endblock %}

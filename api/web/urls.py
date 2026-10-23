@@ -1,7 +1,7 @@
-from django.urls import path
+from django.urls import path, re_path
 
-from . import pool_views, statement_views, storage_views, weather_views
-from . import auth_views, buyer_views, catalog_views, console_views, deals_views, engage_views, farmer_views, fpo_views, help_views, inputs_views, kvk_views, insurance_views, knowledge_views, location, market_views, public_views, rates_views
+from . import group_views, notify_views, pool_views, share_views, social, voice_views, statement_views, storage_views, weather_views
+from . import auth_views, buyer_views, catalog_views, console_views, deals_views, engage_views, farmer_views, fpo_views, help_views, inputs_views, insurance_views, knowledge_views, location, market_views, public_views, rates_views
 
 urlpatterns = [
     # public
@@ -78,10 +78,36 @@ urlpatterns = [
     path("fpo/requests/<int:pk>/reject/", fpo_views.decide, {"approve": False}),
     path("fpo/auto-approve/", fpo_views.toggle_auto),
     # admin console
+    path("auth/facebook/", social.start),
+    path("auth/facebook/callback/", social.callback),
+    path("auth/facebook/unlink/", social.unlink),
+    path("auth/facebook/data-deletion/", social.data_deletion),
+    path("voice/", voice_views.page),
+    path("voice/agree/", voice_views.agree),
+    path("voice/withdraw/", voice_views.withdraw),
+    path("voice/save/", voice_views.save),
+    path("voice/<int:pk>/delete/", voice_views.delete),
+    path("voice/<int:pk>/expert/", voice_views.to_expert),
+    path("share/new/", share_views.new),
+    path("share/<str:code>/image/", share_views.upload),
+    path("shared/", share_views.mine),
+    path("s/<str:code>.png", share_views.image),
+    path("s/<str:code>/", share_views.landing),
+    path("notifications/", notify_views.page),
+    path("push/subscribe/", notify_views.subscribe),
+    path("push/test/", notify_views.test_push),
+    path("manifest.webmanifest", notify_views.manifest),
+    path("sw.js", notify_views.service_worker),
+    path("hooks/meta/", notify_views.meta_webhook),
     path("weather/", weather_views.page),
+    path("weather/seen/", weather_views.seen),
     path("fpo/pools/", pool_views.fpo_list),
     path("fpo/pools/<int:pk>/", pool_views.fpo_detail),
     path("fpo/pools/<int:pk>/<str:action>/", pool_views.fpo_act),
+    path("farmer/groups/", group_views.farmer_groups),
+    path("farmer/groups/<int:pk>/", group_views.farmer_group),
+    path("fpo/groups/", group_views.fpo_groups),
+    path("fpo/groups/<int:pk>/", group_views.fpo_group),
     path("farmer/pools/", pool_views.farmer_pools),
     path("farmer/pools/<str:action>/", pool_views.farmer_act),
     path("storage/", storage_views.hub),
@@ -94,19 +120,7 @@ urlpatterns = [
     path("games/<slug:slug>/", engage_views.play),
     path("games/<slug:slug>/score/", engage_views.score),
     path("insights/", engage_views.insights),
-    path("kvk/", kvk_views.dashboard),
-    path("kvk/choose/", kvk_views.choose),
-    path("kvk/map/", kvk_views.map_page),
-    path("kvk/map/data/", kvk_views.map_data),
-    path("kvk/issues/", kvk_views.issues),
-    path("kvk/issues/<int:pk>/", kvk_views.issue_detail),
-    path("kvk/offers/", kvk_views.offers),
-    path("kvk/offers/<int:pk>/", kvk_views.offer_detail),
-    path("kvk/offers/<int:pk>/act/", kvk_views.offer_act),
-    path("kvk/farmers/", kvk_views.farmers),
-    path("kvk/farmers/<int:pk>/", kvk_views.farmer_detail),
-    path("kvk/orgs/", kvk_views.orgs),
-    path("kvk/orgs/<int:pk>/", kvk_views.org_detail),
+    re_path(r"^kvk/(?P<rest>.*)$", public_views.institution_moved),  # old links: Institution Connect is its own site now
     path("help/", help_views.desk),
     path("help/new/", help_views.raise_issue),
     path("help/<int:pk>/", help_views.detail),
@@ -118,6 +132,10 @@ urlpatterns = [
     path("map/data/", inputs_views.map_data),
     path("fpo/location/", inputs_views.set_org_location),
     path("farmer/sharing/", inputs_views.consent),
+    path("console/settings/", console_views.site_settings),
+    path("console/feeds/", console_views.feeds),
+    path("console/sessions/", console_views.login_sessions),
+    path("console/sessions/<int:pk>/end/", console_views.end_session),
     path("console/centres/", console_views.centres),
     path("console/centres/<int:pk>/staff/", console_views.centre_staff),
     path("buyer/producers/", deals_views.producers),

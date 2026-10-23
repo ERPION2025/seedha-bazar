@@ -1,4 +1,6 @@
-{% load static web_tags %}<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+{% load static web_tags %}{{ map_text|json_script:"map-text" }}{{ map_cfg|json_script:"map-cfg" }}
+{% if map_cfg.provider == "google" %}<script src="{% static 'web/map_google.js' %}" defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ map_cfg.google_key|urlencode }}&callback=sbGoogleMap&loading=async" defer></script>
+{% else %}<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
-{{ map_text|json_script:"map-text" }}
-<script src="{% static 'web/map.js' %}" defer></script>
+<script src="{% static 'web/map.js' %}" defer></script>{% endif %}

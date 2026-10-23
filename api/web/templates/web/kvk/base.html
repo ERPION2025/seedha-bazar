@@ -1,5 +1,0 @@
-{% extends "web/base.html" %}{% load web_tags %}
-{% block subnav %}<div class="wrap" style="padding-top:10px"><form method="post" action="/kvk/choose/" class="row scope-bar">{% csrf_token %}<input type="hidden" name="back" value="{{ request.path }}">
-  🏛️ {% if centres|length > 1 %}<select name="centre" onchange="this.form.submit()">{% for c in centres %}<option value="{{ c.pk }}"{% if c.pk == centre.pk %} selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>{% else %}<b>{{ centre.name }}</b>{% endif %}
-  <select name="district" onchange="this.form.submit()" aria-label="{% t "District" %}"><option value="">{% t "All my districts" %}</option>{% for d in centre.districts %}<option value="{{ d }}"{% if d == district %} selected{% endif %}>{{ d }}</option>{% endfor %}</select>
-  <noscript><button class="btn small">{% t "Show" %}</button></noscript></form></div>{% endblock %}

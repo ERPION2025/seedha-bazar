@@ -36,7 +36,7 @@ def link(issue) -> str:
 
 
 def staff_link(issue) -> str:
-    return f"{settings.SITE_URL}/kvk/issues/{issue.pk}/"
+    return f"{settings.INSTITUTION_URL}/issues/{issue.pk}/"
 
 
 def _alert_centre(issue: Issue, what: str):

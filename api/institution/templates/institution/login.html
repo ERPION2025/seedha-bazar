@@ -1,0 +1,12 @@
+{% extends "institution/base.html" %}{% load web_tags %}
+{% block title %}{% t "Sign in" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Institution Connect sign in" %}</h1>
+<p class="mute">{% t "For KVKs, agricultural universities and research agencies. Enter the mobile number Seedha Bazar registered for your centre. We send a 6-digit code." %}</p>
+<form method="post" class="card">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block" name="channel" value="sms">{% t "Send code by SMS" %}</button>
+</form>
+<p class="mute">{% t "Only staff of KVKs and research agencies added by Seedha Bazar can sign in here." %}</p>
+{% endblock %}

@@ -84,3 +84,28 @@ def official_name(state: str, district: str) -> str:
                 if same_district(d, district):
                     return d
     return district
+
+
+def states() -> list[str]:
+    return [st["state"] for st in index()["states"]]
+
+
+def districts_of(state: str) -> list[str]:
+    for st in index()["states"]:
+        if st["state"].lower() == (state or "").lower():
+            return st["districts"]
+    return []
+
+
+def states_with_district(district: str) -> list[str]:
+    return [st["state"] for st in index()["states"] if any(same_district(d, district) for d in st["districts"])]
+
+
+def check_place(state: str, district: str) -> tuple[bool, str]:
+    """(ok, suggested_state). ok is True when the district is in the state, or when we cannot tell (no boundary data)."""
+    if not index()["states"] or not district:
+        return True, ""
+    if any(same_district(d, district) for d in districts_of(state)):
+        return True, ""
+    homes = states_with_district(district)
+    return False, homes[0] if len(homes) == 1 else ""

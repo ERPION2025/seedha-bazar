@@ -1,0 +1,23 @@
+{% extends "institution/scoped.html" %}{% load web_tags %}
+{% block title %}{% t "Active loans" %}{% endblock %}
+{% block content %}
+<h1>🏦 {% t "Active loans" %}</h1>
+<p class="mute">{% t "Crops stored in WDRA warehouses (e-NWR) and bank loans against them, as farmers recorded them. A name shows only if the farmer shares their book with you." %}</p>
+<div class="stats4">
+  <div class="card stat"><small>{% t "Loans running" %}</small><div class="big">{{ L.loans }}</div><small>{{ L.amount|inr }}</small></div>
+  <div class="card stat"><small>{% t "Crop in warehouses" %}</small><div class="big">{{ L.stored_kg|quintal }}</div><small>{% t "quintal" %}</small></div>
+  <div class="card stat {% if L.overdue %}warn{% endif %}"><small>{% t "Past the due date" %}</small><div class="big">{{ L.overdue }}</div><small>{% t "{n} due in 30 days" n=L.due_soon %}</small></div>
+  <div class="card stat"><small>{% t "Registered warehouses" %}</small><div class="big">{{ L.warehouses }}</div><small>{{ L.warehouse_cap|num:0 }} {% t "tonnes" %}</small></div>
+</div>
+<div class="card scroll"><table class="tbl"><thead><tr><th>{% t "Farmer" %}</th><th>{% t "Crop" %}</th><th>{% t "Quantity" %}</th><th>{% t "Warehouse" %}</th><th>{% t "Bank" %}</th><th>{% t "Loan" %}</th><th>{% t "Due" %}</th></tr></thead><tbody>
+{% for p in L.rows %}<tr><td>{% if p.share %}<a href="/farmers/{{ p.farmer_id }}/">{{ p.farmer.farmer_profile.name|default:"—" }}</a>{% else %}🔒 {{ p.farmer.farmer_profile.village }}{% endif %}</td><td>{% crop p.product %}</td><td>{{ p.quantity_kg|quintal }} q</td>
+  <td>{{ p.warehouse.name|default:"—" }}</td><td>{{ p.bank|default:"—" }}</td><td>{% if p.loan_amount %}{{ p.loan_amount|inr }}{% else %}—{% endif %}</td>
+  <td>{% if p.due_date %}<span class="{% if p.overdue %}neg{% elif p.due_soon %}pill sun{% endif %}">{{ p.due_date|date:"j M Y" }}</span>{% else %}—{% endif %}</td></tr>
+{% empty %}<tr><td colspan="7" class="mute">{% t "No farmer here has recorded a warehouse receipt or loan yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% if L.banks %}<div class="card"><h3>{% t "By bank" %}</h3>{% for b in L.banks %}<div class="line"><span>{{ b.bank }}</span><span>{{ b.n }} · <b>{{ b.amount|inr }}</b></span></div>{% endfor %}</div>{% endif %}
+<h2>{% t "Registered warehouses (WDRA)" %}</h2>
+<p class="hint">{% t "From the WDRA public list, refreshed every week. {n} more are listed but not active." n=L.warehouses_other %}</p>
+<div class="card scroll"><table class="tbl"><thead><tr><th>{% t "Warehouse" %}</th><th>{% t "District" %}</th><th>{% t "Capacity" %}</th><th>{% t "Valid until" %}</th><th>{% t "Contact" %}</th></tr></thead><tbody>
+{% for w in L.warehouse_rows %}<tr><td>{{ w.name }}<br><span class="mute">{{ w.operator }} · WDRA {{ w.wdra_reg_no }}</span></td><td>{{ w.district }}</td><td>{{ w.capacity_mt|num:0 }} t</td><td>{{ w.valid_until|date:"j M Y"|default:"—" }}</td><td>{{ w.phone|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="5" class="mute">{% t "No WDRA warehouses loaded for this district yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}
