@@ -5,6 +5,26 @@ template and keep the {placeholders} in the same order. Keep them short.
 """
 
 TEXTS = {
+    "pledge_due": {
+        "en": "Seedha Bazar: your warehouse loan or receipt for {product} falls due on {date}. Plan to repay or sell: {link}",
+        "hi": "सीधा बाज़ार: {product} के गोदाम ऋण या रसीद की तारीख {date} है। चुकाने या बेचने की योजना बनाएँ: {link}",
+        "mr": "सीधा बाज़ार: {product} च्या गोदाम कर्जाची किंवा पावतीची मुदत {date} रोजी संपते. परतफेड किंवा विक्रीचे नियोजन करा: {link}",
+    },
+    "pool_invite": {
+        "en": "Seedha Bazar: {org} wants to add {qty} of your {product} to a group sale. Say yes or no: {link}",
+        "hi": "सीधा बाज़ार: {org} आपकी {product} में से {qty} सामूहिक बिक्री में जोड़ना चाहता है। हाँ या ना कहें: {link}",
+        "mr": "सीधा बाज़ार: {org} तुमच्या {product} पैकी {qty} सामूहिक विक्रीत जोडू इच्छिते. हो किंवा नाही सांगा: {link}",
+    },
+    "pool_paid": {
+        "en": "Seedha Bazar: {org} sold the group lot of {product}. Your share: {amount}. Details: {link}",
+        "hi": "सीधा बाज़ार: {org} ने {product} का सामूहिक लॉट बेचा। आपका हिस्सा: {amount}। विवरण: {link}",
+        "mr": "सीधा बाज़ार: {org} ने {product} चा सामूहिक लॉट विकला. तुमचा वाटा: {amount}. तपशील: {link}",
+    },
+    "weather_alert": {
+        "en": "Seedha Bazar weather, {date}: {crop}. {advice} More: {link}",
+        "hi": "सीधा बाज़ार मौसम, {date}: {crop}। {advice} और: {link}",
+        "mr": "सीधा बाज़ार हवामान, {date}: {crop}. {advice} अधिक: {link}",
+    },
     "input_update": {
         "en": "Seedha Bazar: {what} ({product}). See: {link}",
         "hi": "सीधा बाज़ार: {what} ({product})। देखें: {link}",

@@ -8,7 +8,7 @@ from notify.backends import MemoryBackend
 from notify.models import Message, OptOut
 
 MEM = {"sms": "notify.backends.MemoryBackend", "whatsapp": "notify.backends.MemoryBackend"}
-PARAMS = {"centre": "KVK Rewa", "item": "गेहूँ बीज", "product": "सूखा मशरूम", "what": "दोनों ने समझौते पर हस्ताक्षर किए", "crop": "Wheat", "qty": "10 quintal", "hand": "₹45,540", "cut": "₹1,260", "direct": "₹54,000", "gap": "₹8,460", "place": "Rewa",
+PARAMS = {"org": "नैगढ़ी एफपीओ", "amount": "Rs 12,400", "advice": "आज रात पाला पड़ सकता है। शाम को हल्की सिंचाई करें।", "centre": "KVK Rewa", "item": "गेहूँ बीज", "product": "सूखा मशरूम", "what": "दोनों ने समझौते पर हस्ताक्षर किए", "crop": "Wheat", "qty": "10 quintal", "hand": "₹45,540", "cut": "₹1,260", "direct": "₹54,000", "gap": "₹8,460", "place": "Rewa",
           "date": "21 Oct", "price": "₹2,450", "msp": "", "link": "https://x/y"}
 
 

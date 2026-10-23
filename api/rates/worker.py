@@ -63,10 +63,22 @@ def issues_tick(now=None) -> int:
     return n
 
 
+def weather_tick(now=None):
+    from weather import services as weather_services  # lazy: the worker serves several jobs
+
+    out = weather_services.tick(now)
+    if out is not None:
+        from storage.services import remind_due  # warehouse loan reminders ride on the same daily run
+        remind_due()
+    if out:
+        log.info("weather alerts: %s", out)
+    return out
+
+
 def loop(poll_seconds: int = 600):
     log.info("worker started; rates every %s hours, news every %s hours", settings.RATES_REFRESH_HOURS, settings.NEWS_REFRESH_HOURS)
     while True:
-        for job in (tick, news_tick, issues_tick):
+        for job in (tick, news_tick, issues_tick, weather_tick):
             try:
                 job()
             except Exception:

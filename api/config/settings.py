@@ -30,6 +30,8 @@ INSTALLED_APPS = [
     "extension",
     "issues",
     "engagement",
+    "weather",
+    "storage",
     "market",
     "web",
 ]
@@ -139,6 +141,8 @@ RATES_STATES = [s for s in os.environ.get("RATES_STATES", "").split(",") if s]  
 RATES_REFRESH_HOURS = int(os.environ.get("RATES_REFRESH_HOURS", "24"))
 RATES_SHOW_DEMO = os.environ.get("RATES_SHOW_DEMO", "1" if DEBUG else "0") == "1"  # sample rows are for local trials only
 DEFAULT_STATE = os.environ.get("DEFAULT_STATE", "Madhya Pradesh")
+WEATHER_API_KEY = os.environ.get("WEATHER_API_KEY", "")  # Open-Meteo is free for non-commercial use; commercial use needs their key
+WEATHER_LOOKUP_VILLAGES = os.environ.get("WEATHER_LOOKUP_VILLAGES", "1") == "1"
 NEWS_REFRESH_HOURS = int(os.environ.get("NEWS_REFRESH_HOURS", "6"))
 NEWS_STATES = [s for s in os.environ.get("NEWS_STATES", "Madhya Pradesh,Maharashtra").split(",") if s]  # states that get their own local searches
 GEOCODER_USER_AGENT = os.environ.get("GEOCODER_USER_AGENT", "SeedhaBazar/1.0 (+https://seedhabazar.in; contact: set GEOCODER_USER_AGENT)")

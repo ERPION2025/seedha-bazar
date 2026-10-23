@@ -69,6 +69,10 @@ def home(request):
     from extension.services import offers_for
     ctx["kvk"] = centre_for_place(fp.state, fp.district)
     ctx["offers_n"] = len(offers_for(request.user))
+    from .weather_views import home_alert
+    ctx["wx"] = home_alert(request.user)
+    from market.models import PoolShare
+    ctx["pool_asks"] = PoolShare.objects.filter(farmer=request.user, status="proposed").count()
     from engagement import scores
     ctx["scores"] = {"activity": scores.activity(request.user)["score"], "performance": scores.performance(request.user)["score"]}
     return render(request, "web/farmer/home.html", ctx)

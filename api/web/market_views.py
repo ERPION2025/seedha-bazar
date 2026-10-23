@@ -71,6 +71,8 @@ def seller_required(view):
 def card(listing, memo):
     """Adds what a listing card needs: the mandi comparison, an emoji and who is selling (never a phone number)."""
     listing.ref = services.mandi_reference(listing, memo)
+    pool = getattr(listing, "pool", None) if hasattr(listing, "pool") else None
+    listing.pool_n = pool.shares.filter(status="confirmed").count() if pool else 0
     listing.emoji = catalog.emoji(listing.crop)
     if listing.organisation_id:
         listing.seller_label, listing.seller_verified, listing.seller_org = listing.organisation.name, listing.organisation.verified, True

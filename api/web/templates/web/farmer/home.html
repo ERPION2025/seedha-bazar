@@ -18,6 +18,10 @@
   <form method="post" action="/farmer/sharing/" class="row">{% csrf_token %}<button class="btn" name="share" value="1">{% t "Yes, allow" %}</button><button class="btn ghost" name="share" value="0">{% t "No, thank you" %}</button></form></div>
 {% endif %}
 <div class="quick" style="margin-bottom:14px"><a class="btn ghost" href="/help/">🧑‍🔬 {% t "Ask an expert" %}</a><a class="btn ghost" href="/inputs/">🌱 {% t "Seeds and inputs" %}{% if offers_n %} <span class="pill sun">{{ offers_n }}</span>{% endif %}</a><a class="btn ghost" href="/map/">🗺️ {% t "Nearest KVK" %}</a><a class="btn ghost" href="/insights/">📊 {% t "My district" %}</a></div>
+{% if wx %}<a class="door" href="/weather/"><div class="card {% if wx.alert %}{% if wx.alert.kind == "frost" or wx.alert.kind == "rain" %}warn{% else %}sun{% endif %}{% else %}tint{% endif %}">
+  <div class="row between"><b>{{ wx.today.icon }} {% t "Weather" %} · {{ wx.today.tmax|num:0 }}° / {{ wx.today.tmin|num:0 }}°</b>{% if wx.alert %}<span class="pill">{{ wx.alert.day }} · {{ wx.alert.value }}</span>{% endif %}</div>
+  {% if wx.alert %}<p style="margin:6px 0 0"><b>{% crop wx.alert.crop %}:</b> {% t wx.alert.advice %}</p>{% else %}<p class="mute" style="margin:6px 0 0">{% t "No weather risk for your crops in the next 5 days." %}</p>{% endif %}</div></a>{% endif %}
+{% if pool_asks %}<a class="door" href="/farmer/pools/"><div class="card sun"><b>🤝 {% t "Your FPO asks to add your stock to a group sale" %}</b> <span class="pill">{{ pool_asks }}</span></div></a>{% endif %}
 {% if scores %}<a class="door" href="/insights/"><div class="card"><div class="row between"><b>⚡ {% t "Activity" %} {{ scores.activity }}/100</b><b>🏅 {% t "Performance" %} {{ scores.performance }}/100</b></div><div class="scorebar" style="margin-top:8px"><span style="width:{{ scores.activity }}%"></span></div></div></a>{% endif %}
 {% if not loc %}<div class="card tint"><b>📍 {% t "Allow location to see rates near you" %}</b>{% include "web/partials/location_bar.html" with auto="1" reload="1" %}</div>{% endif %}
 {% include "web/partials/rate_strip.html" %}

@@ -79,6 +79,14 @@ class Command(BaseCommand):
             InputOffer.objects.create(centre=kvk, kind="seed", name="Wheat seed HI-1544 (demo)", crop="wheat", quantity=500, unit="kg", per_person_limit=40, price=0,
                                       valid_until=today + timedelta(days=30), pickup="KVK Rewa campus", note="For farmers with a soil health card. Bring Aadhaar.")
         Organisation.objects.filter(code="naigarhi", lat__isnull=True).update(lat=24.62, lon=81.18)
+        from storage.models import Warehouse
+        Warehouse.objects.get_or_create(name="Demo warehouse, Rewa", defaults={"operator": "Demo operator (not a real warehouse)", "state": "Madhya Pradesh", "district": "Rewa",
+                                                                              "repository": "nerl", "storage_rate": 10, "verified": False})
+        from market.models import Pool
+        if not Pool.objects.exists():
+            from market import pools
+            Pool.objects.create(organisation=org, created_by=agent, product="kodo", unit="quintal", price=3400, fee_pct=2,
+                                description="Kodo from member farmers, cleaned and graded at the FPO centre.")
         fp_demo = farmer.farmer_profile
         if fp_demo.share_with_extension is None:
             fp_demo.share_with_extension = True

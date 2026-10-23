@@ -1,0 +1,13 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "Check a statement" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>🔎 {% t "Check a statement" %}</h1>
+{% if s %}<div class="card {% if ok_digest %}tint{% else %}warn{% endif %}"><b>{% if ok_digest %}✔ {% t "This statement was made on Seedha Bazar and has not been changed." %}{% else %}{% t "This statement's figures do not match its fingerprint." %}{% endif %}</b></div>
+<div class="card"><p style="margin:0">{{ d.farmer.name }} · {{ d.farmer.village }}, {{ d.farmer.district }}</p>
+  <p class="mute" style="margin:4px 0">{{ d.period.from }} → {{ d.period.to }} · {% t "made" %} {{ s.created_at|date:"j M Y" }}</p>
+  <div class="stats flat"><div class="stat"><small>{% t "Income" %}</small><div class="big">{{ d.totals.income|inr }}</div></div><div class="stat"><small>{% t "Costs" %}</small><div class="big">{{ d.totals.expenses|inr }}</div></div><div class="stat"><small>{% t "Net" %}</small><div class="big">{{ d.totals.net|inr }}</div></div></div>
+  <p class="hash mute" style="font-family:monospace;font-size:.8rem;word-break:break-all;margin-top:8px">SHA-256: {{ s.digest }}</p></div>
+<p class="hint">{% t "Compare these figures with the printed copy. The phone number and full details are only on the farmer's copy." %}</p>
+{% else %}<div class="card warn"><p style="margin:0">{% t "No statement has this code." %}</p></div>{% endif %}
+{% endblock %}

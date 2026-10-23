@@ -13,7 +13,8 @@ RAISE = re.compile(r'ValidationError\(\s*"((?:[^"\\]|\\.)*)"')
 ROW_ERR = re.compile(r'row\["error"\]\s*=\s*"((?:[^"\\]|\\.)*)"|ValueError\("((?:[^"\\]|\\.)*)"\)')
 SCAN_PY = ("auth_views.py", "farmer_views.py", "fpo_views.py", "console_views.py", "buyer_views.py", "helpers.py", "public_views.py", "forms.py",
            "rates_views.py", "market_views.py", "location.py", "rate_alerts.py", "catalog_views.py", "knowledge_views.py", "insurance_views.py", "deals_views.py",
-           "help_views.py", "kvk_views.py", "inputs_views.py", "engage_views.py")
+           "help_views.py", "kvk_views.py", "inputs_views.py", "engage_views.py",
+           "weather_views.py", "pool_views.py", "storage_views.py", "statement_views.py")
 
 
 def template_strings() -> set[str]:
@@ -42,11 +43,11 @@ def form_strings() -> set[str]:
 
     from django import forms
 
-    from web import deals_views, help_views, insurance_views, kvk_views
+    from web import deals_views, help_views, insurance_views, kvk_views, pool_views
     from web import forms as wf
 
     out = set()
-    classes = {cls for mod in (wf, deals_views, insurance_views, help_views, kvk_views) for _, cls in inspect.getmembers(mod, inspect.isclass)}
+    classes = {cls for mod in (wf, deals_views, insurance_views, help_views, kvk_views, pool_views) for _, cls in inspect.getmembers(mod, inspect.isclass)}
     for cls in classes:
         if not issubclass(cls, forms.Form) or cls is forms.Form:
             continue
@@ -112,6 +113,16 @@ def form_strings() -> set[str]:
         out.update(label for _, label in choices)
     out.update(MAP_TEXT.values())
     out.update(SCORE_TEXTS + ISSUE_TEXTS)
+    from market.models import Pool, PoolShare
+    from storage.models import Pledge
+    from weather import rules as wx_rules
+    from weather import stages as wx_stages
+    from weather.models import Alert as WxAlert
+
+    out.update(wx_rules.ALL_TEXTS)
+    out.update(wx_stages.LABELS.values())
+    for choices in (Pool.Status.choices, PoolShare.Status.choices, Pledge.Status.choices, WxAlert.Kind.choices):
+        out.update(label for _, label in choices)
     out.update(label for _, label in ins_services.DOCS + LOSS_CAUSES)
     for choices in (InsPlan.Scheme.choices, InsPlan.Season.choices, InsPlan.Group.choices, InsApp.Status.choices, InsApp.Channel.choices):
         out.update(label for _, label in choices)

@@ -34,7 +34,19 @@ def listed_kg(cycle, product: str = "", exclude_listing=None) -> Decimal:
 
 
 def free_kg(cycle, product: str = "", exclude_listing=None) -> Decimal:
-    return max(Decimal(0), book_kg(cycle, product) - listed_kg(cycle, product, exclude_listing))
+    """Book stock less what is listed, promised to an FPO lot, or pledged in a warehouse."""
+    from .pools import reserved_kg
+
+    product = product or cycle.crop
+    return max(Decimal(0), book_kg(cycle, product) - listed_kg(cycle, product, exclude_listing) - reserved_kg(cycle, product) - pledged_kg(cycle, product))
+
+
+def pledged_kg(cycle, product: str) -> Decimal:
+    try:
+        from storage.services import pledged_kg as pk
+    except ImportError:  # the storage app is optional
+        return Decimal(0)
+    return pk(cycle, product)
 
 
 def in_unit(kg: Decimal, unit: str, bag_weight_kg=None) -> Decimal:
@@ -62,7 +74,7 @@ def lines(owners, crop: str = "") -> list[dict]:
             if book <= 0 or (crop and crop != product):
                 continue
             listed = listed_kg(c, product)
-            free = max(Decimal(0), book - listed)
+            free = free_kg(c, product)
             out.append({**base, "crop": c.crop, "product": product, "processed": product != c.crop, "in_book_kg": book, "listed_kg": listed,
                         "free_kg": free, "free_quintal": in_unit(free, "quintal")})
     out.sort(key=lambda x: -x["free_kg"])

@@ -2,6 +2,7 @@
 {% block title %}{% t "My book" %}{% endblock %}
 {% block content %}
 <div class="row between"><h1 style="margin:0">{% t "My book" %}</h1><a class="btn" href="/farmer/book/new/">+ {% t "Add crop" %}</a></div>
+<div class="quick" style="margin:12px 0"><a class="btn ghost" href="/statement/">🧾 {% t "Income statement for a loan" %}</a><a class="btn ghost" href="/storage/">🏬 {% t "Warehouse loans" %}</a><a class="btn ghost" href="/farmer/pools/">🤝 {% t "Group selling" %}</a><a class="btn ghost" href="/weather/">🌦️ {% t "Weather" %}</a></div>
 <div class="card" style="margin-top:16px">
   <div class="stats flat">
     <div class="stat"><small>{% t "Spent" %}</small><div class="big">{{ ledger.totals.expenses|inr }}</div></div>

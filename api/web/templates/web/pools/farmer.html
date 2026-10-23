@@ -1,0 +1,16 @@
+{% extends "web/farmer/base.html" %}{% load web_tags %}
+{% block title %}{% t "Group selling" %}{% endblock %}
+{% block content %}
+<h1>🤝 {% t "Group selling with my FPO" %}</h1>
+<p class="mute">{% t "Put part of your stock into your FPO's big lot. Buyers pay better for big lots. Your stock stays in your book until it sells; then your share is paid to you." %}</p>
+{% for s in mine %}{% if s.status == "proposed" %}<div class="card sun"><b>{{ s.pool.organisation.name }}</b>: {% crop s.pool.product %} · {{ s.unit_qty|num }} {% t s.pool.unit %}
+  <form method="post" action="/farmer/pools/yes/" class="row" style="margin-top:8px">{% csrf_token %}<input type="hidden" name="share" value="{{ s.pk }}"><button class="btn small">{% t "Yes, add it" %}</button><button class="btn small ghost" formaction="/farmer/pools/no/">{% t "No" %}</button></form></div>{% endif %}{% endfor %}
+{% for p in open %}<div class="card"><h3 style="margin:0">{{ p.product|emoji_of }} {% crop p.product %} · {{ p.price|inr }} / {% t p.unit %}</h3>
+  <p class="mute">{{ p.organisation.name }}{% if p.fee_pct %} · {% t "FPO fee" %} {{ p.fee_pct|num }}%{% endif %}{% if p.collect_by %} · {% t "until {date}" date=p.collect_by|date:"j M" %}{% endif %}</p>
+  {% for ln in p.lines %}<form method="post" action="/farmer/pools/join/" class="row">{% csrf_token %}<input type="hidden" name="pool" value="{{ p.pk }}"><input type="hidden" name="cycle" value="{{ ln.cycle.pk }}">
+    <span>{{ ln.plot }} · {% t "free" %} {{ ln.free_unit|num }}</span><input name="qty" inputmode="decimal" value="{{ ln.free_unit }}" style="width:90px"><button class="btn small">{% t "Join" %}</button></form>{% endfor %}</div>{% endfor %}
+<h2>{% t "My shares" %}</h2>
+{% for s in mine %}<div class="line card"><div><b>{% crop s.pool.product %}</b> · {{ s.unit_qty|num }} {% t s.pool.unit %} · {{ s.pool.organisation.name }}<br><span class="mute">{% t s.pool.get_status_display %}{% if s.payout is not None %} · {% t "Your share" %} <b>{{ s.payout|inr }}</b>{% if s.paid_at %} ✔ {% t "Paid" %}{% else %} · {% t "waiting for payment" %}{% endif %}{% endif %}</span></div>
+  {% if s.status == "confirmed" and s.pool.status in "open listed" %}<form method="post" action="/farmer/pools/withdraw/">{% csrf_token %}<input type="hidden" name="share" value="{{ s.pk }}"><button class="link-btn" style="color:var(--red)">{% t "Take back" %}</button></form>{% endif %}</div>
+{% empty %}<p class="mute">{% t "Not in any lot yet." %}</p>{% endfor %}
+{% endblock %}

@@ -39,7 +39,7 @@
 {% news_for_home %}
 {% if org.verified and not org.lat %}<div class="card tint"><b>📍 {% t "Put your office on the map" %}</b><p class="mute" style="margin:4px 0 8px">{% t "Buyers and your district's KVK can then find you. Stand at the office and tap the button." %}</p>
   <form method="post" action="/fpo/location/" id="org-loc">{% csrf_token %}<input type="hidden" name="lat"><input type="hidden" name="lon"><button type="button" class="btn small" onclick="var f=this.form;navigator.geolocation&&navigator.geolocation.getCurrentPosition(function(p){f.lat.value=p.coords.latitude;f.lon.value=p.coords.longitude;f.submit();},function(){},{enableHighAccuracy:true,timeout:15000})">📍 {% t "Use my location" %}</button></form></div>{% endif %}
-<div class="quick" style="margin-bottom:14px"><a class="btn ghost" href="/help/">🧑‍🔬 {% t "Ask an expert" %}</a><a class="btn ghost" href="/inputs/">🌱 {% t "Seeds and inputs" %}</a><a class="btn ghost" href="/map/">🗺️ {% t "Map" %}</a><a class="btn ghost" href="/insights/">📊 {% t "My district" %}</a></div>
+<div class="quick" style="margin-bottom:14px"><a class="btn ghost" href="/fpo/pools/">🤝 {% t "Group selling" %}</a><a class="btn ghost" href="/weather/">🌦️ {% t "Weather" %}</a><a class="btn ghost" href="/help/">🧑‍🔬 {% t "Ask an expert" %}</a><a class="btn ghost" href="/inputs/">🌱 {% t "Seeds and inputs" %}</a><a class="btn ghost" href="/map/">🗺️ {% t "Map" %}</a><a class="btn ghost" href="/insights/">📊 {% t "My district" %}</a></div>
 {% if top_crops %}<div class="card"><h3>{% t "What your members grow" %}</h3>
   <div class="row">{% for c, n in top_crops %}<span class="pill">{% crop c %} · {{ n }}</span>{% endfor %}</div></div>{% endif %}
 

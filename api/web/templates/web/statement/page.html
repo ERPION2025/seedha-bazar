@@ -1,0 +1,11 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Income statement" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>🧾 {% t "Income statement for a loan" %}</h1>
+<p class="mute">{% t "A printable summary of your Farmer Book: crops, harvest, sales, costs, stock and loans. Take it to the bank for a Kisan Credit Card or crop loan. The bank can check it online with the code on it." %}</p>
+<form method="post" action="/statement/new/" class="card">{% csrf_token %}{% if for_id %}<input type="hidden" name="for" value="{{ for_id }}"><p><b>{{ owner.farmer_profile.name }}</b></p>{% endif %}
+  <div class="grid g2"><div class="field"><label>{% t "From" %}</label><input type="date" name="from" value="{{ start|date:"Y-m-d" }}"></div><div class="field"><label>{% t "To" %}</label><input type="date" name="to" value="{{ end|date:"Y-m-d" }}"></div></div>
+  <button class="btn block">{% t "Make the statement" %}</button></form>
+{% for s in rows %}<div class="line card"><span>{{ s.period_from|date:"j M Y" }} – {{ s.period_to|date:"j M Y" }}</span><a class="btn small ghost" href="/statement/{{ s.code }}/">{% t "Open" %}</a></div>{% endfor %}
+{% endblock %}

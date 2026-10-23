@@ -6,6 +6,10 @@ Keep {placeholders} exactly as they are. Do not use an apostrophe in "Remove thi
 
 # Shown when the backend refuses something. Keys are the stable error codes from the API.
 API_ERRORS = {
+    "pool_closed": "This lot is no longer taking shares.",
+    "not_member": "Only members of this FPO can join its lots.",
+    "already_in_pool": "This stock is already in the lot.",
+    "pool_empty": "No confirmed shares yet.",
     "describe_issue": "Tell us the problem: type it, speak it, or record a voice note.",
     "not_allowed": "You cannot do this.",
     "district_needed": "Add your district to your profile first.",

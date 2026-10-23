@@ -210,3 +210,12 @@ Static files are served by WhiteNoise from the same container. `python manage.py
 
 Navigation: wide screens get a left-side menu; phones get a bottom bar with four main items and **More**. Menus per role live in `web/menus.py`.
 District boundary files are built with `python tools/build_boundaries.py adm1.geojson adm2.geojson` from geoBoundaries IND ADM1/ADM2.
+
+## Weather alerts, group selling, income statement, warehouse loans
+
+| Feature | What it does | Notes |
+| --- | --- | --- |
+| `weather/` | Daily 7-day forecast for each farmer's village (OpenStreetMap lookup, else district centre), crop stage from the Farmer Book sowing date, stage-specific advice (rain, frost, heat, wind, dry spell, blight/rust), one SMS a day per farmer. `/weather/`. | Open-Meteo: free for non-commercial use; set `WEATHER_API_KEY` for commercial. Runs in the worker after 6 a.m. |
+| Group selling (`market/pools.py`) | An FPO builds one lot from members' book stock; members confirm (FPO-managed members are added directly); one marketplace listing "pooled from N farmers"; on sale each member gets a pro-rata sale in their book, less the FPO fee; the FPO marks each payout. `/fpo/pools/`, `/farmer/pools/`. | Pooled stock is reserved so it cannot be listed twice. |
+| Income statement (`farmerbook/statement.py`) | Printable statement for a KCC or bank loan: crops, harvest, sales, costs, net per acre, stock valued at today's price, insurance, loans; confirmed figures marked. Frozen snapshot with SHA-256 fingerprint; banks check it at `/verify/<code>/` (QR on the print). FPOs can make one for a member. | Mostly self-reported book figures; the page says so. |
+| `storage/` | Store-or-sell calculator (loan at the bank's lending %, storage and interest, break-even price), WDRA warehouse list (CSV import), pledge record (e-NWR number, repository, loan, due date), reminders 15 and 3 days before due; pledged stock is held back from listings. `/storage/`. | Links to WDRA's e-Kisan Upaj Nidhi. No e-NWR repository API is public, so receipts are recorded, not fetched. Load warehouses with `load_warehouses file.csv`. |

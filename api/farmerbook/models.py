@@ -175,3 +175,23 @@ class Processing(BookRecord):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["owner", "client_id"], name="uniq_processing_client")]
+
+
+class Statement(models.Model):
+    """A frozen income statement from the Farmer Book, for a Kisan Credit Card or bank loan.
+
+    The figures are copied at the time it is made, and `digest` fingerprints them, so a bank can check the printed copy
+    against /verify/<code>/ and see whether anything was changed.
+    """
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="statements")
+    made_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    code = models.CharField(max_length=12, unique=True)
+    period_from = models.DateField()
+    period_to = models.DateField()
+    data = models.JSONField()
+    digest = models.CharField(max_length=64)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created_at"]

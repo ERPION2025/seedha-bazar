@@ -5,7 +5,9 @@ FARMER = [
     ("Home", "🏠", "/farmer/", ["=/farmer/"], ""), ("My book", "📒", "/farmer/book/", ["/farmer/book"], ""),
     ("Sell", "🏷️", "/farmer/sell/", ["/farmer/sell"], ""), ("Rates", "📈", "/rates/", ["/rates"], ""),
     ("Orders", "📦", "/deals/", ["/deals"], "deal_unread"), ("Messages", "💬", "/farmer/enquiries/", ["/farmer/enquiries", "/enquiry"], "unread"),
-    ("Ask an expert", "🧑‍🔬", "/help/", ["/help"], ""), ("Seeds and inputs", "🌱", "/inputs/", ["/inputs"], ""),
+    ("Weather", "🌦️", "/weather/", ["/weather"], ""), ("Ask an expert", "🧑‍🔬", "/help/", ["/help"], ""),
+    ("Seeds and inputs", "🌱", "/inputs/", ["/inputs"], ""), ("Group selling", "🤝", "/farmer/pools/", ["/farmer/pools"], ""),
+    ("Warehouse loans", "🏬", "/storage/", ["/storage"], ""), ("Income statement", "🧾", "/statement/", ["/statement"], ""),
     ("Insurance", "🛡️", "/insurance/", ["/insurance"], ""), ("Earn more", "💰", "/value/", ["/value"], ""),
     ("News", "📰", "/news/", ["/news", "/schemes", "/videos"], ""), ("My district", "📊", "/insights/", ["/insights"], ""),
     ("Games", "🎮", "/games/", ["/games"], ""), ("Map", "🗺️", "/map/", ["/map"], ""), ("Calculator", "🧮", "/calculator/", ["/calculator"], ""),
@@ -15,6 +17,7 @@ FARMER = [
 FPO = [
     ("Home", "🏠", "/fpo/", ["=/fpo/"], ""), ("My farmers", "🧑‍🌾", "/fpo/farmers/", ["=/fpo/farmers/"], ""),
     ("Sell", "🏷️", "/fpo/sell/", ["/fpo/sell"], ""), ("Orders", "📦", "/deals/", ["/deals"], "deal_unread"),
+    ("Group selling", "🤝", "/fpo/pools/", ["/fpo/pools"], ""), ("Weather", "🌦️", "/weather/", ["/weather"], ""),
     ("Add farmer", "➕", "/fpo/farmers/add/", ["/fpo/farmers/add"], ""), ("Requests", "📥", "/fpo/requests/", ["/fpo/requests"], ""),
     ("Messages", "💬", "/fpo/enquiries/", ["/fpo/enquiries", "/enquiry"], "unread"), ("Ask an expert", "🧑‍🔬", "/help/", ["/help"], ""),
     ("Seeds and inputs", "🌱", "/inputs/", ["/inputs"], ""), ("Insurance", "🛡️", "/fpo/insurance/", ["/fpo/insurance", "/insurance"], ""),
@@ -46,6 +49,7 @@ PUBLIC = [
     ("Home", "🏠", "/", ["=/"], ""), ("Rates", "📈", "/rates/", ["/rates"], ""), ("Marketplace", "🛒", "/market/", ["/market"], ""),
     ("Calculator", "🧮", "/calculator/", ["/calculator"], ""), ("News", "📰", "/news/", ["/news"], ""), ("Government schemes", "🏛️", "/schemes/", ["/schemes"], ""),
     ("Crop insurance", "🛡️", "/insurance/", ["/insurance"], ""), ("Earn more", "💰", "/value/", ["/value"], ""), ("Videos", "🎬", "/videos/", ["/videos"], ""),
+    ("Weather", "🌦️", "/weather/", ["/weather"], ""), ("Warehouse loans", "🏬", "/storage/", ["/storage"], ""),
     ("Games", "🎮", "/games/", ["/games"], ""), ("Map", "🗺️", "/map/", ["/map"], ""), ("For farmers", "🧑‍🌾", "/for-farmers/", ["/for-farmers"], ""),
     ("For FPOs and NGOs", "🤝", "/for-fpos/", ["/for-fpos"], ""), ("For buyers", "🛒", "/for-buyers/", ["/for-buyers"], ""), ("Sign in", "🔑", "/login/", ["/login"], ""),
 ]

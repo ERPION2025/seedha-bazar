@@ -1,5 +1,6 @@
 from django.urls import path
 
+from . import pool_views, statement_views, storage_views, weather_views
 from . import auth_views, buyer_views, catalog_views, console_views, deals_views, engage_views, farmer_views, fpo_views, help_views, inputs_views, kvk_views, insurance_views, knowledge_views, location, market_views, public_views, rates_views
 
 urlpatterns = [
@@ -77,6 +78,18 @@ urlpatterns = [
     path("fpo/requests/<int:pk>/reject/", fpo_views.decide, {"approve": False}),
     path("fpo/auto-approve/", fpo_views.toggle_auto),
     # admin console
+    path("weather/", weather_views.page),
+    path("fpo/pools/", pool_views.fpo_list),
+    path("fpo/pools/<int:pk>/", pool_views.fpo_detail),
+    path("fpo/pools/<int:pk>/<str:action>/", pool_views.fpo_act),
+    path("farmer/pools/", pool_views.farmer_pools),
+    path("farmer/pools/<str:action>/", pool_views.farmer_act),
+    path("storage/", storage_views.hub),
+    path("storage/<str:action>/", storage_views.act),
+    path("statement/", statement_views.page),
+    path("statement/new/", statement_views.make),
+    path("statement/<str:code>/", statement_views.show),
+    path("verify/<str:code>/", statement_views.verify),
     path("games/", engage_views.hub),
     path("games/<slug:slug>/", engage_views.play),
     path("games/<slug:slug>/score/", engage_views.score),
