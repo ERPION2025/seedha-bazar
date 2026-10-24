@@ -219,3 +219,35 @@ District boundary files are built with `python tools/build_boundaries.py adm1.ge
 | Group selling (`market/pools.py`) | An FPO builds one lot from members' book stock; members confirm (FPO-managed members are added directly); one marketplace listing "pooled from N farmers"; on sale each member gets a pro-rata sale in their book, less the FPO fee; the FPO marks each payout. `/fpo/pools/`, `/farmer/pools/`. | Pooled stock is reserved so it cannot be listed twice. |
 | Income statement (`farmerbook/statement.py`) | Printable statement for a KCC or bank loan: crops, harvest, sales, costs, net per acre, stock valued at today's price, insurance, loans; confirmed figures marked. Frozen snapshot with SHA-256 fingerprint; banks check it at `/verify/<code>/` (QR on the print). FPOs can make one for a member. | Mostly self-reported book figures; the page says so. |
 | `storage/` | Store-or-sell calculator (loan at the bank's lending %, storage and interest, break-even price), WDRA warehouse list (CSV import), pledge record (e-NWR number, repository, loan, due date), reminders 15 and 3 days before due; pledged stock is held back from listings. `/storage/`. | Links to WDRA's e-Kisan Upaj Nidhi. No e-NWR repository API is public, so receipts are recorded, not fetched. Load warehouses with `load_warehouses file.csv`. |
+
+## Going live: checklist
+
+The structure is described in `STRUCTURE.md`. To put it on a server:
+
+1. **Two addresses, one app.** Point the main domain (e.g. `seedhabazar.in`) and the Institution Connect domain (e.g. `connect.seedhabazar.in`) at the same server, with https on both.
+   - Set `SITE_URL`, `INSTITUTION_URL` and `INSTITUTION_HOSTS`.
+   - List every domain in `DJANGO_ALLOWED_HOSTS` and, with `https://`, in `CSRF_TRUSTED_ORIGINS`.
+2. **Settings.** Copy `.env.example` to `.env` and fill it. Set `DJANGO_DEBUG=0`, a long random `DJANGO_SECRET_KEY`, the Postgres `DB_*` values and `DATA_GOV_IN_API_KEY`. Production refuses to start without a secret key.
+3. **Run it.** `docker compose up -d --build` starts:
+   - Postgres;
+   - the web app, which runs migrations first;
+   - the background worker;
+   - a `media` volume that keeps voice notes, photos and shared pictures across rebuilds.
+4. **Owner account.** Run `docker compose exec api python manage.py create_owner --phone <mobile> --email <email>`. It prints a one-time password. Sign in at `/console/login/` and change it in All records (`/admin/`).
+5. **Data.** Load data with:
+   - `python manage.py seed_insurance`;
+   - `load_msp`;
+   - `sync_wdra "Madhya Pradesh"` for a first warehouse list (the worker then refreshes every state weekly);
+   - `read_advisories` for the first mKisan advisories.
+6. **Institutions.** Add the KVKs and their staff in Console → Institutions. Staff sign in on the Institution Connect address with a code by SMS or email.
+7. **Messages.** Until an SMS provider is connected, everyone uses the trial code `OTP_STATIC_CODE`. Before opening to the public:
+   - register DLT templates with an SMS provider, set `OTP_BACKEND` and `NOTIFY_SMS_BACKEND`, and clear `OTP_STATIC_CODE`;
+   - set `EMAIL_*` for email codes;
+   - run `python manage.py make_vapid_keys` for phone notifications;
+   - add the WhatsApp and Meta keys if used.
+8. **Maps.** Move to a keyed tile provider (`MAP_TILE_URL`, `MAP_TILE_ATTRIBUTION`) before real traffic; OpenStreetMap's own tiles are for light use.
+9. **HTTPS hardening.** Plain http is redirected to https. HSTS starts at one hour; raise `SECURE_HSTS_SECONDS` to 31536000 once https works on every address.
+10. **Before launch, reviews by people:**
+    - native speakers for the Hindi and Marathi texts;
+    - a vet or the animal husbandry department for the livestock reminder schedules;
+    - a lawyer for the privacy notice and the order agreement.

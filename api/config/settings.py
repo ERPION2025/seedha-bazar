@@ -131,6 +131,13 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "1") == "1"  # every http:// request goes to https://
+    SECURE_REDIRECT_EXEMPT = [r"^health/$"]  # the load balancer's health check may use plain http
+    # Browsers remember to use https only. Starts at one hour; raise to 31536000 (a year) once https is known to work everywhere.
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "3600"))
+    # Off by default: both are hard to undo. Turn on only when every subdomain is https-only (preload also needs a year of HSTS).
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", "0") == "1"
+    SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD", "0") == "1"
 
 # --- Website ---
 LOGIN_URL = "/login/"
