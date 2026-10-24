@@ -1,0 +1,16 @@
+{% extends "web/fpo/base.html" %}{% load web_tags %}
+{% block title %}{% t "Requests" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Farmers who want to join" %}</h1>
+{% for r in pending %}
+<div class="card">
+  <b>{{ r.farmer.name|default:"—" }}</b><br>
+  <span class="mute">{{ r.farmer.user.phone }}{% if r.farmer.village %} · {{ r.farmer.village }}{% endif %}</span>
+  {% if org.verified %}<div class="row" style="margin-top:12px">
+    <form method="post" action="/fpo/requests/{{ r.pk }}/approve/">{% csrf_token %}<button class="btn small">{% t "Approve" %}</button></form>
+    <form method="post" action="/fpo/requests/{{ r.pk }}/reject/">{% csrf_token %}<button class="btn small ghost">{% t "Decline" %}</button></form>
+  </div>{% endif %}
+</div>
+{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No one is waiting." %}</p></div>{% endfor %}
+{% endblock %}

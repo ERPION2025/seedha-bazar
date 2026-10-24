@@ -1,0 +1,9 @@
+{% load web_tags %}
+<section class="card strip">
+  <div class="row between"><h3 style="margin:0">📈 {% t "Today's mandi rates" %}</h3><a href="/rates/">{% t "See all" %}</a></div>
+  <p class="hint" style="margin:4px 0 10px">{{ strip_place }} · {% t "per quintal" %}</p>
+  {% if strip %}
+  <div class="strip-row">{% for r in strip %}<a class="strip-item" href="/rates/?crop={{ r.crop }}"><span>{{ r.emoji }}</span><b>{% t r.label %}</b><i>{{ r.typical|inr }}</i></a>{% endfor %}</div>
+  {% else %}<p class="mute" style="margin:0">{% t "Mandi rates will appear here soon." %}</p>{% endif %}
+  {% if not strip_known and strip %}<p class="hint" style="margin:10px 0 0"><a href="/rates/">📍 {% t "Allow location to see rates near you" %}</a></p>{% endif %}
+</section>

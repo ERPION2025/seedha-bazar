@@ -1,0 +1,15 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "Enter the code" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Enter the code" %}</h1>
+<p class="mute">{% t "We sent a code to {phone}." phone=phone %}</p>
+<form method="post" class="card">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block">{% t "Continue" %}</button>
+</form>
+<form method="post" action="/login/resend/" class="row">{% csrf_token %}
+  <button class="btn small ghost">{% t "Send a new code" %}</button>
+  <a href="/login/">{% t "Change number" %}</a>
+</form>
+{% endblock %}

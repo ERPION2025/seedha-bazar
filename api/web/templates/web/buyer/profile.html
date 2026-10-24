@@ -1,0 +1,11 @@
+{% extends "web/buyer/base.html" %}{% load web_tags %}
+{% block title %}{% t "Business details" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Business details" %}</h1>
+{% if profile.level >= 2 %}<p><span class="pill">✔ {% t "Verified buyer" %}</span></p>{% elif profile.level == 1 %}<p class="hint">{% t "Add your GSTIN or FSSAI number and our team can verify your business. Sellers trust verified buyers more." %}</p>{% endif %}
+<form method="post" class="card">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block">{% t "Save" %}</button>
+</form>
+{% endblock %}

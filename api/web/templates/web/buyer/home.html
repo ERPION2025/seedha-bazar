@@ -1,0 +1,14 @@
+{% extends "web/buyer/base.html" %}{% load web_tags %}
+{% block title %}{% t "Buyer" %}{% endblock %}
+{% block content %}
+<h1>{% t "Namaste" %}{% if profile.contact_name %}, {{ profile.contact_name }}{% endif %}</h1>
+{% if profile.level < 1 %}
+<div class="card sun"><span class="pill sun">{% t "Next step" %}</span><h2 style="margin-top:8px">{% t "Tell us about your business" %}</h2><p>{% t "Sellers want to know who is asking. It takes one minute." %}</p><a class="btn" href="/buyer/profile/">{% t "Business details" %}</a></div>
+{% else %}
+<div class="stats"><div class="card stat"><small>{% t "Open conversations" %}</small><div class="big">{{ open_enquiries }}</div></div><div class="card stat"><small>{% t "Accepted" %}</small><div class="big">{{ accepted }}</div></div>
+  <div class="card stat"><small>{% t "Business" %}</small><div class="big" style="font-size:1rem">{% if profile.level >= 2 %}✔ {% t "Verified" %}{% else %}{% t "Not verified" %}{% endif %}</div></div></div>
+{% endif %}
+{% include "web/partials/rate_strip.html" %}
+<div class="row between"><h2 style="margin:0">{% if near %}{% t "New produce in your state" %}{% else %}{% t "New produce" %}{% endif %}</h2><a href="/market/">{% t "See all" %}</a></div>
+<div class="grid g2" style="margin-top:12px">{% for li in listings %}{% include "web/partials/listing_card.html" %}{% empty %}<div class="card sun" style="grid-column:1/-1"><p style="margin:0">{% t "No listings yet. Farmers and FPOs are adding produce." %}</p></div>{% endfor %}</div>
+{% endblock %}

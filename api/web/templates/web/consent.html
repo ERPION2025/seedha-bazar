@@ -1,0 +1,14 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "One last step" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "One last step" %}</h1>
+<div class="card tint">
+  <p>{% t "Seedha Bazar keeps your name, village, land, crops and farm book so the service can work for you. Your farm book is private to you. You can delete your account at any time." %}</p>
+  <p style="margin:0"><a href="/privacy/" target="_blank">{% t "Read the privacy notice" %}</a></p>
+</div>
+<form method="post" class="card">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block">{% t "Agree and continue" %}</button>
+</form>
+{% endblock %}

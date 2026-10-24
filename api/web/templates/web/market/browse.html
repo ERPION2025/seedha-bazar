@@ -1,0 +1,20 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "Marketplace" %}{% endblock %}
+{% block subnav %}{% if user.is_authenticated and user.role == "buyer" %}{% include "web/buyer/tabs.html" %}{% endif %}{% endblock %}
+{% block content %}
+<h1>🛒 {% t "Marketplace" %}</h1>
+<p class="mute">{% t "Produce offered directly by farmers and FPOs. Prices are what the seller is asking." %}</p>
+<form method="get" class="card" style="padding:12px 14px">
+  <div class="chip-row" style="margin-top:0"><a class="chip{% if not crop %} on{% endif %}" href="?{% if district %}district={{ district }}{% endif %}">{% t "All" %}</a>
+    {% for c in crop_chips %}<a class="chip{% if crop == c.crop %} on{% endif %}" href="?crop={{ c.crop }}{% if district %}&district={{ district }}{% endif %}">{{ c.emoji }} {% crop c.crop %}</a>{% endfor %}</div>
+  {% if crop %}<input type="hidden" name="crop" value="{{ crop }}">{% endif %}
+  <div class="row" style="margin-top:10px"><input type="text" name="district" value="{{ district }}" placeholder="{% t 'District' %}" style="flex:1;min-width:140px">
+    <select name="sort" style="width:auto"><option value="new"{% if sort == "new" %} selected{% endif %}>{% t "Newest" %}</option><option value="cheap"{% if sort == "cheap" %} selected{% endif %}>{% t "Lowest price" %}</option></select>
+    <button class="btn small">{% t "Search" %}</button></div>
+</form>
+<div class="grid g2">{% for li in rows %}{% include "web/partials/listing_card.html" %}{% empty %}
+  <div class="card sun" style="grid-column:1/-1"><h3>{% t "No listings yet" %}</h3><p style="margin:0">{% t "Farmers and FPOs are adding produce. Check back soon." %}</p></div>{% endfor %}</div>
+<div class="row" style="margin-top:8px">{% if page > 1 %}<a class="btn small ghost" href="?{% if crop %}crop={{ crop }}&{% endif %}{% if district %}district={{ district }}&{% endif %}sort={{ sort }}&page={{ page|add:'-1' }}">← {% t "Back" %}</a>{% endif %}
+  {% if has_next %}<a class="btn small" href="?{% if crop %}crop={{ crop }}&{% endif %}{% if district %}district={{ district }}&{% endif %}sort={{ sort }}&page={{ page|add:'1' }}">{% t "More" %} →</a>{% endif %}</div>
+{% if not user.is_authenticated %}<div class="card tint" style="margin-top:16px"><b>{% t "Want to buy?" %}</b> <a href="/login/?as=buyer&next=/market/">{% t "Sign in as a buyer" %}</a> · <a href="/for-buyers/">{% t "Join the waitlist" %}</a></div>{% endif %}
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Messages" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>💬 {% t "Messages" %}</h1>
+{% for e in rows %}
+<a class="door" href="/enquiry/{{ e.pk }}/"><div class="card">
+  <div class="row between"><b>{{ e.emoji }} {% crop e.listing.crop %}</b><span class="pill {% if e.unseen %}red{% elif e.status == "accepted" %}{% else %}grey{% endif %}">{% if e.unseen %}{% t "New" %}{% else %}{% t e.get_status_display %}{% endif %}</span></div>
+  <p class="mute" style="margin:4px 0 0">{% if is_buyer %}{{ e.listing.district }}{% else %}{{ e.buyer.buyer_profile.business_name }}{% endif %} · {{ e.quantity|num:2 }} {% t e.listing.unit %}</p>
+  {% if e.last %}<p style="margin:6px 0 0" class="mute">“{{ e.last.text|truncatechars:70 }}”</p>{% endif %}
+</div></a>
+{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No conversations yet." %}</p></div>{% endfor %}
+{% endblock %}

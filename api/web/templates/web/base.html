@@ -1,0 +1,41 @@
+{% load static web_tags %}<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14532d">
+<title>{% block title %}{% t "Seedha Bazar" %}{% endblock %} · {% t "Seedha Bazar" %}</title>
+<meta name="description" content="{% block desc %}{% t "Direct market, fair price, your farmer brother" %}{% endblock %}">
+<link rel="stylesheet" href="{% static 'web/app.css' %}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/"><i>सी</i>{% t "Seedha Bazar" %}</a>
+  <nav class="langs" aria-label="Language">{% for code, name in lang_choices %}<a href="?lang={{ code }}"{% if code == lang %} class="on" aria-current="true"{% endif %}>{{ name }}</a>{% endfor %}</nav>
+  {% if user.is_authenticated %}
+    <a class="login" href="{{ home_url }}">{% t "My page" %}</a>
+    <form method="post" action="/logout/">{% csrf_token %}<button class="link-btn">{% t "Sign out" %}</button></form>
+  {% else %}
+    <a class="login" href="/login/">{% t "Sign in" %}</a>
+  {% endif %}
+</div></header>
+{% block subnav %}{% endblock %}
+{% block hero %}{% endblock %}
+<main class="wrap{% block mainclass %}{% endblock %}">
+  {% if messages %}<ul class="msgs">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+{% block after %}{% endblock %}
+<footer><div class="wrap">
+  <p><b>{% t "Seedha Bazar" %}</b> — {% t "Direct market, fair price, your farmer brother" %}</p>
+  <p><a href="/for-farmers/">{% t "For farmers" %}</a> · <a href="/for-fpos/">{% t "For FPOs and NGOs" %}</a> · <a href="/for-buyers/">{% t "For buyers" %}</a> · <a href="/market/">{% t "Marketplace" %}</a> · <a href="/rates/">{% t "Rates" %}</a> · <a href="/calculator/">{% t "Harvest calculator" %}</a> · <a href="/privacy/">{% t "Privacy" %}</a></p>
+</div></footer>
+{% if SUPPORT_WHATSAPP %}<a class="wa" href="https://wa.me/{{ SUPPORT_WHATSAPP }}" data-track="whatsapp_click" rel="noopener">{% t "Help on WhatsApp" %}</a>{% endif %}
+{% if GA4_ID or META_PIXEL_ID %}
+<div class="cc" id="cc" hidden><div class="wrap"><span>{% t "We use cookies to learn which ads bring farmers here. Allow?" %}</span><button class="btn small" id="cc-yes" type="button">{% t "Allow" %}</button><button class="btn small ghost" id="cc-no" type="button">{% t "No thanks" %}</button></div></div>
+<script>window.SB_CFG={ga4:"{{ GA4_ID }}",meta:"{{ META_PIXEL_ID }}"};</script>
+<script src="{% static 'web/track.js' %}" defer></script>
+{% endif %}
+</body>
+</html>

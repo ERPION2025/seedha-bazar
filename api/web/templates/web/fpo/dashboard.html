@@ -1,0 +1,44 @@
+{% extends "web/fpo/base.html" %}{% load web_tags %}
+{% block title %}{{ org.name }}{% endblock %}
+{% block content %}
+<h1>{{ org.name }}</h1>
+{% if not org.verified %}
+<div class="card sun"><span class="pill sun">{% t "Waiting for approval" %}</span>
+  <h3 style="margin-top:8px">{% t "We are checking your registration" %}</h3>
+  <p style="margin:0">{% t "Once approved you can add farmers, and your members can find you. We will call the number you signed in with if we need anything." %}</p></div>
+{% else %}
+<div class="stats4">
+  <div class="card stat"><small>{% t "Members" %}</small><div class="big">{{ confirmed }}</div></div>
+  <div class="card stat"><small>{% t "Waiting to confirm" %}</small><div class="big">{{ waiting }}</div></div>
+  <div class="card stat"><small>{% t "Requests" %}</small><div class="big">{{ requests }}</div></div>
+  <div class="card stat"><small>{% t "Acres" %}</small><div class="big">{{ acres|num:1 }}</div></div>
+</div>
+
+{% if requests %}<div class="card sun"><b>{% t "{n} farmers want to join." n=requests %}</b> <a class="btn small" href="/fpo/requests/">{% t "Review" %}</a></div>{% endif %}
+{% if waiting %}<div class="card"><b>{% t "{n} farmers have not entered their code yet." n=waiting %}</b> <a href="/fpo/farmers/">{% t "See who" %}</a></div>{% endif %}
+
+<div class="card tint">
+  <h2>{% t "Invite your members" %}</h2>
+  <p>{% t "Share this message on WhatsApp. Farmers who open the link and sign in are sent to you." %}</p>
+  <div class="copy">{{ share_text }}</div>
+  <div class="row" style="margin-top:12px">
+    <a class="btn" href="{{ wa_url }}" target="_blank" rel="noopener">{% t "Share on WhatsApp" %}</a>
+    <span class="mute">{% t "Your code" %}: <b>{{ org.code }}</b></span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="row between">
+    <div><h3 style="margin:0">{% t "Auto-approve members" %}</h3>
+    <p class="mute" style="margin:4px 0 0">{% if org.auto_approve_members %}{% t "On: farmers who use your link are confirmed at once." %}{% else %}{% t "Off: you approve each farmer yourself." %}{% endif %}</p></div>
+    <form method="post" action="/fpo/auto-approve/">{% csrf_token %}<button class="btn small ghost">{% if org.auto_approve_members %}{% t "Turn off" %}{% else %}{% t "Turn on" %}{% endif %}</button></form>
+  </div>
+</div>
+
+{% include "web/partials/rate_strip.html" %}
+{% if top_crops %}<div class="card"><h3>{% t "What your members grow" %}</h3>
+  <div class="row">{% for c, n in top_crops %}<span class="pill">{% crop c %} · {{ n }}</span>{% endfor %}</div></div>{% endif %}
+
+<div class="row"><a class="btn" href="/fpo/farmers/add/">+ {% t "Add farmer" %}</a><a class="btn ghost" href="/fpo/farmers/bulk/">{% t "Add many at once" %}</a></div>
+{% endif %}
+{% endblock %}

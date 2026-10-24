@@ -1,0 +1,11 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Messages" %}{% endblock %}
+{% block content %}
+<h1>{% t "Messages" %}</h1>
+<p class="mute">{% t "Every SMS and WhatsApp message the platform tried to send. Status 'logged' means no provider is connected yet." %}</p>
+<div class="card scroll"><table class="tbl">
+<thead><tr><th>{% t "When" %}</th><th>{% t "Channel" %}</th><th>{% t "To" %}</th><th>{% t "Message" %}</th><th>{% t "Status" %}</th></tr></thead>
+<tbody>{% for m in rows %}<tr><td>{{ m.created_at|date:"j M, H:i" }}</td><td>{{ m.get_channel_display }}</td><td>{{ m.phone }}</td><td style="max-width:420px">{{ m.text }}<br><span class="mute">{{ m.template }} · {{ m.related }}</span></td>
+<td><span class="pill {% if m.status == "sent" %}{% elif m.status == "logged" %}sun{% else %}red{% endif %}">{{ m.get_status_display }}</span>{% if m.error %}<br><span class="mute">{{ m.error }}</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="5" class="mute">{% t "Nothing sent yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

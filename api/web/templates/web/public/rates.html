@@ -1,0 +1,44 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "Today's mandi rates" %}{% endblock %}
+{% block content %}
+<h1>📈 {% t "Today's mandi rates" %}</h1>
+{% include "web/partials/location_bar.html" with auto="1" reload="1" %}
+
+{% if tiles %}
+<div class="tiles small" style="margin:16px 0">
+  {% for t in tiles %}<a class="tile{% if t.crop == crop %} on{% endif %}" href="?crop={{ t.crop }}"><span class="e">{{ t.emoji }}</span><b>{% t t.label %}</b><small>{{ t.typical|inr }}</small></a>{% endfor %}
+</div>
+{% endif %}
+
+{% if q and q.typical %}
+<div class="card tint">
+  <div class="row between"><h2 style="margin:0">{% crop q.crop %}</h2>
+    {% if q.trend is not None %}{% if q.trend > 0 %}<span class="pill">▲ {% t "up {n}% this week" n=q.trend|num:1 %}</span>{% elif q.trend < 0 %}<span class="pill red">▼ {% t "down {n}% this week" n=q.trend|num:1|cut:"-" %}</span>{% endif %}{% endif %}</div>
+  <p class="mute" style="margin:4px 0 8px">{% if q.scope == "district" %}{{ q.district }}{% elif q.scope == "state" %}{{ q.state|default:"India" }}{% else %}India{% endif %} · {% t "Reported on {date}" date=q.as_of|date:"j M" %}</p>
+  <div class="big">{{ q.typical|inr }} <small style="font-size:1rem;font-weight:500">{% t "per quintal" %}</small></div>
+  {% if q.msp %}<p style="margin:10px 0 0"><span class="pill sun">🏛️ {% t "Govt MSP" %} {{ q.msp.price|inr }}</span> <span class="hint">{{ q.msp.season }}</span></p>{% endif %}
+  {% if q.demo %}<p class="err" style="margin-top:8px">{% t "Sample data, not real prices" %}</p>{% endif %}
+</div>
+
+{% if q.local %}<div class="card"><h3>{% t "Mandis in your district" %}</h3>{% include "web/partials/rate_rows.html" with rows=q.local %}</div>{% endif %}
+{% if q.nearby %}<div class="card"><h3>{% if q.local %}{% t "Best prices elsewhere in your state" %}{% elif loc.state %}{% t "Mandis near you" %}{% else %}{% t "Best prices across India today" %}{% endif %}</h3>{% include "web/partials/rate_rows.html" with rows=q.nearby %}</div>{% endif %}
+
+<div class="row">
+  <a class="btn" href="/calculator/?crop={{ q.crop }}">🧮 {% t "Calculate my money" %}</a>
+  {% if user.is_authenticated %}
+    {% if alert_set %}<span class="pill">🔔 {% t "Daily alert is on" %}</span> <a href="/alerts/">{% t "My rate alerts" %}</a>
+    {% else %}<button class="btn ghost" id="alert-btn" data-crop="{{ q.crop }}">🔔 {% t "Tell me {crop} rates every day" crop=q.label %}</button>{% endif %}
+  {% else %}<a class="btn ghost" href="/login/?as=farmer&next=/rates/%3Fcrop={{ q.crop }}">🔔 {% t "Sign in to get this on your phone" %}</a>{% endif %}
+</div>
+<p class="hint" style="margin-top:14px">{% t "Rates are from mandis reported to Agmarknet (Govt. of India). Your mandi may differ." %}{% if updated %} {% t "Last updated {when}" when=updated|date:"j M, H:i" %}{% endif %}</p>
+<p id="alert-msg" class="hint" hidden></p>
+{% elif tiles or crop %}
+<div class="card sun"><p style="margin:0">{% t "No rate found near you for this crop. Type your own rate." %}</p></div>
+{% else %}
+<div class="card sun"><h3>{% t "Mandi rates will appear here soon." %}</h3><p style="margin:0">{% t "We are connecting the Government of India mandi price feed. Check back soon." %}</p></div>
+{% endif %}
+<script>
+var ab=document.getElementById("alert-btn");
+if(ab){ab.onclick=function(){var m=document.cookie.match(/csrftoken=([^;]+)/);fetch("/rates/alert/",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-CSRFToken":m?m[1]:""},body:JSON.stringify({crop:ab.dataset.crop,channel:"whatsapp"})}).then(function(r){return r.json()}).then(function(d){var o=document.getElementById("alert-msg");o.hidden=false;o.textContent=d.ok?(d.live?"{% t "You will get {crop} rates every day." crop=q.label|default:"" %}":"{% t "Saved. Daily messages start as soon as messaging is switched on." %}"):"{% t "Something went wrong. Please try again." %}";if(d.ok)ab.hidden=true;});};}
+</script>
+{% endblock %}

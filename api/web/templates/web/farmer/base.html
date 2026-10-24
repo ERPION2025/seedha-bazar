@@ -1,0 +1,11 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block subnav %}<nav class="tabs"><div class="wrap">
+  <a href="/farmer/"{% if request.path == "/farmer/" %} class="on"{% endif %}>{% t "Home" %}</a>
+  <a href="/farmer/book/"{% if "/farmer/book" in request.path %} class="on"{% endif %}>{% t "My book" %}</a>
+  <a href="/farmer/sell/"{% if "/farmer/sell" in request.path %} class="on"{% endif %}>{% t "Sell" %}</a>
+  <a href="/farmer/enquiries/"{% if "/enquir" in request.path %} class="on"{% endif %}>{% t "Messages" %}{% if unread %}<span class="n">{{ unread }}</span>{% endif %}</a>
+  <a href="/rates/"{% if "/rates" in request.path %} class="on"{% endif %}>{% t "Rates" %}</a>
+  <a href="/farmer/fpo/"{% if "/farmer/fpo" in request.path %} class="on"{% endif %}>{% t "My FPO" %}</a>
+  <a href="/calculator/">{% t "Calculator" %}</a>
+  <a href="/farmer/account/"{% if "/farmer/account" in request.path %} class="on"{% endif %}>{% t "Account" %}</a>
+</div></nav>{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "My rate alerts" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>🔔 {% t "My rate alerts" %}</h1>
+{% if not live.sms and not live.whatsapp %}<div class="card sun"><p style="margin:0">{% t "Daily messages start as soon as messaging is switched on." %}</p></div>{% endif %}
+{% for a in alerts %}
+<div class="card"><div class="row between"><div><b>{% crop a.crop %}</b> <span class="pill grey">{{ a.get_channel_display }}</span><br><span class="mute">{{ a.district|default:a.state|default:"—" }}</span></div>
+  <form method="post" action="/alerts/{{ a.pk }}/delete/">{% csrf_token %}<button class="btn small ghost">{% t "Remove" %}</button></form></div></div>
+{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No alerts yet. Open the rates page and tap the bell." %}</p><p style="margin:12px 0 0"><a class="btn small" href="/rates/">{% t "Today's mandi rates" %}</a></p></div>{% endfor %}
+{% endblock %}

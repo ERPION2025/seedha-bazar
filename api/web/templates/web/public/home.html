@@ -1,0 +1,31 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block hero %}
+<section class="hero"><div class="wrap">
+  <h1>{% t "Direct market, fair price, your farmer brother" %}</h1>
+  <p>{% t "Seedha Bazar helps farmers and FPOs keep their accounts and reach buyers directly. No commission on your sale. Free to join." %}</p>
+  <div class="row" style="margin-top:20px">
+    <a class="btn sun" href="/login/?as=farmer" data-track="cta_farmer">{% t "I am a farmer" %}</a>
+    <a class="btn ghost" href="/login/?as=fpo" data-track="cta_fpo">{% t "I run an FPO or NGO" %}</a>
+  </div>
+</div></section>
+{% endblock %}
+{% block content %}
+{% include "web/partials/rate_strip.html" %}
+{% if listings %}<div class="row between"><h2 style="margin:0">🛒 {% t "Fresh from farmers" %}</h2><a href="/market/">{% t "See all" %}</a></div>
+<div class="grid g2" style="margin:12px 0 22px">{% for li in listings %}{% include "web/partials/listing_card.html" %}{% endfor %}</div>{% endif %}
+<h2>{% t "Choose your door" %}</h2>
+<div class="grid g3">
+  <a class="door" href="/for-farmers/"><div class="card"><div class="ico">🌾</div><h3>{% t "Farmers" %}</h3><p class="mute">{% t "Keep your crop accounts, see your profit, and join your FPO." %}</p></div></a>
+  <a class="door" href="/for-fpos/"><div class="card"><div class="ico">🤝</div><h3>{% t "FPOs and NGOs" %}</h3><p class="mute">{% t "Add your members, share one link, and see everyone in one place." %}</p></div></a>
+  <a class="door" href="/for-buyers/"><div class="card"><div class="ico">🛒</div><h3>{% t "Buyers" %}</h3><p class="mute">{% t "Join the waitlist to buy directly from verified farmers and FPOs." %}</p></div></a>
+</div>
+<h2 style="margin-top:28px">{% t "How it works" %}</h2>
+<div class="card"><div class="step"><b>1</b><div><h3>{% t "Sign in with your mobile number" %}</h3><p class="mute" style="margin:0">{% t "A code comes by SMS. No password to remember." %}</p></div></div></div>
+<div class="card"><div class="step"><b>2</b><div><h3>{% t "Tell us about your land and crops" %}</h3><p class="mute" style="margin:0">{% t "Or let your FPO add you. You just confirm the code on your own phone." %}</p></div></div></div>
+<div class="card"><div class="step"><b>3</b><div><h3>{% t "Write down costs and sales" %}</h3><p class="mute" style="margin:0">{% t "See your real profit for every crop. Buyer enquiries are coming next." %}</p></div></div></div>
+<div class="card sun">
+  <h3>{% t "How much do middlemen take from your sale?" %}</h3>
+  <p>{% t "Try the harvest calculator. It takes one minute." %}</p>
+  <a class="btn" href="/calculator/" data-track="cta_calculator">{% t "Open the harvest calculator" %}</a>
+</div>
+{% endblock %}

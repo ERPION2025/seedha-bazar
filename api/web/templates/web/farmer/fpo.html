@@ -1,0 +1,27 @@
+{% extends "web/farmer/base.html" %}{% load web_tags %}
+{% block title %}{% t "My FPO" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "My FPO or NGO" %}</h1>
+{% if fp.organisation %}
+<div class="card {% if fp.org_status == "confirmed" %}tint{% endif %}">
+  <h2>{{ fp.organisation.name }}</h2>
+  {% if fp.org_status == "confirmed" %}<span class="pill">✔ {% t "Member confirmed" %}</span>{% else %}<span class="pill sun">{% t "Waiting for confirmation" %}</span>{% endif %}
+</div>
+{% endif %}
+{% for r in pending %}<div class="card sun"><b>{{ r.organisation.name }}</b> — {% t "request sent, waiting for the FPO" %}</div>{% endfor %}
+
+<div class="card">
+  <h3>{% t "Join with a code" %}</h3>
+  <form method="post">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn block">{% t "Join" %}</button></form>
+</div>
+
+<div class="card">
+  <h3>{% t "Or find your FPO" %}</h3>
+  <form method="get" class="row" style="margin-bottom:10px"><input type="text" name="q" value="{{ q }}" placeholder="{% t "Name or district" %}" style="flex:1"><button class="btn small">{% t "Search" %}</button></form>
+  {% for o in orgs %}
+  <div class="line"><div><b>{{ o.name }}</b><br><span class="mute">{{ o.district }}{% if o.block %} · {{ o.block }}{% endif %}</span></div>
+    <form method="post">{% csrf_token %}<input type="hidden" name="code" value="{{ o.code }}"><button class="btn small ghost">{% t "Join" %}</button></form></div>
+  {% empty %}<p class="mute">{% t "No verified FPO found. Ask your FPO for its code or link." %}</p>{% endfor %}
+</div>
+{% endblock %}

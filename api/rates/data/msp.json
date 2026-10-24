@@ -1,0 +1,20 @@
+{
+  "note": "Copied from the Cabinet (CCEA) press releases on pib.gov.in. Check each new announcement and add its rows; do not edit old seasons.",
+  "seasons": [
+    {
+      "season": "RMS 2027-28", "announced_on": "2026-09-30",
+      "source_url": "https://www.pib.gov.in/PressReleasepage.aspx?PRID=2316941&reg=48&lang=1",
+      "prices": {"wheat": ["Wheat", 2610], "barley": ["Barley", 2286], "gram": ["Gram", 5958], "lentil": ["Lentil (Masur)", 7390], "mustard": ["Rapeseed & Mustard", 6613], "safflower": ["Safflower", 7215]}
+    },
+    {
+      "season": "RMS 2026-27", "announced_on": "2025-10-01",
+      "source_url": "https://www.pib.gov.in/PressReleasepage.aspx?PRID=2316941&reg=48&lang=1",
+      "prices": {"wheat": ["Wheat", 2585], "barley": ["Barley", 2150], "gram": ["Gram", 5875], "lentil": ["Lentil (Masur)", 7000], "mustard": ["Rapeseed & Mustard", 6200], "safflower": ["Safflower", 6540]}
+    },
+    {
+      "season": "KMS 2026-27", "announced_on": "2026-05-13",
+      "source_url": "https://www.pib.gov.in/PressReleasePage.aspx?PRID=2260618&reg=48&lang=2",
+      "prices": {"rice": ["Paddy (Common)", 2441], "jowar": ["Jowar (Hybrid)", 4023], "bajra": ["Bajra", 2900], "ragi": ["Ragi", 5205], "maize": ["Maize", 2410], "tur": ["Tur / Arhar", 8450], "moong": ["Moong", 8780], "urad": ["Urad", 8200], "groundnut": ["Groundnut", 7517], "sunflower": ["Sunflower Seed", 8343], "soybean": ["Soybean (Yellow)", 5708], "sesame": ["Sesamum", 10346], "cotton": ["Cotton (Medium Staple)", 8267]}
+    }
+  ]
+}

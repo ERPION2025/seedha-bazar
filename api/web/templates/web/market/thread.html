@@ -1,0 +1,38 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% crop li.crop %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<p><a href="{% if is_seller %}{% if user.role == "agent" %}/fpo{% else %}/farmer{% endif %}/enquiries/{% else %}/buyer/enquiries/{% endif %}">← {% t "Messages" %}</a></p>
+<a class="door" href="/market/{{ li.pk }}/"><div class="card">
+  <div class="row between"><h3 style="margin:0">{{ li.emoji }} {% crop li.crop %}</h3><span class="pill {% if e.status == "new" %}sun{% elif e.status == "accepted" %}{% else %}grey{% endif %}">{% t e.get_status_display %}</span></div>
+  <p style="margin:6px 0 0">{% t "Asking" %}: <b>{{ li.price|inr }} / {% t li.unit %}</b> · {{ li.quantity|num:2 }} {% t li.unit %}</p>
+  <p style="margin:2px 0 0">{% t "Wanted" %}: <b>{{ e.quantity|num:2 }} {% t li.unit %}</b>{% if e.offered_price %} {% t "at" %} <b>{{ e.offered_price|inr }}</b>{% endif %}</p>
+</div></a>
+
+{% if contact %}
+<div class="card tint"><h3>🔓 {% if is_seller %}{% t "Buyer's contact" %}{% else %}{% t "Seller's contact" %}{% endif %}</h3>
+  <p style="margin:0"><b>{{ contact.name }}</b>{% if contact.business %} · {{ contact.business }}{% endif %}{% if contact.city %} · {{ contact.city }}{% endif %}</p>
+  <div class="row" style="margin-top:10px"><a class="btn" href="tel:{{ contact.phone }}">📞 {{ contact.phone }}</a><a class="btn ghost" href="{{ contact.wa }}" target="_blank" rel="noopener">💬 WhatsApp</a></div>
+  {% if sale_url %}<p style="margin:12px 0 0"><a class="btn sun" href="{{ sale_url }}">🧾 {% t "Record this sale in my book" %}</a></p>{% endif %}
+</div>
+{% elif e.status == "new" %}<div class="card"><p class="hint" style="margin:0">🔒 {% t "Phone numbers stay hidden until the seller accepts." %}</p></div>{% endif %}
+
+{% if is_seller and e.status == "new" %}
+<div class="card sun"><p><b>{% t "Accept this enquiry?" %}</b> {% t "You and the buyer will see each other's phone number." %}</p>
+  <div class="row"><form method="post" action="/enquiry/{{ e.pk }}/accept/">{% csrf_token %}<button class="btn">{% t "Accept" %}</button></form>
+  <form method="post" action="/enquiry/{{ e.pk }}/decline/">{% csrf_token %}<button class="btn ghost">{% t "Decline" %}</button></form></div></div>
+{% endif %}
+
+<div class="card chat">
+  {% for m in messages_ %}<div class="bubble {% if m.sender_id == user.pk %}me{% endif %}"><p>{{ m.text }}</p><small>{{ m.created_at|date:"j M, H:i" }}{% if m.masked %} · 🔒 {% t "Contact details hidden" %}{% endif %}</small></div>
+  {% empty %}<p class="mute" style="margin:0">{% t "No messages yet." %}</p>{% endfor %}
+</div>
+{% if not closed %}
+<form method="post" action="/enquiry/{{ e.pk }}/message/" class="card">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn block">{% t "Send" %}</button></form>
+{% endif %}
+{% if e.status == "accepted" %}
+<form method="post" action="/enquiry/{{ e.pk }}/close/" class="row">{% csrf_token %}
+  {% if is_seller %}<button class="btn small" name="sold" value="1">{% t "Mark as sold" %}</button>{% endif %}
+  <button class="btn small ghost">{% t "Close conversation" %}</button></form>
+{% endif %}
+{% endblock %}

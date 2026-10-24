@@ -1,0 +1,20 @@
+{% load web_tags static %}
+<div class="locbar" id="locbar" data-auto="{{ auto|default:'0' }}" data-reload="{{ reload|default:'0' }}" data-has="{% if loc.state or loc.district %}1{% endif %}"
+     data-t-finding="{% t 'Finding your place...' %}" data-t-fail="{% t 'Could not find your place. Choose it from the list.' %}"
+     data-t-denied="{% t 'Location is blocked. Choose your place from the list.' %}" data-t-none="{% t 'Location not set' %}">
+  <div class="locbar-main"><span aria-hidden="true">📍</span> <b id="loc-text">{% if loc_label %}{{ loc_label }}{% else %}{% t "Location not set" %}{% endif %}</b></div>
+  <div class="row">
+    <button type="button" class="btn small" id="loc-gps">{% t "Use my location" %}</button>
+    <button type="button" class="btn small ghost" id="loc-pick">{% t "Choose place" %}</button>
+  </div>
+  <p class="hint" id="loc-msg" style="flex-basis:100%;margin:0" hidden></p>
+</div>
+<div class="sheet" id="loc-sheet" hidden role="dialog" aria-modal="true" aria-label="{% t 'Choose your place' %}">
+  <div class="sheet-panel">
+    <h3>{% t "Choose your place" %}</h3>
+    <div class="field"><label for="loc-state">{% t "State" %}</label><select id="loc-state"></select></div>
+    <div class="field"><label for="loc-district">{% t "District" %}</label><select id="loc-district"></select></div>
+    <div class="row"><button type="button" class="btn" id="loc-save">{% t "Save" %}</button><button type="button" class="btn ghost" id="loc-cancel">{% t "Back" %}</button></div>
+  </div>
+</div>
+<script src="{% static 'web/location.js' %}" defer></script>

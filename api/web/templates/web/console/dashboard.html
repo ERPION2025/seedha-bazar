@@ -1,0 +1,22 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Overview" %}{% endblock %}
+{% block content %}
+<h1>{% t "Overview" %}</h1>
+<div class="grid g4">
+  <div class="card stat"><small>{% t "Farmers" %}</small><div class="big">{{ farmers }}</div><small>+{{ farmers_week }} {% t "this week" %}</small></div>
+  <div class="card stat"><small>{% t "Waiting to confirm" %}</small><div class="big">{{ waiting }}</div></div>
+  <div class="card stat"><small>{% t "Verified FPOs and NGOs" %}</small><div class="big">{{ orgs_verified }}</div></div>
+  <div class="card stat"><small>{% t "Buyers" %}</small><div class="big">{{ buyers }}</div></div>
+  <div class="card stat"><small>{% t "Leads this week" %}</small><div class="big">{{ leads_week }}</div></div>
+</div>
+{% if to_verify %}
+<div class="card sun"><h3>{% t "Waiting for your approval" %}</h3>
+  {% for o in to_verify %}<div class="line"><div><b>{{ o.name }}</b> <span class="pill grey">{{ o.get_kind_display }}</span><br><span class="mute">{{ o.district }}{% if o.block %} · {{ o.block }}{% endif %}{% if o.registration_no %} · {{ o.registration_no }}{% endif %}{% if o.contact_name %} · {{ o.contact_name }}{% endif %}</span></div>
+    <form method="post" action="/console/orgs/{{ o.pk }}/verify/">{% csrf_token %}<input type="hidden" name="verified" value="1"><input type="hidden" name="back" value="/console/"><button class="btn small">{% t "Approve" %}</button></form></div>{% endfor %}
+</div>{% endif %}
+<div class="grid g2">
+  <div class="card"><h3>{% t "Top districts" %}</h3>{% for d in districts %}<div class="line"><span>{{ d.district|default:"—" }}</span><b>{{ d.n }}</b></div>{% empty %}<p class="mute">—</p>{% endfor %}</div>
+  <div class="card"><h3>{% t "Latest leads" %}</h3>{% for l in recent_leads %}<div class="line"><span>{{ l.name }} <span class="pill grey">{{ l.get_kind_display }}</span></span><span class="mute">{{ l.created_at|date:"j M" }}</span></div>{% empty %}<p class="mute">—</p>{% endfor %}</div>
+</div>
+<div class="row"><a class="btn" href="/console/orgs/new/">+ {% t "New FPO or NGO" %}</a><a class="btn ghost" href="/console/farmers/add/">+ {% t "Add farmer" %}</a></div>
+{% endblock %}

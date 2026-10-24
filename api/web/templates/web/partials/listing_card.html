@@ -1,0 +1,7 @@
+{% load web_tags %}
+<a class="door" href="/market/{{ li.pk }}/"><div class="card">
+  <div class="row between"><h3 style="margin:0">{{ li.emoji }} {% crop li.crop %}{% if li.variety %} · {{ li.variety }}{% endif %}</h3>{% if li.grade != "ungraded" %}<span class="pill">{% t li.get_grade_display %}</span>{% endif %}</div>
+  <p style="margin:8px 0 2px"><b>{{ li.quantity|num:2 }} {% t li.unit %}</b> · <b class="pos big2">{{ li.price|inr }}</b> / {% t li.unit %}</p>
+  {% if li.ref %}<p style="margin:0 0 4px"><span class="pill {% if li.ref.diff_pct > 8 %}red{% elif li.ref.diff_pct < -8 %}sun{% endif %}">{% t "Mandi today {price}" price=li.ref.typical|inr %} · {% if li.ref.diff_pct > 0 %}+{% endif %}{{ li.ref.diff_pct|num:1 }}%</span></p>{% endif %}
+  <p class="mute" style="margin:6px 0 0">📍 {{ li.district }}, {{ li.state }} · {% if li.seller_org %}🏢{% else %}🧑‍🌾{% endif %} {{ li.seller_label }}{% if li.seller_verified %} <span class="pos">✔</span>{% endif %}</p>
+</div></a>

@@ -1,0 +1,57 @@
+{% extends "web/farmer/base.html" %}{% load web_tags %}
+{% block title %}{% t "Home" %}{% endblock %}
+{% block content %}
+<h1>{% t "Namaste" %}{% if fp.name %}, {{ fp.name }}{% endif %}</h1>
+
+{% if step %}
+<div class="card sun">
+  <span class="pill sun">{% t "Next step" %}</span>
+  <h2 style="margin-top:8px">{% t step.title %}</h2>
+  <p>{% t step.text %}</p>
+  <a class="btn" href="{{ step.url }}">{% t step.button %}</a>
+</div>
+{% endif %}
+
+{% if not loc %}<div class="card tint"><b>📍 {% t "Allow location to see rates near you" %}</b>{% include "web/partials/location_bar.html" with auto="1" reload="1" %}</div>{% endif %}
+{% include "web/partials/rate_strip.html" %}
+
+{% if cycle_count %}
+<div class="stats">
+  <div class="card stat"><small>{% t "Spent" %}</small><div class="big">{{ ledger.expenses|inr }}</div></div>
+  <div class="card stat"><small>{% t "Sold for" %}</small><div class="big">{{ ledger.revenue|inr }}</div></div>
+  <div class="card stat"><small>{% t "Profit so far" %}</small><div class="big {% if ledger.profit|slice:":1" == "-" %}neg{% else %}pos{% endif %}">{{ ledger.profit|inr }}</div></div>
+</div>
+{% if quick %}
+<h2>{% t "Add now" %} — {% crop quick.crop %}</h2>
+<div class="quick">
+  <a class="btn ghost" href="/farmer/book/{{ quick.client_id }}/add/expense/">💸 {% t "Expense" %}</a>
+  <a class="btn ghost" href="/farmer/book/{{ quick.client_id }}/add/harvest/">🌾 {% t "Harvest" %}</a>
+  <a class="btn ghost" href="/farmer/book/{{ quick.client_id }}/add/sale/">🧾 {% t "Sale" %}</a>
+  <a class="btn ghost" href="/farmer/book/{{ quick.client_id }}/add/task/">📅 {% t "Work or reminder" %}</a>
+</div>
+{% endif %}
+{% endif %}
+
+{% if tasks %}
+<div class="card"><h3>{% t "Coming up" %}</h3>
+  {% for a in tasks %}<div class="line"><div><b>{% t a.get_kind_display %}</b> · {% crop a.crop_cycle.crop %}<br><span class="mute">{{ a.date|date:"j M" }}{% if a.date < today %} · <span class="neg">{% t "overdue" %}</span>{% endif %}{% if a.note %} · {{ a.note }}{% endif %}</span></div>
+    <form method="post" action="/farmer/book/{{ a.crop_cycle.client_id }}/done/{{ a.client_id }}/">{% csrf_token %}<input type="hidden" name="back" value="home"><button class="btn small">{% t "Done" %}</button></form></div>{% endfor %}
+</div>
+{% endif %}
+
+{% if stock %}
+<div class="card"><h3>{% t "Stock at home" %}</h3>
+  {% for s in stock %}<div class="line"><div><b>{% crop s.crop %}</b><br><a class="btn small sun" href="/farmer/sell/new/?cycle={{ s.crop_cycle }}">🏷️ {% t "List for sale" %}</a></div><div>{{ s.stock_quintal|num }} {% t "quintal" %}{% if s.days_left is not None %}<br><span class="mute">{% if s.days_left < 0 %}<span class="neg">{% t "past storage time" %}</span>{% else %}{% t "{n} days left" n=s.days_left %}{% endif %}</span>{% endif %}</div></div>{% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="row between"><h3 style="margin:0">{% t "Profile level {n} of 3" n=fp.level %}</h3><a href="/farmer/profile/">{% t "Edit profile" %}</a></div>
+  <p class="mute" style="margin:8px 0 0">
+    {% if fp.level == 0 %}{% t "Fill in your name, village, land and crops to reach level 1." %}
+    {% elif fp.level == 1 %}{% t "Join a verified FPO or NGO to reach level 2." %}
+    {% elif fp.level == 2 %}{% t "Our team can verify your documents for level 3." %}
+    {% else %}{% t "Your documents are verified." %}{% endif %}
+  </p>
+</div>
+{% endblock %}

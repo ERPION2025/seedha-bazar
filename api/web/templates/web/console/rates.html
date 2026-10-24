@@ -1,0 +1,20 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Rates" %}{% endblock %}
+{% block content %}
+<h1>📈 {% t "Market rates" %}</h1>
+<div class="stats4">
+  <div class="card stat"><small>{% t "Price feed" %}</small><div class="big" style="font-size:1.1rem">{% if key_set %}<span class="pos">{% t "Connected" %}</span>{% else %}<span class="neg">{% t "Not connected" %}</span>{% endif %}</div></div>
+  <div class="card stat"><small>{% t "Rows saved" %}</small><div class="big">{{ rows }}</div></div>
+  <div class="card stat"><small>{% t "Latest price date" %}</small><div class="big" style="font-size:1.1rem">{{ latest|date:"j M Y"|default:"—" }}</div></div>
+  <div class="card stat"><small>{% t "MSP rows" %}</small><div class="big">{{ msp }}</div></div>
+</div>
+{% if not key_set %}<div class="card sun"><h3>{% t "Connect the government price feed" %}</h3>
+  <p>{% t "Get a free API key from data.gov.in (My Account), then set DATA_GOV_IN_API_KEY on the server and restart. Rates then refresh by themselves every day." %}</p></div>{% endif %}
+{% if demo_rows %}<div class="card warn"><p style="margin:0">{% t "{n} sample rows are in the database for trying the site. They are hidden in production." n=demo_rows %}</p></div>{% endif %}
+<div class="card"><div class="row between"><div><b>{% t "Refreshes every {n} hours" n=hours %}</b><br><span class="mute">{% if updated %}{% t "Last good update {when}" when=updated|date:"j M, H:i" %}{% else %}{% t "No update yet." %}{% endif %}</span></div>
+  <form method="post" action="/console/rates/refresh/">{% csrf_token %}<button class="btn" {% if not key_set %}disabled{% endif %}>{% t "Refresh now" %}</button></form></div></div>
+<div class="card scroll"><h3>{% t "Recent fetches" %}</h3><table class="tbl">
+<thead><tr><th>{% t "When" %}</th><th>{% t "Source" %}</th><th>{% t "Status" %}</th><th>{% t "Rows" %}</th><th>{% t "Latest date" %}</th><th>{% t "Note" %}</th></tr></thead>
+<tbody>{% for l in logs %}<tr><td>{{ l.started_at|date:"j M, H:i" }}</td><td>{{ l.source }}</td><td><span class="pill {% if l.status == "ok" %}{% elif l.status == "skipped" %}grey{% else %}red{% endif %}">{{ l.get_status_display }}</span></td><td>{{ l.rows_saved }}/{{ l.rows_fetched }}</td><td>{{ l.latest_date|date:"j M"|default:"—" }}</td><td class="mute">{{ l.message }}</td></tr>
+{% empty %}<tr><td colspan="6" class="mute">{% t "No fetches yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "Sign in" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% if door == "fpo" %}{% t "FPO and NGO sign in" %}{% elif door == "buyer" %}{% t "Buyer sign in" %}{% else %}{% t "Farmer sign in" %}{% endif %}</h1>
+<p class="mute">{% t "Enter your mobile number. We send a 6-digit code. No password needed." %}</p>
+<div class="card tint" style="padding:12px 14px"><b>📍 {% t "Allow location to see rates near you" %}</b>
+  <p class="hint" style="margin:2px 0 0">{% t "Optional. We keep only your district, not your exact position." %}</p>
+  {% include "web/partials/location_bar.html" with auto="1" %}</div>
+<form method="post" class="card">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block" name="channel" value="sms">{% t "Send code by SMS" %}</button>
+  {% if "whatsapp" in channels or "voice" in channels %}
+  <p class="hint" style="margin-top:12px">{% t "Not getting the SMS?" %}
+    {% if "whatsapp" in channels %}<button class="link-btn" style="color:var(--g-dark)" name="channel" value="whatsapp">{% t "Send on WhatsApp" %}</button>{% endif %}
+    {% if "voice" in channels %}<button class="link-btn" style="color:var(--g-dark)" name="channel" value="voice">{% t "Call me with the code" %}</button>{% endif %}
+  </p>{% endif %}
+</form>
+<p class="mute">{% t "I am" %}:
+  <a href="?as=farmer">{% t "a farmer" %}</a> · <a href="?as=fpo">{% t "an FPO or NGO" %}</a> · <a href="?as=buyer">{% t "a buyer" %}</a></p>
+{% endblock %}

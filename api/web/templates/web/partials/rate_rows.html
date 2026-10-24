@@ -1,0 +1,3 @@
+{% load web_tags %}
+<div class="scroll"><table class="tbl"><thead><tr><th>{% t "Mandi" %}</th><th>{% t "Date" %}</th><th>{% t "Low" %}</th><th>{% t "Typical" %}</th><th>{% t "High" %}</th></tr></thead>
+<tbody>{% for r in rows %}<tr><td><b>{{ r.market }}</b><br><span class="mute">{{ r.district }}</span></td><td>{{ r.date|date:"j M" }}</td><td>{{ r.min|inr }}</td><td><b>{{ r.modal|inr }}</b></td><td>{{ r.max|inr }}</td></tr>{% endfor %}</tbody></table></div>

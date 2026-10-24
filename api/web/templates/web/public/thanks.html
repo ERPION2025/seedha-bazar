@@ -1,0 +1,12 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "Thank you" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<div class="card tint" style="text-align:center">
+  <div class="big">🙏</div>
+  <h1>{% t "Thank you" %}</h1>
+  <p>{% t "We have your details and will contact you soon." %}</p>
+  <a class="btn" href="/">{% t "Back to home" %}</a>
+</div>
+<script>window.addEventListener("load",function(){if(window.sbTrack)sbTrack("lead_submitted");});</script>
+{% endblock %}

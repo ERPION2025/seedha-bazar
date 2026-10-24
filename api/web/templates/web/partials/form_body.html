@@ -1,0 +1,2 @@
+{% load web_tags %}{% if form.non_field_errors %}<div class="card warn">{% for e in form.non_field_errors %}<p class="err" style="margin:0">{% t e %}</p>{% endfor %}</div>{% endif %}
+{% for bf in form %}{% if bf.name == "website" %}<div class="hp" aria-hidden="true">{{ bf }}</div>{% else %}{% field bf %}{% endif %}{% endfor %}

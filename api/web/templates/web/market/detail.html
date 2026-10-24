@@ -1,0 +1,46 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% crop li.crop %}{% endblock %}
+{% block content %}
+<p><a href="/market/">← {% t "Marketplace" %}</a></p>
+{% if not li.is_live %}<div class="card warn"><b>{% if li.status == "sold" %}{% t "This produce has been sold." %}{% elif li.status == "paused" %}{% t "The seller has paused this listing." %}{% else %}{% t "This listing is no longer available." %}{% endif %}</b></div>{% endif %}
+<div class="row between"><h1 style="margin:0">{{ li.emoji }} {% crop li.crop %}{% if li.variety %} · {{ li.variety }}{% endif %}</h1>{% if li.grade != "ungraded" %}<span class="pill">{% t li.get_grade_display %}</span>{% endif %}</div>
+<p class="mute">📍 {{ li.district }}, {{ li.state }}{% if li.village %} · {{ li.village }}{% endif %} · {% if li.seller_org %}🏢{% else %}🧑‍🌾{% endif %} {{ li.seller_label }}{% if li.seller_verified %} <span class="pos">✔ {% t "Verified" %}</span>{% endif %}</p>
+
+<div class="card tint">
+  <div class="stats flat">
+    <div class="stat"><small>{% t "Quantity" %}</small><div class="big">{{ li.quantity|num:2 }}</div><small>{% t li.unit %}</small></div>
+    <div class="stat"><small>{% t "Asking price" %}</small><div class="big">{{ li.price|inr }}</div><small>/ {% t li.unit %}</small></div>
+    <div class="stat"><small>{% t "Total value" %}</small><div class="big">{{ li.total_value|inr }}</div></div>
+  </div>
+  {% if li.unit != "quintal" %}<p class="hint" style="margin:10px 0 0">{{ li.price_per_quintal|inr }} {% t "per quintal" %}</p>{% endif %}
+</div>
+
+{% if ref %}
+<div class="card"><h3>📈 {% t "Compare with the mandi" %}</h3>
+  <p style="margin:0">{% t "Mandi price near here" %}: <b>{{ ref.typical|inr }}</b> {% t "per quintal" %} · {% t "Reported on {date}" date=ref.as_of|date:"j M" %}</p>
+  <p style="margin:6px 0 0"><span class="pill {% if ref.diff_pct > 8 %}red{% elif ref.diff_pct < -8 %}sun{% endif %}">{% if ref.diff_pct > 0 %}+{% endif %}{{ ref.diff_pct|num:1 }}% {% t "compared with the mandi" %}</span>
+  {% if quote and quote.msp %}<span class="pill sun">🏛️ {% t "Govt MSP" %} {{ quote.msp.price|inr }}</span>{% endif %}</p>
+  {% if ref.demo %}<p class="err" style="margin-top:8px">{% t "Sample data, not real prices" %}</p>{% endif %}
+</div>{% endif %}
+
+{% if li.description %}<div class="card"><p style="margin:0">{{ li.description }}</p></div>{% endif %}
+<p class="hint">{% t "Available from {date}" date=li.available_from|date:"j M Y" %} · {% t "Listed until {date}" date=li.expires_at|date:"j M Y" %}</p>
+
+{% if mine %}
+  <a class="btn" href="{% if user.role == "agent" %}/fpo{% else %}/farmer{% endif %}/sell/{{ li.pk }}/">{% t "Manage this listing" %}</a>
+{% elif enquiry %}
+  <div class="card tint"><b>{% t "You have asked about this produce." %}</b> <a class="btn small" href="/enquiry/{{ enquiry.pk }}/">{% t "Open conversation" %}</a></div>
+{% elif li.is_live %}
+  {% if user.is_authenticated and user.role == "buyer" %}
+    {% if buyer_ready %}
+    <div class="card"><h3>{% t "Ask the seller" %}</h3>
+      <p class="hint">{% t "Phone numbers stay hidden until the seller accepts your enquiry." %}</p>
+      <form method="post" action="/market/{{ li.pk }}/enquire/">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn block">{% t "Send enquiry" %}</button></form></div>
+    {% else %}<div class="card sun"><p>{% t "Fill in your business details first." %}</p><a class="btn" href="/buyer/profile/">{% t "Business details" %}</a></div>{% endif %}
+  {% elif user.is_authenticated %}
+    <div class="card"><p class="mute" style="margin:0">{% t "Only buyers can send enquiries. Sellers can list produce from their own page." %}</p></div>
+  {% else %}
+    <div class="card tint"><h3>{% t "Want to buy this?" %}</h3><a class="btn" href="/login/?as=buyer&next=/market/{{ li.pk }}/">{% t "Sign in as a buyer" %}</a></div>
+  {% endif %}
+{% endif %}
+{% endblock %}

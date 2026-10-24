@@ -1,0 +1,49 @@
+{% extends "web/farmer/base.html" %}{% load web_tags %}
+{% block title %}{% crop cycle.crop %}{% endblock %}
+{% block content %}
+<p><a href="/farmer/book/">← {% t "My book" %}</a></p>
+<div class="row between"><h1 style="margin:0">{% crop cycle.crop %}</h1>
+  <span class="pill {% if cycle.status == "active" %}{% elif cycle.status == "harvested" %}sun{% else %}grey{% endif %}">{% if cycle.status == "active" %}{% t "Growing" %}{% elif cycle.status == "harvested" %}{% t "Harvested" %}{% else %}{% t "Closed" %}{% endif %}</span></div>
+<p class="mute">{{ cycle.plot.name }}{% if cycle.expected_harvest_date %} · {% t "Harvest expected" %} {{ cycle.expected_harvest_date|date:"j M Y" }}{% endif %}</p>
+
+<div class="card">
+  <div class="grid g4">
+    <div class="stat"><small>{% t "Spent" %}</small><div class="big">{{ s.expenses|inr }}</div></div>
+    <div class="stat"><small>{% t "Sold for" %}</small><div class="big">{{ s.revenue|inr }}</div></div>
+    <div class="stat"><small>{% t "Profit" %}</small><div class="big {% if s.profit|slice:":1" == "-" %}neg{% else %}pos{% endif %}">{{ s.profit|inr }}</div></div>
+    <div class="stat"><small>{% t "In stock" %}</small><div class="big">{{ s.stock_kg|num:1 }}<small style="display:inline"> kg</small></div></div>
+  </div>
+  {% if s.cost_per_kg %}<p class="hint" style="margin-top:10px">{% t "Cost per kg" %}: {{ s.cost_per_kg|inr:2 }}{% if s.avg_sale_rate_per_quintal %} · {% t "Average sale rate" %}: {{ s.avg_sale_rate_per_quintal|inr }} / {% t "quintal" %}{% endif %}</p>
+  {% elif s.avg_sale_rate_per_quintal %}<p class="hint" style="margin-top:10px">{% t "Average sale rate" %}: {{ s.avg_sale_rate_per_quintal|inr }} / {% t "quintal" %}</p>{% endif %}
+</div>
+
+<div class="quick">
+  <a class="btn ghost" href="add/expense/">💸 {% t "Expense" %}</a>
+  <a class="btn ghost" href="add/harvest/">🌾 {% t "Harvest" %}</a>
+  <a class="btn ghost" href="add/sale/">🧾 {% t "Sale" %}</a>
+  <a class="btn ghost" href="add/task/">📅 {% t "Work or reminder" %}</a>
+</div>
+
+{% if s.stock_kg != "0.000" %}<a class="btn sun block" style="margin-bottom:16px" href="/farmer/sell/new/?cycle={{ cycle.client_id }}">🏷️ {% t "List this stock for sale" %}</a>{% endif %}
+<div class="card">
+  <h3>{% t "History" %}</h3>
+  {% for r in rows %}
+  <div class="line">
+    <div>
+      <b>{% if r.kind == "expense" %}💸{% elif r.kind == "harvest" %}🌾{% elif r.kind == "sale" %}🧾{% else %}📅{% endif %} {% t r.label %}</b>
+      {% if r.kind == "task" and not r.done %}<span class="pill sun">{% t "Reminder" %}</span>{% endif %}<br>
+      <span class="mute">{{ r.date|date:"j M Y" }}{% if r.qty %} · {{ r.qty|num:3 }} {% t r.unit %}{% endif %}{% if r.note %} · {{ r.note }}{% endif %}</span>
+    </div>
+    <div class="row">
+      {% if r.amount %}<b class="{% if r.sign == "+" %}pos{% else %}neg{% endif %}">{{ r.sign }}{{ r.amount|inr }}</b>{% endif %}
+      {% if r.kind == "task" and not r.done %}<form method="post" action="done/{{ r.id }}/">{% csrf_token %}<button class="btn small">{% t "Done" %}</button></form>{% endif %}
+      <form method="post" action="delete/{{ r.kind }}/{{ r.id }}/" onsubmit="return confirm('{% t "Remove this entry?" %}')">{% csrf_token %}<button class="link-btn" style="color:var(--red)" aria-label="{% t "Remove" %}">✕</button></form>
+    </div>
+  </div>
+  {% empty %}<p class="mute">{% t "Nothing written yet. Use the buttons above." %}</p>{% endfor %}
+</div>
+
+<form method="post" action="status/" class="row">{% csrf_token %}
+  {% if cycle.status != "closed" %}<button class="btn small ghost" name="status" value="closed">{% t "Close this crop" %}</button>{% else %}<button class="btn small ghost" name="status" value="active">{% t "Open again" %}</button>{% endif %}
+</form>
+{% endblock %}

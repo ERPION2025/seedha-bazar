@@ -1,0 +1,10 @@
+{% extends "web/farmer/base.html" %}{% load web_tags %}
+{% block title %}{% t "My profile" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "My profile" %}</h1>
+<form method="post" class="card">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block">{% t "Save" %}</button>
+</form>
+{% endblock %}

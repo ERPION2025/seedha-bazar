@@ -1,0 +1,18 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% t "For farmers" %}{% endblock %}
+{% block hero %}
+<section class="hero"><div class="wrap">
+  <h1>{% t "Know your real profit on every crop" %}</h1>
+  <p>{% t "Write down your costs, harvest and sales in one simple book on your phone. Free to join. No commission on your sale." %}</p>
+  <div class="row" style="margin-top:20px"><a class="btn sun" href="/login/?as=farmer" data-track="cta_farmer">{% t "Start now" %}</a><a class="btn ghost" href="/calculator/">{% t "Harvest calculator" %}</a></div>
+</div></section>
+{% endblock %}
+{% block content %}
+<div class="grid g2">
+  <div class="card"><h3>📒 {% t "Farmer Book" %}</h3><p class="mute" style="margin:0">{% t "Costs, harvest, stock and sales for every crop. Profit is worked out for you." %}</p></div>
+  <div class="card"><h3>🤝 {% t "Join your FPO" %}</h3><p class="mute" style="margin:0">{% t "Use your FPO's link or code, or let them add you. You always confirm on your own phone." %}</p></div>
+  <div class="card"><h3>🔒 {% t "Your data stays yours" %}</h3><p class="mute" style="margin:0">{% t "Your farm book is private. You can delete your account at any time." %}</p></div>
+  <div class="card"><h3>🗣️ {% t "In your language" %}</h3><p class="mute" style="margin:0">{% t "Hindi, Marathi and English. Big buttons, simple steps." %}</p></div>
+</div>
+<p style="text-align:center;margin-top:18px"><a class="btn" href="/login/?as=farmer" data-track="cta_farmer">{% t "Start now" %}</a></p>
+{% endblock %}
