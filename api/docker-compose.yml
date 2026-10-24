@@ -16,6 +16,7 @@ services:
       DB_PASSWORD: seedha
     depends_on: [db]
     ports: ["8000:8000"]
+    volumes: [media:/app/media]  # voice notes, photos and shared pictures survive rebuilds
     command: sh -c "python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
   worker:
     build: .
@@ -26,7 +27,10 @@ services:
       DB_USER: seedha
       DB_PASSWORD: seedha
     depends_on: [db, api]
-    # Refreshes mandi rates about every 24 hours, then sends daily rate alerts.
+    volumes: [media:/app/media]
+    # Background jobs: mandi rates and alerts, news, problem reminders, weather and farm reminders, loan reminders,
+    # mKisan advisories, the WDRA warehouse list (and IMD warnings once enabled). Each job decides when it is due.
     command: python manage.py run_worker
 volumes:
   pgdata:
+  media:
