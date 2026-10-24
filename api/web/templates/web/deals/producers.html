@@ -1,0 +1,21 @@
+{% extends "web/buyer/base.html" %}{% load web_tags %}
+{% block title %}{% t "Find producers" %}{% endblock %}
+{% block content %}
+<h1>🧑‍🌾 {% t "Find producers" %}</h1>
+<p class="mute">{% t "See what farmers and FPOs grow, what they have in stock and what they can make. Ask them for produce, or to process it for you: dried, ground, split, pressed or packed." %}</p>
+<form method="get" class="card" style="padding:12px 14px">
+  <div class="chip-row" style="margin-top:0"><a class="chip{% if not kind %} on{% endif %}" href="?{% if crop %}crop={{ crop }}{% endif %}">{% t "All" %}</a><a class="chip{% if kind == "fpo" %} on{% endif %}" href="?kind=fpo{% if crop %}&crop={{ crop }}{% endif %}">🏢 {% t "FPOs and NGOs" %}</a><a class="chip{% if kind == "farmer" %} on{% endif %}" href="?kind=farmer{% if crop %}&crop={{ crop }}{% endif %}">🧑‍🌾 {% t "Farmers" %}</a></div>
+  <div class="row" style="margin-top:10px"><select name="crop" style="flex:1;min-width:140px"><option value="">{% t "Any crop" %}</option>{% for k, e in crops %}<option value="{{ k }}"{% if crop == k %} selected{% endif %}>{{ e }} {% crop k %}</option>{% endfor %}</select>
+    <input type="text" name="district" value="{{ district }}" placeholder="{% t 'District' %}" style="flex:1;min-width:120px">{% if kind %}<input type="hidden" name="kind" value="{{ kind }}">{% endif %}<button class="btn small">{% t "Search" %}</button></div>
+</form>
+{% if spotlight %}<div class="card sun"><h3 style="margin:0 0 8px">⭐ {% t "Places known for a product" %}</h3><div class="chip-row" style="margin-top:0">{% for r in spotlight %}<a class="chip" href="?{% if r.crop %}crop={{ r.crop }}&{% endif %}district={{ r.odop.district }}">{{ r.odop.district }} · {{ r.odop.product|truncatechars:24 }}</a>{% endfor %}</div></div>{% endif %}
+<div class="grid g2">{% for c in rows %}
+<a class="door" href="/producers/{{ c.kind }}/{{ c.id }}/"><div class="card">
+  <div class="row between"><h3 style="margin:0">{% if c.kind == "fpo" %}🏢{% else %}🧑‍🌾{% endif %} {{ c.name }}</h3>{% if c.verified %}<span class="pill">✔ {% t "Verified" %}</span>{% endif %}</div>
+  <p class="mute" style="margin:4px 0 6px">📍 {% if c.village %}{{ c.village }}, {% endif %}{{ c.district }}{% if c.kind == "fpo" %} · {% t "{n} members" n=c.members %}{% endif %}</p>
+  <div class="row">{% for g in c.grows|slice:":5" %}<span class="pill grey">{% crop g %}</span>{% endfor %}</div>
+  {% if c.stock %}<p style="margin:8px 0 0"><b>{% t "In stock now" %}:</b> {% for k, kg in c.stock.items %}{% crop k %} {{ kg|quintal }} {% t "quintal" %}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+  {% if c.makes %}<p class="mute" style="margin:4px 0 0">⚙️ {% t "Makes" %}: {% for k in c.makes %}{% crop k %}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+</div></a>{% empty %}
+<div class="card sun" style="grid-column:1/-1"><p style="margin:0">{% t "No producers match. Try another crop or district." %}</p></div>{% endfor %}</div>
+{% endblock %}

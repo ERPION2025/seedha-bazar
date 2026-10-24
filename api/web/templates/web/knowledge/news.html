@@ -1,0 +1,16 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "News and announcements" %}{% endblock %}
+{% block content %}
+<h1>📰 {% t "News and announcements" %}</h1>
+<p class="mute">{% t "Headlines about farming, prices and schemes, collected every few hours from government, institute and news sources. Tap one to read it at the source." %}</p>
+{% for a in announcements %}{% include "web/partials/announcement.html" %}{% endfor %}
+<div class="chip-row" style="margin-top:0">{% for k, label in topic_tabs %}<a class="chip{% if topic == k %} on{% endif %}" href="?{% if k %}topic={{ k }}{% endif %}{% if language %}&language={{ language }}{% endif %}">{% t label %}</a>{% endfor %}</div>
+<div class="chip-row"><a class="chip{% if not language %} on{% endif %}" href="?{% if topic %}topic={{ topic }}{% endif %}">{% t "All languages" %}</a><a class="chip{% if language == "hi" %} on{% endif %}" href="?language=hi{% if topic %}&topic={{ topic }}{% endif %}">हिन्दी</a><a class="chip{% if language == "mr" %} on{% endif %}" href="?language=mr{% if topic %}&topic={{ topic }}{% endif %}">मराठी</a><a class="chip{% if language == "en" %} on{% endif %}" href="?language=en{% if topic %}&topic={{ topic }}{% endif %}">English</a></div>
+{% if videos %}<div class="card tint"><div class="row between"><h3 style="margin:0">🎬 {% t "Watch" %}</h3><a href="/videos/">{% t "All videos" %}</a></div>
+  {% for v in videos %}<div class="line"><div><b>{{ v.title }}</b><br><span class="mute">{{ v.channel }}</span></div><a class="btn small" href="/videos/?play={{ v.pk }}">▶ {% t "Watch" %}</a></div>{% endfor %}</div>{% endif %}
+<div class="grid g2" style="margin-top:12px">{% for a in rows %}{% include "web/partials/article_card.html" %}{% empty %}
+  <div class="card sun" style="grid-column:1/-1"><h3>{% t "No news yet" %}</h3><p style="margin:0">{% t "The news reader has not run yet, or nothing matches. Try All." %}</p></div>{% endfor %}</div>
+<div class="row" style="margin-top:8px">{% if page > 1 %}<a class="btn small ghost" href="?{% if topic %}topic={{ topic }}&{% endif %}{% if language %}language={{ language }}&{% endif %}page={{ page|add:'-1' }}">← {% t "Back" %}</a>{% endif %}
+  {% if has_next %}<a class="btn small" href="?{% if topic %}topic={{ topic }}&{% endif %}{% if language %}language={{ language }}&{% endif %}page={{ page|add:'1' }}">{% t "More" %} →</a>{% endif %}</div>
+<p class="hint" style="margin-top:14px">{% t "Seedha Bazar shows only the headline and a short snippet, and links to the original. We do not check every report. Verify before you act, especially on prices and scheme rules." %}</p>
+{% endblock %}

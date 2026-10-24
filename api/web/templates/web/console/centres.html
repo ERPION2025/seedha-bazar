@@ -1,0 +1,12 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "KVKs and research centres" %}{% endblock %}
+{% block content %}
+<h1>🏛️ {% t "KVKs and research centres" %}</h1>
+<details class="card"{% if form.errors %} open{% endif %}><summary><b>+ {% t "Add a centre" %}</b></summary>
+  <form method="post" style="margin-top:10px">{% csrf_token %}<input type="hidden" name="form" value="centre">{% include "web/partials/form_body.html" %}<button class="btn">{% t "Save" %}</button></form></details>
+{% for c in rows %}<div class="card"><div class="row between"><h3 style="margin:0">{{ c.name }}</h3><span class="pill grey">{{ c.get_kind_display }}</span></div>
+  <p class="mute" style="margin:4px 0">{{ c.state }} · {{ c.districts|join:", " }}{% if c.phone %} · {{ c.phone }}{% endif %}{% if not c.lat %} · <span class="neg">{% t "No map location" %}</span>{% endif %}</p>
+  {% for m in c.members.all %}<span class="pill">{{ m.user.phone }} · {{ m.get_role_display }}{% if m.speciality %} · {{ m.speciality }}{% endif %}</span> {% endfor %}
+  <form method="post" action="/console/centres/{{ c.pk }}/staff/" class="row" style="margin-top:10px">{% csrf_token %}{% for bf in staff_form %}{{ bf }}{% endfor %}<button class="btn small">{% t "Add staff" %}</button></form></div>
+{% empty %}<p class="mute">{% t "No centres yet." %}</p>{% endfor %}
+{% endblock %}

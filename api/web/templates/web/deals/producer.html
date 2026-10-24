@@ -1,0 +1,18 @@
+{% extends "web/buyer/base.html" %}{% load web_tags %}
+{% block title %}{{ c.name }}{% endblock %}
+{% block content %}
+<p><a href="/buyer/producers/">← {% t "Find producers" %}</a></p>
+<div class="row between"><h1 style="margin:0">{% if c.kind == "fpo" %}🏢{% else %}🧑‍🌾{% endif %} {{ c.name }}</h1>{% if c.verified %}<span class="pill">✔ {% t "Verified" %}</span>{% endif %}</div>
+<p class="mute">📍 {% if c.village %}{{ c.village }}, {% endif %}{{ c.district }}, {{ c.state }}{% if c.kind == "fpo" %} · {{ c.org_kind }} · {% t "{n} members" n=c.members %}{% elif c.org %} · {% t "Member of {org}" org=c.org %}{% endif %}{% if past %} · {% t "{n} orders completed" n=past %}{% endif %}</p>
+{% if odop %}<div class="card sun"><span class="pill sun">⭐ {% t "Known in {district}" district=odop.district %}</span> <b>{{ odop.product }}</b></div>{% endif %}
+<div class="card"><h3>{% t "Grows" %}</h3><div class="row">{% for g in c.grows %}<span class="pill grey">{% crop g %}</span>{% empty %}<span class="mute">—</span>{% endfor %}</div>
+  {% if c.growing %}<p class="mute" style="margin:10px 0 0">{% for g in c.growing %}🌱 {% crop g.crop %} · {{ g.area|num }} {% t "acre" %}{% if g.harvest %} · {% t "harvest around {date}" date=g.harvest|date:"j M" %}{% endif %}<br>{% endfor %}</p>{% endif %}</div>
+{% if c.stock %}<div class="card"><h3>{% t "In stock now" %}</h3>{% for k, kg in c.stock.items %}<div class="line"><span>{% crop k %}</span><b>{{ kg|quintal }} {% t "quintal" %}</b></div>{% endfor %}</div>{% endif %}
+{% if c.makes %}<div class="card"><h3>⚙️ {% t "Has made before" %}</h3><div class="row">{% for k in c.makes %}<span class="pill">{% crop k %}</span>{% endfor %}</div></div>{% endif %}
+<div class="card tint"><h3>{% t "Ask for produce or processing" %}</h3>
+  <p class="hint">{% t "Phone numbers stay hidden until both of you sign the agreement." %}</p>
+  <div class="chip-row" style="margin-top:0">{% for k in c.stock %}<a class="chip" href="/deals/new/?{{ c.kind }}={{ c.id }}&product={{ k }}">{% crop k %}</a>{% endfor %}{% for k in c.grows %}{% if k not in c.stock %}<a class="chip" href="/deals/new/?{{ c.kind }}={{ c.id }}&product={{ k }}">{% crop k %}</a>{% endif %}{% endfor %}</div>
+  {% if can_make %}<p style="margin:10px 0 4px"><b>{% t "Or ask them to make" %}:</b></p><div class="chip-row" style="margin-top:0">{% for k in can_make %}<a class="chip" href="/deals/new/?{{ c.kind }}={{ c.id }}&product={{ k }}">⚙️ {% crop k %}</a>{% endfor %}</div>{% endif %}
+</div>
+{% if listings %}<h2>{% t "Listed for sale" %}</h2><div class="grid g2">{% for li in listings %}{% include "web/partials/listing_card.html" %}{% endfor %}</div>{% endif %}
+{% endblock %}

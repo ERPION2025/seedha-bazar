@@ -1,0 +1,7 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Warehouse receipt loans" %}{% endblock %}
+{% block content %}
+<h1>🏬 {% t "Warehouse receipt loans (e-NWR)" %}</h1>
+{% include "web/storage/explainer.html" %}
+{% if not user.is_authenticated %}<a class="btn" href="/login/?as=farmer&next=/storage/">{% t "Sign in to plan" %}</a>{% endif %}
+{% endblock %}

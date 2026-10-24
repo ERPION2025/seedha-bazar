@@ -1,0 +1,15 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Crop insurance" %}{% endblock %}
+{% block content %}
+<h1>🛡️ {% t "Crop insurance" %}</h1>
+<p class="mute">{% t "Protect your crop against drought, flood, hail, pests and disease. You pay a small share; the government pays the rest of the premium." %}</p>
+<div class="card tint"><b>{% t "What you pay" %}</b>
+  <p style="margin:6px 0 0">{% t "2% of the cover for kharif food grains and oilseeds, 1.5% for rabi, 5% for commercial and horticulture crops." %}</p>
+  <div class="row" style="margin-top:10px"><a class="btn" href="/insurance/compare/">{% t "Compare and work out the cost" %}</a><a class="btn ghost" href="/insurance/norms/">{% t "Rules, agencies and forms" %}</a></div></div>
+{% if cycles %}<div class="card"><h3>{% t "Crops in your book you can insure" %}</h3>
+  {% for c in cycles %}<div class="line"><div><b>{% crop c.crop %}</b><br><span class="mute">{{ c.plot.name }} · {{ c.plot.area_acres|num }} {% t "acre" %}{% if c.season %} · {% t c.get_season_display %}{% endif %}</span></div><a class="btn small sun" href="/insurance/compare/?cycle={{ c.client_id }}">🛡️ {% t "Insure" %}</a></div>{% endfor %}</div>{% endif %}
+{% if rows %}<div class="card"><h3>{% t "My insurance" %}</h3>
+  {% for a in rows %}<a class="line" href="/insurance/{{ a.pk }}/" style="text-decoration:none;color:inherit"><div><b>{% crop a.crop %}</b> · {% t a.get_season_display %} {{ a.year }}<br><span class="mute">{% t "Cover" %} {{ a.sum_insured|inr }} · {% t "You pay" %} {{ a.farmer_premium|inr }}</span></div>
+    <span class="pill {% if a.status == "enrolled" or a.status == "claim_paid" %}{% elif a.status == "loss" %}red{% else %}sun{% endif %}">{% t a.get_status_display %}</span></a>{% endfor %}</div>{% endif %}
+<div class="card"><b>📞 {% t "Crop insurance helpline" %}: 14447</b><br><span class="hint">{% t "Report crop loss within 72 hours on the helpline, the Crop Insurance app, or to your bank or insurer." %}</span></div>
+{% endblock %}

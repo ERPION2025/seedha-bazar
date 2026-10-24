@@ -574,3 +574,41 @@ class CsrfTests(TestCase):
         c = Client(enforce_csrf_checks=True)
         self.assertEqual(c.post("/login/", {"phone": FARMER}).status_code, 403)
         self.assertEqual(c.post("/lead/buyer/", {}).status_code, 403)
+
+
+class VoiceTests(WebCase):
+    def test_every_page_carries_the_listen_helper_in_its_language(self):
+        for path in ("/", "/login/", "/rates/", "/calculator/", "/market/", "/privacy/"):
+            for lang in ("hi", "mr", "en"):
+                r = self.client.get(f"{path}?lang={lang}")
+                self.assertContains(r, 'id="sb-voice"', msg_prefix=path)
+                self.assertContains(r, "web/voice.js", msg_prefix=path)
+        import json
+
+        body = self.client.get("/?lang=hi").content.decode()
+        cfg = json.loads(re.search(r'<script id="sb-voice" type="application/json">(.*?)</script>', body, re.S).group(1))
+        self.assertEqual(cfg["speech"], "hi-IN")
+        self.assertEqual(cfg["t"]["Read this screen"], "यह स्क्रीन पढ़कर सुनाएँ")
+        self.assertContains(self.client.get("/?lang=mr"), "mr-IN")
+
+    def test_login_shows_trial_code_for_farmers_only(self):
+        with override_settings(OTP_STATIC_CODE="123456", OTP_BACKEND="accounts.messaging.MemoryBackend"):
+            self.client.post("/login/", {"phone": "9222222222", "channel": "sms"})
+            self.assertContains(self.client.get("/login/verify/?lang=en"), "123456")
+            User.objects.create_user(phone="9222222223", role=Role.ADMIN)
+            self.client.post("/login/", {"phone": "9222222223", "channel": "sms"})
+            self.assertNotContains(self.client.get("/login/verify/?lang=en"), "123456")
+
+
+class OrgApprovalVisibilityTests(WebCase):
+    def test_new_org_shows_for_staff_in_console_badge_and_django_admin(self):
+        org = Organisation.objects.create(name="Waiting FPO", code="waiting-fpo")
+        self.client.force_login(staff())
+        r = self.client.get("/console/?lang=en")
+        self.assertContains(r, "Waiting FPO")
+        self.assertContains(r, '<span class="n">1</span>')
+        r = self.client.get("/admin/profiles/organisation/")
+        self.assertContains(r, "Waiting FPO")
+        self.client.post("/admin/profiles/organisation/", {"action": "approve", "_selected_action": [org.pk]})
+        org.refresh_from_db()
+        self.assertTrue(org.verified)

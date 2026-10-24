@@ -1,0 +1,14 @@
+{% extends "web/buyer/base.html" %}{% load web_tags %}
+{% block title %}{% t "Ask for produce or processing" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<p><a href="/producers/{{ c.kind }}/{{ c.id }}/">← {{ c.name }}</a></p>
+<h1>📝 {% t "Ask for produce or processing" %}</h1>
+<p class="mute">{% t "To" %} {{ c.name }}, {{ c.district }}</p>
+{% if hint %}<div class="card tint">{% if hint.per == "kg" %}<b>{% if hint.source == "listings" %}{% t "Typical price on Seedha Bazar" %}{% else %}{% t "Starter estimate" %}{% endif %}: {{ hint.typical|inr }}</b> {% t "per kg" %} <span class="hint">({{ hint.low|inr }} – {{ hint.high|inr }})</span>
+  {% else %}<b>{% t "Mandi price near them" %}: {{ hint.typical|inr }}</b> {% t "per quintal" %}{% endif %}</div>{% endif %}
+<form method="post" class="card">{% csrf_token %}<input type="hidden" name="{{ kind }}" value="{{ pk }}">
+  {% include "web/partials/form_body.html" %}
+  <p class="hint">{% t "The seller can accept, or reply with other terms. Once you both agree, you both sign the agreement with a code on your phone, then pay the advance." %}</p>
+  <button class="btn block">{% t "Send request" %}</button></form>
+{% endblock %}

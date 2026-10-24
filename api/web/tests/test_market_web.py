@@ -67,6 +67,8 @@ class MarketCase(TestCase):
         self.bc.force_login(self.buyer)
 
     def listing(self, **over):
+        if "source_cycle" not in over:  # every listing comes out of the Farmer Book
+            over["source_cycle"] = stocked_cycle(self.seller, quintals=1000, crop=over.get("crop", "wheat"))
         return services.save_listing(self.seller, listing_data(**over))
 
 
@@ -160,14 +162,14 @@ class BrowseTests(MarketCase):
         li = self.listing()
         e = services.start_enquiry(self.buyer, li, Decimal("5"), None, "hello")
         for lang in ("hi", "mr", "en"):
-            for path in ("/market/", f"/market/{li.pk}/", "/farmer/sell/", "/farmer/sell/new/", f"/farmer/sell/{li.pk}/", f"/farmer/sell/{li.pk}/edit/", "/farmer/enquiries/", f"/enquiry/{e.pk}/"):
-                self.assertEqual(self.sc.get(f"{path}?lang={lang}").status_code, 200, path)
+            for path in ("/market/", f"/market/{li.pk}/", "/farmer/sell/", "/farmer/sell/pick/", f"/farmer/sell/new/?stock={li.source_cycle.pk}", f"/farmer/sell/{li.pk}/", f"/farmer/sell/{li.pk}/edit/", "/farmer/enquiries/", f"/enquiry/{e.pk}/"):
+                self.assertEqual(self.sc.get(f"{path}{'&' if '?' in path else '?'}lang={lang}").status_code, 200, path)
             for path in ("/buyer/", "/buyer/profile/", "/buyer/enquiries/", f"/market/{li.pk}/", f"/enquiry/{e.pk}/"):
                 self.assertEqual(self.bc.get(f"{path}?lang={lang}").status_code, 200, path)
 
 
 class SellerWebTests(MarketCase):
-    FORM = {"crop": "wheat", "crop_other": "", "variety": "Sharbati", "grade": "A", "quantity": "10", "unit": "quintal", "price": "2500", "state": "Madhya Pradesh",
+    FORM = {"variety": "Sharbati", "grade": "A", "quantity": "10", "unit": "quintal", "price": "2500", "state": "Madhya Pradesh",
             "district": "Rewa", "village": "Naigarhi", "available_from": TODAY.isoformat(), "description": ""}
 
     def test_incomplete_profile_is_sent_to_finish_it_first(self):
@@ -179,28 +181,47 @@ class SellerWebTests(MarketCase):
         rate(modal=2400)
         cycle = stocked_cycle(self.seller, quintals=24)
         form = self.sc.get(f"/farmer/sell/new/?cycle={cycle.client_id}&lang=en").context["form"]
-        self.assertEqual((form.initial["crop"], form.initial["quantity"], form.initial["district"], form.initial["price"]), ("wheat", Decimal("24.00"), "Rewa", Decimal("2400")))
+        self.assertEqual((form.initial["quantity"], form.initial["district"], form.initial["price"]), (Decimal("24.000"), "Rewa", Decimal("2400")))
 
-    def test_a_garbled_cycle_in_the_address_is_ignored(self):
-        self.assertEqual(self.sc.get("/farmer/sell/new/?cycle=not-a-uuid").status_code, 200)
-        r = self.sc.post("/farmer/sell/new/", {**self.FORM, "cycle": "junk"})
-        self.assertEqual(r.status_code, 302)
-        self.assertIsNone(Listing.objects.get().source_cycle)
+    def test_prefilled_quantity_never_exceeds_the_stock(self):
+        plot = Plot.objects.create(owner=self.seller, name="P", area_acres=1)
+        cycle = CropCycle.objects.create(owner=self.seller, plot=plot, crop="wheat")
+        Harvest.objects.create(owner=self.seller, crop_cycle=cycle, date=TODAY, quantity=Decimal("12.596"), unit="kg", quantity_kg=Decimal("12.596"))
+        form = self.sc.get(f"/farmer/sell/new/?cycle={cycle.client_id}&lang=en").context["form"]
+        self.assertEqual(form.initial["quantity"], Decimal("0.125"))  # 12.596 kg is 0.12596 quintal; rounding up would be 0.126
+        data = {**self.FORM, "stock": cycle.pk, "quantity": str(form.initial["quantity"])}
+        self.assertEqual(self.sc.post("/farmer/sell/new/", data).status_code, 302)
+
+    def test_a_second_listing_of_the_same_crop_starts_from_what_is_left(self):
+        cycle = stocked_cycle(self.seller, quintals=24)
+        self.listing(quantity=Decimal("15"), source_cycle=cycle)
+        form = self.sc.get(f"/farmer/sell/new/?cycle={cycle.client_id}&lang=en").context["form"]
+        self.assertEqual(form.initial["quantity"], Decimal("9.000"))
+
+    def test_without_a_stock_line_you_are_sent_to_pick_one_or_to_the_book(self):
+        r = self.sc.get("/farmer/sell/new/")
+        self.assertRedirects(r, "/farmer/sell/pick/", fetch_redirect_response=False)
+        self.assertContains(self.sc.get("/farmer/sell/pick/?lang=en"), "Nothing to sell yet")
+        self.assertRedirects(self.sc.get("/farmer/sell/new/?cycle=not-a-uuid"), "/farmer/sell/pick/", fetch_redirect_response=False)
+        stocked_cycle(self.seller, quintals=8)
+        page = self.sc.get("/farmer/sell/pick/?lang=en").content.decode()
+        self.assertIn("8 quintal", page)
+
+    def test_nothing_can_be_listed_without_book_stock(self):
+        r = self.sc.post("/farmer/sell/new/", self.FORM)
+        self.assertRedirects(r, "/farmer/sell/pick/", fetch_redirect_response=False)
+        self.assertEqual(Listing.objects.count(), 0)
 
     def test_someone_elses_cycle_is_ignored(self):
         other_cycle = stocked_cycle(make_farmer("9000000066"))
-        form = self.sc.get(f"/farmer/sell/new/?cycle={other_cycle.client_id}").context["form"]
-        self.assertNotIn("quantity", form.initial)
-
-    def test_list_from_calculator_prefills(self):
-        form = self.sc.get("/farmer/sell/new/?crop=wheat&qty=12&unit=kg&price=2300&lang=en").context["form"]
-        self.assertEqual((form.initial["crop"], form.initial["quantity"], form.initial["unit"], form.initial["price"]), ("wheat", "12", "kg", "2300"))
+        self.assertRedirects(self.sc.get(f"/farmer/sell/new/?cycle={other_cycle.client_id}"), "/farmer/sell/pick/", fetch_redirect_response=False)
 
     def test_create_edit_pause_sell_and_delete(self):
-        r = self.sc.post("/farmer/sell/new/", self.FORM)
+        cycle = stocked_cycle(self.seller, quintals=30)
+        r = self.sc.post("/farmer/sell/new/", {**self.FORM, "stock": cycle.pk})
         li = Listing.objects.get()
         self.assertRedirects(r, f"/farmer/sell/{li.pk}/", fetch_redirect_response=False)
-        self.assertEqual((li.seller, li.price_per_quintal, li.variety), (self.seller, Decimal("2500.00"), "Sharbati"))
+        self.assertEqual((li.seller, li.crop, li.source_cycle, li.price_per_quintal, li.variety), (self.seller, "wheat", cycle, Decimal("2500.00"), "Sharbati"))
         self.sc.post(f"/farmer/sell/{li.pk}/edit/", {**self.FORM, "price": "2600"})
         li.refresh_from_db()
         self.assertEqual(li.price, Decimal("2600"))
@@ -214,22 +235,30 @@ class SellerWebTests(MarketCase):
         self.sc.post(f"/farmer/sell/{li.pk}/action/", {"action": "delete"})
         self.assertEqual(Listing.objects.count(), 0)
 
+    def test_editing_cannot_raise_the_quantity_above_the_stock(self):
+        cycle = stocked_cycle(self.seller, quintals=12)
+        li = self.listing(quantity=Decimal("10"), source_cycle=cycle)
+        r = self.sc.post(f"/farmer/sell/{li.pk}/edit/", {**self.FORM, "quantity": "13"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Only 12 quintal")
+        self.assertEqual(self.sc.post(f"/farmer/sell/{li.pk}/edit/", {**self.FORM, "quantity": "12"}).status_code, 302)
+
     def test_listing_with_enquiries_cannot_be_deleted(self):
         li = self.listing()
         services.start_enquiry(self.buyer, li, Decimal("2"), None, "")
         self.sc.post(f"/farmer/sell/{li.pk}/action/", {"action": "delete"})
         self.assertEqual(Listing.objects.count(), 1)
 
-    def test_other_crop_needs_a_name_and_bad_price_is_refused(self):
-        self.assertEqual(self.sc.post("/farmer/sell/new/", {**self.FORM, "crop": "other"}).status_code, 200)
-        self.assertEqual(self.sc.post("/farmer/sell/new/", {**self.FORM, "price": "0"}).status_code, 200)
+    def test_bad_price_is_refused(self):
+        cycle = stocked_cycle(self.seller, quintals=30)
+        self.assertEqual(self.sc.post("/farmer/sell/new/", {**self.FORM, "stock": cycle.pk, "price": "0"}).status_code, 200)
         self.assertEqual(Listing.objects.count(), 0)
 
     def test_stock_limit_applies_on_the_form_too(self):
         cycle = stocked_cycle(self.seller, quintals=5)
-        r = self.sc.post("/farmer/sell/new/", {**self.FORM, "cycle": str(cycle.client_id), "quantity": "9"})
+        r = self.sc.post("/farmer/sell/new/", {**self.FORM, "stock": cycle.pk, "quantity": "9"})
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "more than the stock")
+        self.assertContains(r, "Only 5 quintal of this is free")
         self.assertEqual(Listing.objects.count(), 0)
 
     def test_sellers_cannot_touch_each_others_listings(self):
@@ -261,8 +290,25 @@ class FpoSellingTests(MarketCase):
         self.ac = Client()
         self.ac.force_login(self.agent)
 
+    def member_stock(self, quintals=40, crop="kodo", status="confirmed"):
+        farmer = make_farmer("9877700001")
+        fp = farmer.farmer_profile
+        fp.organisation, fp.org_status = self.org, status
+        fp.save()
+        return stocked_cycle(farmer, quintals=quintals, crop=crop)
+
+    def test_an_fpo_can_list_only_from_its_member_farmers_books(self):
+        self.assertContains(self.ac.get("/fpo/sell/pick/?lang=en"), "Nothing to sell yet")
+        stray = stocked_cycle(make_farmer("9877700002"), quintals=40, crop="kodo")  # not a member
+        self.assertRedirects(self.ac.get(f"/fpo/sell/new/?stock={stray.pk}"), "/fpo/sell/pick/", fetch_redirect_response=False)
+        cycle = self.member_stock()
+        page = self.ac.get("/fpo/sell/pick/?lang=en").content.decode()
+        self.assertIn("Ramesh Kushwaha", page)
+        self.assertEqual(self.ac.get(f"/fpo/sell/new/?stock={cycle.pk}").status_code, 200)
+
     def test_a_verified_fpo_lists_in_its_own_name(self):
-        r = self.ac.post("/fpo/sell/new/", {**SellerWebTests.FORM, "crop": "kodo", "quantity": "30"})
+        cycle = self.member_stock()
+        r = self.ac.post("/fpo/sell/new/", {**SellerWebTests.FORM, "stock": cycle.pk, "quantity": "30"})
         li = Listing.objects.get()
         self.assertRedirects(r, f"/fpo/sell/{li.pk}/", fetch_redirect_response=False)
         self.assertEqual(li.organisation, self.org)
@@ -275,7 +321,7 @@ class FpoSellingTests(MarketCase):
         self.assertRedirects(self.ac.get("/fpo/sell/new/"), "/fpo/", fetch_redirect_response=False)
 
     def test_buyer_sees_the_fpo_contact_after_accept(self):
-        li = services.save_listing(self.agent, listing_data(crop="kodo"), org=self.org)
+        li = services.save_listing(self.agent, listing_data(crop="kodo", source_cycle=self.member_stock()), org=self.org)
         e = services.start_enquiry(self.buyer, li, Decimal("5"), None, "")
         services.decide(e, self.agent, True)
         page = self.bc.get(f"/enquiry/{e.pk}/?lang=en").content.decode()

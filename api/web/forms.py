@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 
 from django import forms
@@ -12,6 +13,7 @@ from profiles.models import BuyerProfile, Organisation
 
 from .i18n import tr
 
+import catalog  # noqa: E402
 from rates.crops import CROPS  # noqa: E402
 
 UNIT_LABELS = [("quintal", "Quintal"), ("kg", "Kg"), ("tonne", "Tonne"), ("bag", "Bag")]
@@ -19,7 +21,7 @@ assert set(UNITS) == {u for u, _ in UNIT_LABELS}
 
 
 def crop_label(lang: str, value: str) -> str:
-    return tr(lang, CROPS.get(value, value.strip().title()))
+    return tr(lang, catalog.name(value))
 
 
 def today():
@@ -76,13 +78,16 @@ class FarmerProfileForm(LangForm):
     land_acres = forms.DecimalField(label="Land you farm (acres)", min_value=Decimal("0.01"), max_value=Decimal("100000"), decimal_places=2, widget=forms.NumberInput(attrs={"step": "0.01", "inputmode": "decimal"}))
     crops = forms.MultipleChoiceField(label="What do you grow?", choices=list(CROPS.items()), required=False, widget=forms.CheckboxSelectMultiple(attrs={"class": "chips"}))
     other_crops = forms.CharField(label="Other crops (separate with commas)", max_length=120, required=False)
+    discoverable = forms.BooleanField(label="Let verified buyers see my first name, village, crops and stock, and ask me for produce. My phone number stays hidden.", required=False, initial=True)
+    share_with_extension = forms.BooleanField(label="Let my district's KVK or research centre see my profile, crops and Farmer Book, to advise me and offer seeds and inputs.", required=False)
 
     @classmethod
     def from_profile(cls, fp, lang):
         known = [c for c in fp.crops if c in CROPS]
         other = ", ".join(c for c in fp.crops if c not in CROPS)
         return cls(lang=lang, initial={"name": fp.name, "village": fp.village, "block": fp.block, "district": fp.district,
-                                       "land_acres": fp.land_acres, "crops": known, "other_crops": other})
+                                       "land_acres": fp.land_acres, "crops": known, "other_crops": other, "discoverable": fp.discoverable,
+                                       "share_with_extension": bool(fp.share_with_extension)})
 
     def clean(self):
         data = super().clean()
@@ -178,9 +183,41 @@ class HarvestForm(QuantityForm):
 
 
 class SaleForm(QuantityForm):
+    product = forms.ChoiceField(label="What did you sell?", choices=[], required=False)
     rate = forms.DecimalField(label="Rate (₹ per unit chosen above)", min_value=Decimal("0.01"), decimal_places=2, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
     channel = forms.ChoiceField(label="Sold to", choices=list(Sale.Channel.choices), initial="other", required=False)
     buyer_note = forms.CharField(label="Buyer name or note (optional)", max_length=160, required=False)
+
+    def __init__(self, *args, products=(), **kwargs):
+        """`products`: (key, English name) of what is in stock besides the crop itself. With none, the question is not asked."""
+        super().__init__(*args, **kwargs)
+        if products:
+            self.fields["product"].choices = [("", tr(self.lang, "The crop itself"))] + [(k, tr(self.lang, n)) for k, n in products]
+        else:
+            del self.fields["product"]
+
+
+class ProcessForm(QuantityForm):
+    """Making something from stock: how much went in, what came out, what it cost."""
+
+    product = forms.ChoiceField(label="What did you make?", choices=[])
+    input_quantity = forms.DecimalField(label="How much did you put in?", min_value=Decimal("0.001"), decimal_places=3, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal", "autofocus": True}))
+    input_unit = forms.ChoiceField(label="Unit of what went in", choices=[("quintal", "Quintal"), ("kg", "Kg"), ("tonne", "Tonne")], initial="quintal")
+    cost = forms.DecimalField(label="What did the work cost in total? (₹)", required=False, min_value=Decimal("0"), max_value=Decimal("100000000"), decimal_places=2, initial=0, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
+    packaging = forms.ChoiceField(label="How will it be sold?", choices=[("bulk", "Loose, in bulk"), ("packed", "Packed for retail")], initial="bulk", required=False)
+    pack_size_g = forms.IntegerField(label="Grams (or ml) in one pack", required=False, min_value=1, max_value=100000)
+    shelf_life_days = forms.IntegerField(label="How many days can it be stored? (optional)", required=False, min_value=1, max_value=3650)
+    note = forms.CharField(label="Note (optional)", max_length=200, required=False)
+
+    def __init__(self, *args, crop="", **kwargs):
+        super().__init__(*args, **kwargs)
+        from catalog import services as cat
+
+        options = [c[1] for c in cat.conversions_from(crop)]
+        seen = []
+        self.fields["product"].choices = [(k, tr(self.lang, catalog.name(k))) for k in options if k not in seen and not seen.append(k)]
+        self.fields["quantity"].label = "How much did you get out?"
+        self.order_fields(["product", "date", "input_quantity", "input_unit", "quantity", "unit", "bag_weight_kg", "cost", "packaging", "pack_size_g", "shelf_life_days", "note"])
 
 
 class TaskForm(LangForm):
@@ -246,8 +283,6 @@ class ConsoleAddFarmerForm(AddFarmerForm):
 
 
 class ListingForm(LangForm):
-    crop = forms.ChoiceField(label="Crop", choices=list(CROPS.items()) + [("other", "Other")])
-    crop_other = forms.CharField(label="Crop name", max_length=60, required=False)
     variety = forms.CharField(label="Variety (optional)", max_length=60, required=False)
     grade = forms.ChoiceField(label="Quality", choices=list(Listing.Grade.choices), initial="ungraded", required=False)
     quantity = forms.DecimalField(label="How much is for sale?", min_value=Decimal("0.001"), decimal_places=3, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
@@ -258,19 +293,33 @@ class ListingForm(LangForm):
     district = forms.CharField(label="District", max_length=80)
     village = forms.CharField(label="Village (optional)", max_length=120, required=False)
     available_from = date_field("Available from", initial=today)
+    packaging = forms.ChoiceField(label="How is it sold?", choices=[("bulk", "Loose, in bulk"), ("packed", "Packed for retail")], initial="bulk", required=False)
+    pack_size_g = forms.IntegerField(label="Grams (or ml) in one pack", required=False, min_value=1, max_value=100000, widget=forms.NumberInput(attrs={"inputmode": "numeric"}))
+    brand = forms.CharField(label="Brand name (optional)", max_length=80, required=False)
+    fssai_no = forms.CharField(label="FSSAI licence or registration number (14 digits)", max_length=20, required=False, widget=forms.TextInput(attrs={"inputmode": "numeric"}))
+    shelf_life_days = forms.IntegerField(label="Stays good for (days)", required=False, min_value=1, max_value=3650, widget=forms.NumberInput(attrs={"inputmode": "numeric"}))
     description = forms.CharField(label="Anything buyers should know? (optional)", max_length=300, required=False, widget=forms.Textarea(attrs={"rows": 3}))
+
+    SEMI_ONLY = ("packaging", "pack_size_g", "brand", "fssai_no")
+
+    def __init__(self, *args, processed=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.processed = processed
+        if not processed:
+            for name in self.SEMI_ONLY:
+                del self.fields[name]
+            self.fields["shelf_life_days"].label = "Stays good for (days, optional)"
 
     def clean(self):
         d = super().clean()
-        if d.get("crop") == "other" and not (d.get("crop_other") or "").strip():
-            self.add_error("crop_other", "Write the crop name")
+        if self.processed and d.get("packaging") == "packed":
+            if len(re.sub(r"\D", "", d.get("fssai_no") or "")) != 14:
+                self.add_error("fssai_no", "Packed food needs a 14-digit FSSAI licence or registration number.")
+            if not d.get("pack_size_g"):
+                self.add_error("pack_size_g", "Tell us the size of one pack")
         if d.get("unit") == "bag" and not d.get("bag_weight_kg"):
             self.add_error("bag_weight_kg", "Tell us how many kg one bag weighs")
         return d
-
-    def crop_name(self):
-        d = self.cleaned_data
-        return d["crop_other"].strip().lower() if d["crop"] == "other" else d["crop"]
 
 
 class EnquiryForm(LangForm):
@@ -281,3 +330,41 @@ class EnquiryForm(LangForm):
 
 class ChatForm(LangForm):
     text = forms.CharField(label="Write a message", max_length=500, widget=forms.Textarea(attrs={"rows": 2}))
+
+
+class AnnouncementForm(LangForm):
+    title = forms.CharField(label="Title", max_length=160)
+    body = forms.CharField(label="Message (optional)", required=False, widget=forms.Textarea(attrs={"rows": 3}))
+    link = forms.URLField(label="Link (optional)", required=False)
+    audience = forms.ChoiceField(label="Who sees it", choices=[("all", "Everyone"), ("farmer", "Farmers"), ("fpo", "FPOs and NGOs"), ("buyer", "Buyers")], initial="all")
+    language = forms.ChoiceField(label="Language", choices=[("", "Every language"), ("hi", "Hindi"), ("mr", "Marathi"), ("en", "English")], required=False)
+    state = forms.CharField(label="Only this state (optional)", max_length=60, required=False)
+    district = forms.CharField(label="Only this district (optional)", max_length=80, required=False)
+    pinned = forms.BooleanField(label="Pin to the top", required=False)
+
+
+class CentreForm(LangForm):
+    name = forms.CharField(label="Centre name", max_length=200)
+    kind = forms.ChoiceField(label="Type", choices=[("kvk", "Krishi Vigyan Kendra (KVK)"), ("research", "Research centre / ICAR institute"), ("university", "Agricultural university"), ("department", "Agriculture department office")])
+    state = forms.CharField(label="State", max_length=60, initial="Madhya Pradesh")
+    districts = forms.CharField(label="Districts it looks after (separate with commas)", max_length=600)
+    host = forms.CharField(label="Host institution (optional)", max_length=200, required=False)
+    address = forms.CharField(label="Address (optional)", max_length=300, required=False)
+    lat = forms.FloatField(label="Latitude (optional)", required=False, min_value=6, max_value=38)
+    lon = forms.FloatField(label="Longitude (optional)", required=False, min_value=68, max_value=98)
+    phone = forms.CharField(label="Phone (optional)", max_length=40, required=False)
+    email = forms.EmailField(label="Email (optional)", required=False)
+    website = forms.URLField(label="Website (optional)", required=False)
+
+
+class CentreStaffForm(LangForm):
+    phone = forms.CharField(label="Mobile number", max_length=20, widget=forms.TextInput(attrs={"inputmode": "tel"}))
+    role = forms.ChoiceField(label="Role", choices=[("head", "Head / Senior scientist"), ("expert", "Subject matter specialist"), ("staff", "Staff")], initial="expert")
+    speciality = forms.CharField(label="Speciality (optional)", max_length=80, required=False)
+
+    def clean_phone(self):
+        from accounts.phone import InvalidPhone, normalise_phone
+        try:
+            return normalise_phone(self.cleaned_data["phone"])
+        except InvalidPhone:
+            raise forms.ValidationError("Enter a valid 10-digit mobile number")

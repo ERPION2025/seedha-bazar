@@ -1,0 +1,15 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{{ f.name }}{% endblock %}
+{% block content %}
+<p><a href="/schemes/">← {% t "Government schemes" %}</a></p>
+<h1>{{ f.name }}</h1>
+<p class="mute">{{ s.agency }}</p>
+<div class="card tint"><b>{{ f.short }}</b></div>
+<div class="card"><h3>{% t "What you get" %}</h3><p style="margin:0">{{ f.benefit }}</p></div>
+{% if f.eligibility %}<div class="card"><h3>{% t "Who can apply" %}</h3><p style="margin:0">{{ f.eligibility }}</p></div>{% endif %}
+{% if f.how_to_apply %}<div class="card"><h3>{% t "How to apply" %}</h3><p style="margin:0">{{ f.how_to_apply }}</p></div>{% endif %}
+{% if f.documents %}<div class="card"><h3>{% t "Papers to keep ready" %}</h3><ul style="margin:0;padding-left:20px">{% for d in f.documents %}<li>{{ d }}</li>{% endfor %}</ul></div>{% endif %}
+<div class="row">{% if s.portal_url %}<a class="btn" href="{{ s.portal_url }}" target="_blank" rel="noopener noreferrer">{% t "Official page" %} ↗</a>{% endif %}{% if s.helpline %}<span class="pill sun">📞 {{ s.helpline }}</span>{% endif %}</div>
+<p class="hint" style="margin-top:12px">{% t "This is a short summary to help you decide. Amounts, dates and rules change, so check the official page before you apply." %}{% if s.last_checked %} {% t "Last compared with the official page on {date}." date=s.last_checked|date:"j M Y" %}{% endif %}</p>
+{% if related %}<h2>{% t "In the news" %}</h2><div class="grid g2">{% for a in related %}{% include "web/partials/article_card.html" %}{% endfor %}</div>{% endif %}
+{% endblock %}

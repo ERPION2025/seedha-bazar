@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,6 +23,15 @@ INSTALLED_APPS = [
     "farmerbook",
     "rates",
     "notify",
+    "catalog",
+    "knowledge",
+    "insurance",
+    "deals",
+    "extension",
+    "issues",
+    "engagement",
+    "weather",
+    "storage",
     "market",
     "web",
 ]
@@ -72,6 +82,11 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# Uploaded files (voice notes, photos). Nothing under private/ is served directly: views check who may see it first.
+MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", str(BASE_DIR / "media")))
+MEDIA_URL = "/media-not-public/"
+DATA_UPLOAD_MAX_MEMORY_SIZE = 8 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 4 * 1024 * 1024
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
@@ -90,6 +105,9 @@ REST_FRAMEWORK = {
 OTP_BACKEND = os.environ.get("OTP_BACKEND", "console")  # console | custom dotted path to a backend class
 OTP_CHANNELS = [c for c in os.environ.get("OTP_CHANNELS", "sms,whatsapp,voice").split(",") if c]  # which "send code" choices the website offers
 OTP_LENGTH = 6
+# Pilot only, until an SMS/WhatsApp provider is connected: farmers, buyers, FPO agents (and numbers not yet registered) sign in
+# with this fixed code. Agronomists and admins always get a real random code. Set OTP_STATIC_CODE= (empty) to turn off.
+OTP_STATIC_CODE = "" if "test" in sys.argv else os.environ.get("OTP_STATIC_CODE", "123456")
 OTP_TTL_SECONDS = 300
 OTP_RESEND_COOLDOWN_SECONDS = 30
 OTP_MAX_PER_PHONE_PER_HOUR = 5
@@ -101,7 +119,7 @@ ACCESS_TOKEN_TTL_SECONDS = 15 * 60
 REFRESH_TOKEN_TTL_DAYS = 90
 CONSENT_VERSION = "2026-10-v1"
 
-if not DEBUG and OTP_BACKEND == "console":
+if not DEBUG and OTP_BACKEND == "console" and not OTP_STATIC_CODE:
     raise RuntimeError("OTP_BACKEND=console prints codes to the log. Configure a real provider for production.")
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -123,6 +141,10 @@ RATES_STATES = [s for s in os.environ.get("RATES_STATES", "").split(",") if s]  
 RATES_REFRESH_HOURS = int(os.environ.get("RATES_REFRESH_HOURS", "24"))
 RATES_SHOW_DEMO = os.environ.get("RATES_SHOW_DEMO", "1" if DEBUG else "0") == "1"  # sample rows are for local trials only
 DEFAULT_STATE = os.environ.get("DEFAULT_STATE", "Madhya Pradesh")
+WEATHER_API_KEY = os.environ.get("WEATHER_API_KEY", "")  # Open-Meteo is free for non-commercial use; commercial use needs their key
+WEATHER_LOOKUP_VILLAGES = os.environ.get("WEATHER_LOOKUP_VILLAGES", "1") == "1"
+NEWS_REFRESH_HOURS = int(os.environ.get("NEWS_REFRESH_HOURS", "6"))
+NEWS_STATES = [s for s in os.environ.get("NEWS_STATES", "Madhya Pradesh,Maharashtra").split(",") if s]  # states that get their own local searches
 GEOCODER_USER_AGENT = os.environ.get("GEOCODER_USER_AGENT", "SeedhaBazar/1.0 (+https://seedhabazar.in; contact: set GEOCODER_USER_AGENT)")
 
 # --- SMS / WhatsApp connectors (see notify/backends.py) ---

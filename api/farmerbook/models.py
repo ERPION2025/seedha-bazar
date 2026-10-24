@@ -134,6 +134,7 @@ class Sale(BookRecord):
         OTHER = "other", "Other"
 
     crop_cycle = models.ForeignKey(CropCycle, on_delete=models.CASCADE, related_name="sales")
+    product = models.CharField(max_length=60, blank=True, help_text="Blank for the crop itself; a catalog key when processed stock was sold")
     date = models.DateField()
     quantity = models.DecimalField(max_digits=12, decimal_places=3)
     unit = models.CharField(max_length=8)
@@ -146,3 +147,51 @@ class Sale(BookRecord):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["owner", "client_id"], name="uniq_sale_client")]
+
+
+class Processing(BookRecord):
+    """Turning some of a crop's stock into something else: dried, ground, split, pressed, pulped, packed.
+
+    The raw stock goes down by `input_kg`; stock of `product` goes up by `quantity_kg`. `cost` joins the cycle's expenses.
+    """
+
+    class Packaging(models.TextChoices):
+        BULK = "bulk", "Loose, in bulk"
+        PACKED = "packed", "Packed for retail"
+
+    crop_cycle = models.ForeignKey(CropCycle, on_delete=models.CASCADE, related_name="processings")
+    date = models.DateField()
+    product = models.CharField(max_length=60, help_text="Catalog key of what was made")
+    input_kg = models.DecimalField(max_digits=14, decimal_places=3)
+    quantity = models.DecimalField(max_digits=12, decimal_places=3)
+    unit = models.CharField(max_length=8)
+    bag_weight_kg = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    quantity_kg = models.DecimalField(max_digits=14, decimal_places=3)
+    cost = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="What the processing cost in total")
+    packaging = models.CharField(max_length=8, choices=Packaging.choices, default=Packaging.BULK)
+    pack_size_g = models.PositiveIntegerField(null=True, blank=True)
+    shelf_life_days = models.PositiveIntegerField(null=True, blank=True)
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["owner", "client_id"], name="uniq_processing_client")]
+
+
+class Statement(models.Model):
+    """A frozen income statement from the Farmer Book, for a Kisan Credit Card or bank loan.
+
+    The figures are copied at the time it is made, and `digest` fingerprints them, so a bank can check the printed copy
+    against /verify/<code>/ and see whether anything was changed.
+    """
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="statements")
+    made_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    code = models.CharField(max_length=12, unique=True)
+    period_from = models.DateField()
+    period_to = models.DateField()
+    data = models.JSONField()
+    digest = models.CharField(max_length=64)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created_at"]

@@ -1,0 +1,4 @@
+{% load web_tags %}{% for a in announcements %}{% include "web/partials/announcement.html" %}{% endfor %}
+{% if rows %}<div class="card"><div class="row between"><h3 style="margin:0">📰 {% t "News for you" %}</h3><a href="/news/">{% t "All news" %}</a></div>
+  {% for a in rows %}<div class="line"><div><a href="{{ a.url }}" target="_blank" rel="noopener noreferrer"><b>{{ a.title }}</b></a><br><span class="mute">{{ a.outlet }} · {{ a.published_at|date:"j M" }}{% if a.state %} · {{ a.state }}{% endif %}</span></div></div>{% endfor %}
+  <p style="margin:10px 0 0"><a href="/schemes/">🏛️ {% t "Government schemes" %}</a> · <a href="/videos/">🎬 {% t "Videos" %}</a></p></div>{% endif %}

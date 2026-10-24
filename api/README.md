@@ -42,7 +42,11 @@ Text lives in `web/translations.py` (English sentence -> Hindi, Marathi). A test
     python manage.py runserver
     python manage.py test                       # 81 tests
 
-Local runs print OTPs in the server log (`OTP_BACKEND=console`). Production refuses to start with that setting.
+Local runs print OTPs in the server log (`OTP_BACKEND=console`). Production refuses to start with that setting, unless a trial code is set.
+
+**Trial code.** Until an SMS/WhatsApp provider is connected, `OTP_STATIC_CODE` (default `123456`) works for farmers, buyers, FPO agents and numbers not yet registered, and the code page says so. Agronomists and admins always get a real random code. Anyone who knows a farmer's number can sign in as them while this is on, so set `OTP_STATIC_CODE=` (empty) the day a provider goes live.
+
+**Read aloud.** Every page has a "Listen" tab on the right edge (`web/static/web/voice.js`). "Read this screen" speaks the page, "What should I do here?" speaks the fields and buttons, with pause, stop, slow voice and a highlight on what is being read. It uses the phone's own text-to-speech, so Hindi and Marathi need a voice installed on the phone. Mark an element `data-say="..."` to change what is read, `data-voice-skip` to hide it, `data-say-do="..."` to explain a group of buttons in one sentence.
 With Docker: copy `.env.example` to `.env`, then `docker compose up --build`.
 
 ## Flows
@@ -191,3 +195,27 @@ Static files are served by WhiteNoise from the same container. `python manage.py
 - The website cannot work offline yet. The JSON API already supports offline sync for a future app.
 - Reminders are shown on the farmer's home page only. SMS/WhatsApp reminders need a provider (same one as OTP).
 - An agent belongs to one organisation in the website screens (the first one). The JSON API supports several.
+
+## More modules (catalog, knowledge, insurance, orders, KVK portal, games)
+
+| Module | What it does | Setup |
+| --- | --- | --- |
+| `catalog/` | 94 products in three forms (raw, fresh, processed) with Hindi/Marathi names; 48 conversions (e.g. fresh to dried mushroom) with yields and **starter** price estimates; One District One Product list (713 districts, official PM-FME list). | `python manage.py load_odop` |
+| Farmer Book processing | A batch turns crop stock into a product; selling is limited to book stock (crop or processed). | — |
+| `knowledge/` | News engine reading public feeds (ICAR, The Hindu, Google News searches incl. PIB/ministry/KVK sites, DD Kisan videos), tagging by topic/crop/state; 12 scheme summaries; staff announcements. | `python manage.py seed_knowledge`, `fetch_news` (the worker runs it every 6 h) |
+| `insurance/` | National PMFBY/RWBCIS premium rules, state notifications by CSV, compare and opt in, papers checklist, printable summary, loss reports (also sent to the district KVK). No public enrolment API exists: the `manual` connector is used until a partner agreement. | `seed_insurance`, `load_insurance_plans file.csv` |
+| `deals/` | Buyers find producers, ask for produce or processing, negotiate, both sign with a one-time code (hash-fingerprinted agreement), advance and balance payments confirmed by both sides. | — |
+| `extension/`, `issues/` | KVK / research centre logins (`/login/?as=kvk`), district geofence (geoBoundaries ODbL, LGD 2021), control centre, issue desk with speech-to-text and voice notes, input offers, maps (OpenStreetMap + Leaflet, directions via Google Maps links). | Add centres at `/console/centres/` |
+| `engagement/` | 12 games (touch and voice), activity and performance scores, district insights. | — |
+
+Navigation: wide screens get a left-side menu; phones get a bottom bar with four main items and **More**. Menus per role live in `web/menus.py`.
+District boundary files are built with `python tools/build_boundaries.py adm1.geojson adm2.geojson` from geoBoundaries IND ADM1/ADM2.
+
+## Weather alerts, group selling, income statement, warehouse loans
+
+| Feature | What it does | Notes |
+| --- | --- | --- |
+| `weather/` | Daily 7-day forecast for each farmer's village (OpenStreetMap lookup, else district centre), crop stage from the Farmer Book sowing date, stage-specific advice (rain, frost, heat, wind, dry spell, blight/rust), one SMS a day per farmer. `/weather/`. | Open-Meteo: free for non-commercial use; set `WEATHER_API_KEY` for commercial. Runs in the worker after 6 a.m. |
+| Group selling (`market/pools.py`) | An FPO builds one lot from members' book stock; members confirm (FPO-managed members are added directly); one marketplace listing "pooled from N farmers"; on sale each member gets a pro-rata sale in their book, less the FPO fee; the FPO marks each payout. `/fpo/pools/`, `/farmer/pools/`. | Pooled stock is reserved so it cannot be listed twice. |
+| Income statement (`farmerbook/statement.py`) | Printable statement for a KCC or bank loan: crops, harvest, sales, costs, net per acre, stock valued at today's price, insurance, loans; confirmed figures marked. Frozen snapshot with SHA-256 fingerprint; banks check it at `/verify/<code>/` (QR on the print). FPOs can make one for a member. | Mostly self-reported book figures; the page says so. |
+| `storage/` | Store-or-sell calculator (loan at the bank's lending %, storage and interest, break-even price), WDRA warehouse list (CSV import), pledge record (e-NWR number, repository, loan, due date), reminders 15 and 3 days before due; pledged stock is held back from listings. `/storage/`. | Links to WDRA's e-Kisan Upaj Nidhi. No e-NWR repository API is public, so receipts are recorded, not fetched. Load warehouses with `load_warehouses file.csv`. |

@@ -1,0 +1,15 @@
+{% extends base_tpl %}{% load static web_tags %}
+{% block title %}{% t g.title %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<p><a href="/games/">← {% t "Games" %}</a></p>
+<div id="game">
+  <div class="game-hud" id="hud"><span>{{ g.emoji }} {% t g.title %}</span><span>⭐ <span class="pts">0</span></span></div>
+  <p class="mute">{% t g.line %}</p>
+  <div class="game-stage" id="stage"><button type="button" class="btn block" id="go" style="min-height:64px;font-size:1.3rem">▶ {% t "Start" %}</button>
+    {% if g.voice %}<p class="hint" style="margin-top:10px">{% t "Tap the answer, or tap the mic and say it." %}</p>{% endif %}</div>
+</div>
+{{ cfg|json_script:"game-cfg" }}
+<script src="{% static 'web/games/core.js' %}"></script>
+<script src="{% static 'web/games/all.js' %}"></script>
+{% endblock %}

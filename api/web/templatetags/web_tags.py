@@ -31,6 +31,21 @@ def num(value, places=2):
     return s.rstrip("0").rstrip(".") if "." in s else s
 
 
+@register.filter
+def quintal(kg):
+    """Kg -> quintal for display, rounded down so it never promises more than the stock."""
+    try:
+        d = Decimal(str(kg))
+    except (InvalidOperation, TypeError):
+        return kg
+    return num((d / 100).quantize(Decimal("0.001"), rounding="ROUND_DOWN"), 3)
+
+
+@register.filter
+def stripzeros(value):
+    return num(value, 3) if value is not None else ""
+
+
 @register.simple_tag(takes_context=True)
 def field(context, bound, hint="", **attrs):
     """One labelled input with its errors, in the visitor's language."""
@@ -53,3 +68,53 @@ def field(context, bound, hint="", **attrs):
 def crop(context, value):
     from web.forms import crop_label
     return crop_label(context.get("lang", "hi"), value)
+
+
+TOPIC_LABELS = {"scheme": "Schemes", "price": "Prices and MSP", "insurance": "Insurance", "fpo": "FPO and NGO", "weather": "Weather", "advisory": "Advisories",
+                "processing": "Processing and storage", "credit": "Credit", "technology": "New methods", "market": "Selling", "inputs": "Inputs and equipment", "farming": "Farming"}
+
+
+@register.filter
+def topic_label(key):
+    return TOPIC_LABELS.get(key, key)
+
+
+
+@register.inclusion_tag("web/partials/news_strip.html", takes_context=True)
+def news_for_home(context, limit=3):
+    """Announcements from staff and the top headlines for this person, for the top of a home page."""
+    from knowledge import services
+
+    request = context["request"]
+    lang = context.get("lang", "hi")
+    rows, _ = services.ranked_articles(request.user, lang, limit=limit)
+    return {"announcements": services.announcements_for(request.user, lang, 2), "rows": rows, "lang": lang}
+
+
+
+@register.filter
+def emoji_of(key):
+    import catalog
+    return catalog.emoji(key)
+
+
+@register.filter
+def crop_name(key, lang="hi"):
+    from web.forms import crop_label
+    return crop_label(lang, key)
+
+
+
+@register.filter
+def first_name(name):
+    """Only the first word of a name: what the other side sees before an agreement is signed."""
+    return (name or "").split()[0] if (name or "").split() else ""
+
+
+
+@register.filter
+def jsonify(value):
+    import json
+
+    from django.utils.safestring import mark_safe
+    return mark_safe(json.dumps(value).replace("<", "\\u003c").replace("'", "\\u0027"))

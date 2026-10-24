@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class ExtensionConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "extension"
+    verbose_name = "KVKs and research centres"

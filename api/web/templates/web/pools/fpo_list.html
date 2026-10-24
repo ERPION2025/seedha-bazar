@@ -1,0 +1,13 @@
+{% extends "web/fpo/base.html" %}{% load web_tags %}
+{% block title %}{% t "Group selling" %}{% endblock %}
+{% block content %}
+<h1>🤝 {% t "Group selling" %}</h1>
+<p class="mute">{% t "Join many members' small stocks into one big lot. Buyers pay more for one large, graded lot. Each member's share stays in their own book until it sells, and each gets their part of the money." %}</p>
+{% if have %}<div class="card tint"><b>{% t "Members' free stock" %}:</b> {% for k, kg in have %}{% crop k %} {{ kg|quintal }} q{% if not forloop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+<details class="card"{% if form.errors %} open{% endif %}><summary><b>+ {% t "Start a group lot" %}</b></summary>
+  <form method="post" style="margin-top:10px">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn">{% t "Start" %}</button></form></details>
+{% for p in rows %}<a class="door" href="/fpo/pools/{{ p.pk }}/"><div class="card">
+  <div class="row between"><h3 style="margin:0">{{ p.product|emoji_of }} {% crop p.product %}</h3><span class="pill sun">{% t p.get_status_display %}</span></div>
+  <p class="mute" style="margin:6px 0 0">{% t "{n} farmers" n=p.n %} · {{ p.total_kg|quintal }} q · {{ p.price|inr }} / {% t p.unit %}{% if p.fee_pct %} · {% t "FPO fee" %} {{ p.fee_pct|num }}%{% endif %}</p></div></a>
+{% empty %}<p class="mute">{% t "No group lots yet." %}</p>{% endfor %}
+{% endblock %}

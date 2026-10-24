@@ -1,0 +1,26 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Rules, agencies and forms" %}{% endblock %}
+{% block content %}
+<p><a href="/insurance/">← {% t "Crop insurance" %}</a></p>
+<h1>📋 {% t "Rules, agencies and forms" %}</h1>
+<div class="card"><h3>{% t "What the farmer pays" %}</h3>
+  <div class="scroll"><table class="tbl"><thead><tr><th>{% t "Plan" %}</th><th>{% t "Season" %}</th><th>{% t "Crops" %}</th><th>{% t "You pay" %}</th></tr></thead><tbody>
+  {% for p in plans %}<tr><td>{% t p.get_scheme_display %}</td><td>{% t p.get_season_display %}</td><td>{% t p.get_group_display %}</td><td><b>{{ p.farmer_share_pct|num }}%</b></td></tr>{% endfor %}</tbody></table></div>
+  <p class="hint">{% t "As a share of the sum insured. The government pays the rest of the premium." %}</p></div>
+<div class="card"><h3>{% t "What is covered" %}</h3>{% for k, text in risks.items %}<p><b>{% if k == "pmfby" %}PMFBY{% else %}RWBCIS{% endif %}:</b> {% t text %}</p>{% endfor %}</div>
+<div class="card"><h3>{% t "Key rules" %}</h3><ul style="margin:0;padding-left:20px">
+  <li>{% t "Enrol before your state's last date for the season. It is different for each crop and district." %}</li>
+  <li>{% t "Farmers with a crop loan or KCC are enrolled by the bank unless they write to opt out before the last date." %}</li>
+  <li>{% t "Tenant farmers and sharecroppers can enrol with proof of the crop they sow." %}</li>
+  <li>{% t "Report a loss from hail, flood, landslide, fire or post-harvest rain within 72 hours." %}</li>
+  <li>{% t "Claims for wide-area losses are worked out from crop-cutting experiments by the state; you do not need to apply for them." %}</li>
+</ul></div>
+<div class="card"><h3>{% t "Who does what" %}</h3><ul style="margin:0;padding-left:20px">
+  <li><b>{% t "State agriculture department" %}</b>: {% t "notifies crops, areas, sum insured and dates, and picks the insurance company for each district cluster." %}</li>
+  <li><b>{% t "Insurance company" %}</b>: {% t "issues the policy, surveys losses and pays claims. Your district's company is on the notification and on pmfby.gov.in." %}</li>
+  <li><b>{% t "Banks and Common Service Centres" %}</b>: {% t "enrol farmers and collect the premium." %}</li>
+  <li><b>{% t "Your FPO" %}</b>: {% t "can collect papers from members and enrol them together." %}</li></ul></div>
+<div class="card"><h3>{% t "Forms and papers" %}</h3><ul style="margin:0;padding-left:20px">{% for k, label in docs %}<li>{% t label %}</li>{% endfor %}</ul>
+  <div class="row" style="margin-top:10px"><a class="btn small" href="https://pmfby.gov.in/" target="_blank" rel="noopener noreferrer">pmfby.gov.in ↗</a><a class="btn small ghost" href="/schemes/pmfby/">{% t "Scheme summary" %}</a></div></div>
+{% if states %}<p class="mute">{% t "State notifications loaded for" %}: {{ states|join:", " }}</p>{% else %}<p class="hint">{% t "Your state's crop list, sum insured and dates are not loaded here yet. Your bank or CSC has them." %}</p>{% endif %}
+{% endblock %}

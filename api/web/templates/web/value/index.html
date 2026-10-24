@@ -1,0 +1,12 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Earn more from your produce" %}{% endblock %}
+{% block content %}
+<h1>💰 {% t "Earn more from your produce" %}</h1>
+<p class="mute">{% t "Many crops sell for much more once they are dried, ground, split, pressed or packed. Pick a crop to see what it can become and what that is worth." %}</p>
+{% if featured %}
+<div class="card sun"><span class="pill sun">⭐ {% t "Known in {district}" district=featured.odop.district %}</span>
+  <h3 style="margin:8px 0 4px">{{ featured.odop.product }}</h3>
+  {% if featured.crop %}<a class="btn small" href="/value/{{ featured.crop }}/">{% t "What can be made from it" %}</a>{% endif %}</div>
+{% endif %}
+<div class="tiles">{% for r in rows %}<a class="tile" href="/value/{{ r.crop }}/" style="text-decoration:none"><span class="e">{{ r.emoji }}</span><b>{% crop r.crop %}</b><small>{% t "{n} ways" n=r.n %}</small></a>{% endfor %}</div>
+{% endblock %}

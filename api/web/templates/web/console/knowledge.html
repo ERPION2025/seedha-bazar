@@ -1,0 +1,30 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "News and announcements" %}{% endblock %}
+{% block content %}
+<h1>📰 {% t "News and announcements" %}</h1>
+<div class="stats4">
+  <div class="card stat"><small>{% t "Headlines kept" %}</small><div class="big">{{ articles }}</div></div>
+  <div class="card stat"><small>{% t "Videos" %}</small><div class="big">{{ videos }}</div></div>
+  <div class="card stat"><small>{% t "Schemes" %}</small><div class="big">{{ schemes }}</div></div>
+  <div class="card stat"><small>{% t "Last read" %}</small><div class="big" style="font-size:1.1rem">{{ last|date:"j M, H:i"|default:"—" }}</div></div>
+</div>
+<div class="card"><div class="row between"><div><b>{% t "The reader runs by itself every few hours." %}</b><br><span class="mute">{% t "It keeps only farming headlines, tags them by topic, crop and state, and drops the rest." %}</span></div>
+  <form method="post" action="/console/news/refresh/">{% csrf_token %}<button class="btn">{% t "Read now" %}</button></form></div></div>
+
+<div class="card"><h3>{% t "Post an announcement" %}</h3>
+  <form method="post" action="/console/news/announce/">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn">{% t "Post" %}</button></form>
+  {% for a in announcements %}<div class="line"><div><b>{% if a.pinned %}📌 {% endif %}{{ a.title }}</b><br><span class="mute">{{ a.get_audience_display }}{% if a.state %} · {{ a.state }}{% endif %}{% if a.district %} · {{ a.district }}{% endif %} · {{ a.starts_at|date:"j M" }}{% if a.ends_at %} → {{ a.ends_at|date:"j M" }}{% endif %}</span></div>
+    {% if not a.ends_at %}<form method="post" action="/console/news/announce/{{ a.pk }}/end/">{% csrf_token %}<button class="btn small ghost">{% t "Take down" %}</button></form>{% endif %}</div>{% endfor %}
+</div>
+
+<div class="card scroll"><h3>{% t "Sources" %}</h3><table class="tbl">
+<thead><tr><th>{% t "Source" %}</th><th>{% t "Language" %}</th><th>{% t "Trust" %}</th><th>{% t "Kept" %}</th><th>{% t "Last read" %}</th><th>{% t "Status" %}</th><th></th></tr></thead>
+<tbody>{% for s in sources %}<tr><td>{{ s.name }}<br><span class="mute">{{ s.get_kind_display }}{% if s.state %} · {{ s.state }}{% endif %}</span></td><td>{{ s.language }}</td><td>{{ s.trust }}</td><td>{{ s.n }}</td><td>{{ s.last_run|date:"j M, H:i"|default:"—" }}</td>
+  <td>{% if not s.active %}<span class="pill grey">{% t "Off" %}</span>{% elif s.last_error %}<span class="pill red" title="{{ s.last_error }}">{% t "Failed" %}</span>{% elif s.last_ok %}<span class="pill">{% t "OK" %}</span>{% else %}<span class="pill grey">—</span>{% endif %}</td>
+  <td><form method="post" action="/console/news/source/{{ s.pk }}/toggle/">{% csrf_token %}<button class="btn small ghost">{% if s.active %}{% t "Switch off" %}{% else %}{% t "Switch on" %}{% endif %}</button></form></td></tr>{% endfor %}</tbody></table>
+<p class="hint">{% t "Add or edit sources in the admin (Knowledge → Sources). A search source takes the search words; a YouTube source takes the channel id." %}</p></div>
+
+<div class="card"><h3>{% t "Latest headlines" %}</h3>
+{% for a in recent %}<div class="line"><div><a href="{{ a.url }}" target="_blank" rel="noopener noreferrer">{{ a.title }}</a><br><span class="mute">{{ a.outlet }} · {{ a.language }} · {{ a.score }} · {{ a.topics|join:", " }}{% if a.state %} · {{ a.state }}{% endif %}</span></div>
+  <form method="post" action="/console/news/article/{{ a.pk }}/toggle/">{% csrf_token %}<button class="btn small ghost">{% if a.hidden %}{% t "Show" %}{% else %}{% t "Hide" %}{% endif %}</button></form></div>{% endfor %}</div>
+{% endblock %}

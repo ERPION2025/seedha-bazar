@@ -21,8 +21,13 @@
   <a class="btn ghost" href="add/expense/">💸 {% t "Expense" %}</a>
   <a class="btn ghost" href="add/harvest/">🌾 {% t "Harvest" %}</a>
   <a class="btn ghost" href="add/sale/">🧾 {% t "Sale" %}</a>
+  {% if can_process %}<a class="btn ghost" href="add/process/">⚙️ {% t "Process this stock" %}</a>{% endif %}
   <a class="btn ghost" href="add/task/">📅 {% t "Work or reminder" %}</a>
 </div>
+{% if processed %}<div class="card"><h3>📦 {% t "Made from this crop" %}</h3>
+  {% for p in processed %}<div class="line"><div><b>{% crop p.product %}</b></div><div>{{ p.kg|num:1 }} {% t "kg" %} · <a class="btn small sun" href="/farmer/sell/new/?cycle={{ cycle.client_id }}&product={{ p.product }}">🏷️ {% t "List for sale" %}</a></div></div>{% endfor %}</div>{% endif %}
+{% if cycle.status == "active" %}<p class="hint"><a href="/insurance/compare/?cycle={{ cycle.client_id }}">🛡️ {% t "Insure this crop against drought, flood, hail and pests" %}</a></p>{% endif %}
+{% if can_process %}<p class="hint"><a href="/value/{{ cycle.crop }}/">💰 {% t "What can be made from this crop and what it is worth" %}</a></p>{% endif %}
 
 {% if s.stock_kg != "0.000" %}<a class="btn sun block" style="margin-bottom:16px" href="/farmer/sell/new/?cycle={{ cycle.client_id }}">🏷️ {% t "List this stock for sale" %}</a>{% endif %}
 <div class="card">
@@ -30,9 +35,9 @@
   {% for r in rows %}
   <div class="line">
     <div>
-      <b>{% if r.kind == "expense" %}💸{% elif r.kind == "harvest" %}🌾{% elif r.kind == "sale" %}🧾{% else %}📅{% endif %} {% t r.label %}</b>
+      <b>{% if r.kind == "expense" %}💸{% elif r.kind == "harvest" %}🌾{% elif r.kind == "sale" %}🧾{% elif r.kind == "process" %}⚙️{% else %}📅{% endif %} {% t r.label %}</b>
       {% if r.kind == "task" and not r.done %}<span class="pill sun">{% t "Reminder" %}</span>{% endif %}<br>
-      <span class="mute">{{ r.date|date:"j M Y" }}{% if r.qty %} · {{ r.qty|num:3 }} {% t r.unit %}{% endif %}{% if r.note %} · {{ r.note }}{% endif %}</span>
+      <span class="mute">{{ r.date|date:"j M Y" }}{% if r.qty %} · {{ r.qty|num:3 }} {% t r.unit %}{% endif %}{% if r.from_kg %} · {% t "from {n} kg" n=r.from_kg|num:1 %}{% endif %}{% if r.note %} · {{ r.note }}{% endif %}</span>
     </div>
     <div class="row">
       {% if r.amount %}<b class="{% if r.sign == "+" %}pos{% else %}neg{% endif %}">{{ r.sign }}{{ r.amount|inr }}</b>{% endif %}

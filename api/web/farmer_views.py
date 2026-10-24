@@ -1,13 +1,18 @@
+from decimal import Decimal
+
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+import catalog
 from accounts import audit
 from accounts.errors import ApiError
 from accounts.models import Role
 from farmerbook import serializers as fb
-from farmerbook.models import Activity, CropCycle, Expense, Harvest, Plot, Sale
+from catalog import services as catalog_services
+from farmerbook.models import Activity, CropCycle, Expense, Harvest, Plot, Processing, Sale
+from farmerbook.units import to_kg
 from farmerbook.views import cycle_summary, ledger_for, stock_for
 from profiles import services
 from profiles.models import Organisation, OrgStatus
@@ -22,6 +27,7 @@ KINDS = {  # record kind -> (form, serializer, model)
     "expense": (f.ExpenseForm, fb.ExpenseSerializer, Expense),
     "harvest": (f.HarvestForm, fb.HarvestSerializer, Harvest),
     "sale": (f.SaleForm, fb.SaleSerializer, Sale),
+    "process": (f.ProcessForm, fb.ProcessingSerializer, Processing),
     "task": (f.TaskForm, fb.ActivitySerializer, Activity),
 }
 
@@ -59,6 +65,16 @@ def home(request):
         "quick": cycles.exclude(status="closed").order_by("-created_at").first(),
         **rate_context(request),
     }
+    from extension.scope import centre_for_place
+    from extension.services import offers_for
+    ctx["kvk"] = centre_for_place(fp.state, fp.district)
+    ctx["offers_n"] = len(offers_for(request.user))
+    from .weather_views import home_alert
+    ctx["wx"] = home_alert(request.user)
+    from market.models import PoolShare
+    ctx["pool_asks"] = PoolShare.objects.filter(farmer=request.user, status="proposed").count()
+    from engagement import scores
+    ctx["scores"] = {"activity": scores.activity(request.user)["score"], "performance": scores.performance(request.user)["score"]}
     return render(request, "web/farmer/home.html", ctx)
 
 
@@ -71,6 +87,8 @@ def profile(request):
         for k in ("name", "village", "block", "district", "land_acres"):
             setattr(fp, k, d[k])
         fp.crops = f.split_crops(d["crops"], d["other_crops"])
+        fp.discoverable = d.get("discoverable", False)
+        fp.share_with_extension = d.get("share_with_extension", False)
         fp.save()
         audit.log("farmer_profile_updated", actor=request.user, target=fp, request=request, via="web")
         ok(request, "Profile saved.")
@@ -136,7 +154,10 @@ def _timeline(cycle, owner):
     for h in Harvest.objects.filter(owner=owner, crop_cycle=cycle, deleted_at__isnull=True):
         rows.append({"kind": "harvest", "date": h.date, "label": h.get_grade_display(), "qty": h.quantity, "unit": h.unit, "note": h.storage_note, "id": h.client_id})
     for s in Sale.objects.filter(owner=owner, crop_cycle=cycle, deleted_at__isnull=True):
-        rows.append({"kind": "sale", "date": s.date, "label": s.get_channel_display(), "qty": s.quantity, "unit": s.unit, "amount": s.amount, "note": s.buyer_note, "id": s.client_id, "sign": "+"})
+        rows.append({"kind": "sale", "date": s.date, "label": catalog.name(s.product) if s.product else s.get_channel_display(), "qty": s.quantity, "unit": s.unit, "amount": s.amount, "note": s.buyer_note, "id": s.client_id, "sign": "+"})
+    for m in Processing.objects.filter(owner=owner, crop_cycle=cycle, deleted_at__isnull=True):
+        rows.append({"kind": "process", "date": m.date, "label": catalog.name(m.product), "qty": m.quantity, "unit": m.unit, "amount": m.cost if m.cost else None, "sign": "-",
+                     "note": m.note, "id": m.client_id, "from_kg": m.input_kg, "product": m.product})
     for a in Activity.objects.filter(owner=owner, crop_cycle=cycle, deleted_at__isnull=True):
         rows.append({"kind": "task", "date": a.date, "label": a.get_kind_display(), "note": a.note, "done": a.done, "id": a.client_id})
     rows.sort(key=lambda r: r["date"], reverse=True)
@@ -147,7 +168,9 @@ def _timeline(cycle, owner):
 def cycle(request, cid):
     c = get_cycle(request, cid)
     summary = cycle_summary(c)
-    return render(request, "web/farmer/cycle.html", {"cycle": c, "s": summary, "rows": _timeline(c, request.user), "today": timezone.localdate()})
+    processed = [{"product": k, "kg": v} for k, v in fb.processed_stock(c).items()]
+    return render(request, "web/farmer/cycle.html", {"cycle": c, "s": summary, "rows": _timeline(c, request.user), "today": timezone.localdate(), "processed": processed,
+                                                      "can_process": bool(catalog_services.conversions_from(c.crop)) and Decimal(summary["stock_kg"]) > 0})
 
 
 @farmer_only
@@ -156,11 +179,24 @@ def add_record(request, cid, kind):
         raise Http404
     c = get_cycle(request, cid)
     form_cls, ser_cls, _ = KINDS[kind]
-    prefill = {k: request.GET[k] for k in ("quantity", "unit", "rate", "channel", "buyer_note") if k in request.GET} if kind == "sale" and request.method == "GET" else {}
-    form = form_cls(request.POST or None, initial=prefill, lang=request.lang)
+    prefill = {k: request.GET[k] for k in ("quantity", "unit", "rate", "channel", "buyer_note", "product") if k in request.GET} if kind == "sale" and request.method == "GET" else {}
+    extra = {}
+    if kind == "sale":
+        extra["products"] = [(k, catalog.name(k)) for k in fb.processed_stock(c)]
+    elif kind == "process":
+        if not catalog_services.conversions_from(c.crop):
+            ok(request, "Nothing in our list can be made from this crop yet.")
+            return redirect(f"/farmer/book/{c.client_id}/")
+        prefill = {"product": request.GET.get("product", "")} if request.method == "GET" and request.GET.get("product") else {}
+        extra["crop"] = c.crop
+    form = form_cls(request.POST or None, initial=prefill, lang=request.lang, **extra)
     if request.method == "POST" and form.is_valid():
         data = payload(form.cleaned_data)
         data["crop_cycle"] = str(c.client_id)
+        if kind == "process":
+            data["input_kg"] = str(to_kg(form.cleaned_data["input_quantity"], form.cleaned_data["input_unit"]))
+            data.pop("input_quantity", None)
+            data.pop("input_unit", None)
         if kind == "task":
             data["done"] = not data.pop("planned", False)
             data.pop("planned", None)
@@ -195,6 +231,9 @@ def delete_record(request, cid, kind, rid):
         raise Http404
     if kind == "harvest" and fb.stock_kg(c, exclude_harvest=rec) < 0:
         warn(request, "Sales already recorded are more than the remaining harvest. Remove those sales first.")
+    elif kind == "process" and fb.product_stock_kg(c, rec.product, exclude_processing=rec) < 0:
+        warn(request, "Some of this has already been sold. Remove those sales first.")
+
     else:
         rec.deleted_at = timezone.now()
         rec.save()

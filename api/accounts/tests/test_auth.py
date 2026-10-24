@@ -5,7 +5,8 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from accounts.messaging import MemoryBackend
-from accounts.models import AuditEvent, Device, OtpChallenge, User
+from accounts import otp
+from accounts.models import AuditEvent, Device, OtpChallenge, Role, User
 from accounts.phone import InvalidPhone, normalise_phone
 
 from .helpers import DEVICE, authed, last_code, login
@@ -251,3 +252,36 @@ class PinTests(TestCase):
     def test_pin_is_stored_hashed(self):
         self.auth.post("/api/auth/pin", {"pin": "4321"}, format="json")
         self.assertNotIn("4321", User.objects.get(phone="9876543210").pin_hash)
+
+
+class StaticTrialCodeTests(TestCase):
+    """Until a message provider is connected, farmers and buyers use a fixed code; staff never do."""
+
+    def setUp(self):
+        MemoryBackend.outbox.clear()
+
+    @override_settings(OTP_STATIC_CODE="123456", OTP_BACKEND="accounts.messaging.MemoryBackend")
+    def test_new_number_signs_in_with_fixed_code_and_nothing_is_sent(self):
+        otp.request_otp("9111111111", "sms", None)
+        self.assertEqual(MemoryBackend.outbox, [])
+        otp.verify_code("9111111111", "123456")
+
+    @override_settings(OTP_STATIC_CODE="123456", OTP_BACKEND="accounts.messaging.MemoryBackend")
+    def test_admins_and_agronomists_still_get_a_random_code(self):
+        for role, phone in ((Role.AGRONOMIST, "9111111112"), (Role.ADMIN, "9111111113")):
+            User.objects.create_user(phone=phone, role=role)
+            otp.request_otp(phone, "sms", None)
+            self.assertEqual(len(MemoryBackend.outbox), 1)
+            MemoryBackend.outbox.clear()
+
+    @override_settings(OTP_STATIC_CODE="", OTP_BACKEND="accounts.messaging.MemoryBackend")
+    def test_empty_setting_turns_it_off(self):
+        otp.request_otp("9111111114", "sms", None)
+        self.assertEqual(len(MemoryBackend.outbox), 1)
+
+    @override_settings(OTP_STATIC_CODE="123456", OTP_BACKEND="accounts.messaging.MemoryBackend")
+    def test_fpo_agents_use_the_fixed_code(self):
+        User.objects.create_user(phone="9111111115", role=Role.AGENT)
+        otp.request_otp("9111111115", "sms", None)
+        self.assertEqual(MemoryBackend.outbox, [])
+        otp.verify_code("9111111115", "123456")

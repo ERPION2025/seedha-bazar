@@ -5,6 +5,56 @@ template and keep the {placeholders} in the same order. Keep them short.
 """
 
 TEXTS = {
+    "pledge_due": {
+        "en": "Seedha Bazar: your warehouse loan or receipt for {product} falls due on {date}. Plan to repay or sell: {link}",
+        "hi": "सीधा बाज़ार: {product} के गोदाम ऋण या रसीद की तारीख {date} है। चुकाने या बेचने की योजना बनाएँ: {link}",
+        "mr": "सीधा बाज़ार: {product} च्या गोदाम कर्जाची किंवा पावतीची मुदत {date} रोजी संपते. परतफेड किंवा विक्रीचे नियोजन करा: {link}",
+    },
+    "pool_invite": {
+        "en": "Seedha Bazar: {org} wants to add {qty} of your {product} to a group sale. Say yes or no: {link}",
+        "hi": "सीधा बाज़ार: {org} आपकी {product} में से {qty} सामूहिक बिक्री में जोड़ना चाहता है। हाँ या ना कहें: {link}",
+        "mr": "सीधा बाज़ार: {org} तुमच्या {product} पैकी {qty} सामूहिक विक्रीत जोडू इच्छिते. हो किंवा नाही सांगा: {link}",
+    },
+    "pool_paid": {
+        "en": "Seedha Bazar: {org} sold the group lot of {product}. Your share: {amount}. Details: {link}",
+        "hi": "सीधा बाज़ार: {org} ने {product} का सामूहिक लॉट बेचा। आपका हिस्सा: {amount}। विवरण: {link}",
+        "mr": "सीधा बाज़ार: {org} ने {product} चा सामूहिक लॉट विकला. तुमचा वाटा: {amount}. तपशील: {link}",
+    },
+    "weather_alert": {
+        "en": "Seedha Bazar weather, {date}: {crop}. {advice} More: {link}",
+        "hi": "सीधा बाज़ार मौसम, {date}: {crop}। {advice} और: {link}",
+        "mr": "सीधा बाज़ार हवामान, {date}: {crop}. {advice} अधिक: {link}",
+    },
+    "input_update": {
+        "en": "Seedha Bazar: {what} ({product}). See: {link}",
+        "hi": "सीधा बाज़ार: {what} ({product})। देखें: {link}",
+        "mr": "सीधा बाज़ार: {what} ({product}). पाहा: {link}",
+    },
+    "issue_alert": {
+        "en": "Seedha Bazar: {what} in {place}. Open: {link}",
+        "hi": "सीधा बाज़ार: {place} में {what}। खोलें: {link}",
+        "mr": "सीधा बाज़ार: {place} मध्ये {what}. उघडा: {link}",
+    },
+    "issue_reply": {
+        "en": "Seedha Bazar: an expert answered your problem. Open: {link}",
+        "hi": "सीधा बाज़ार: विशेषज्ञ ने आपकी समस्या का जवाब दिया। खोलें: {link}",
+        "mr": "सीधा बाज़ार: तज्ज्ञाने तुमच्या समस्येला उत्तर दिले. उघडा: {link}",
+    },
+    "input_offer": {
+        "en": "Seedha Bazar: {centre} offers {item} for {place}. See and request: {link}",
+        "hi": "सीधा बाज़ार: {centre} {place} के लिए {item} दे रहा है। देखें और माँगें: {link}",
+        "mr": "सीधा बाज़ार: {centre} {place} साठी {item} देत आहे. पाहा व मागणी करा: {link}",
+    },
+    "deal_request": {
+        "en": "Seedha Bazar: a buyer asks you for {product} ({qty}). See the offer and reply: {link}",
+        "hi": "सीधा बाज़ार: एक खरीदार आपसे {product} ({qty}) माँग रहा है। प्रस्ताव देखें और जवाब दें: {link}",
+        "mr": "सीधा बाज़ार: एक खरेदीदार तुमच्याकडे {product} ({qty}) मागत आहे. प्रस्ताव पाहा व उत्तर द्या: {link}",
+    },
+    "deal_update": {
+        "en": "Seedha Bazar: {what}. Order for {product}: {link}",
+        "hi": "सीधा बाज़ार: {what}। {product} का ऑर्डर: {link}",
+        "mr": "सीधा बाज़ार: {what}. {product} ची ऑर्डर: {link}",
+    },
     "calc_result": {
         "en": "Seedha Bazar: {crop}, {qty}. At the mandi you get {hand} in hand ({cut} is cut in between). This is an estimate.",
         "hi": "सीधा बाज़ार: {crop}, {qty}। मंडी में हाथ में {hand} आएगा ({cut} बीच में कटेगा)। यह अनुमान है।",

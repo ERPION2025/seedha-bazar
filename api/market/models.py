@@ -30,7 +30,13 @@ class Listing(models.Model):
     seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="listings")
     organisation = models.ForeignKey("profiles.Organisation", null=True, blank=True, on_delete=models.SET_NULL, related_name="listings")
     source_cycle = models.ForeignKey("farmerbook.CropCycle", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
-    crop = models.CharField(max_length=60, db_index=True)
+    crop = models.CharField(max_length=60, db_index=True, help_text="Catalog key of what is sold: a crop, fresh produce, or a processed product")
+    form = models.CharField(max_length=8, default="raw", db_index=True, help_text="raw, fresh or semi: set from the catalog")
+    packaging = models.CharField(max_length=8, default="bulk", help_text="bulk (loose) or packed (retail packs); processed goods only")
+    pack_size_g = models.PositiveIntegerField(null=True, blank=True, help_text="Grams (or ml) in one retail pack")
+    brand = models.CharField(max_length=80, blank=True)
+    fssai_no = models.CharField(max_length=20, blank=True, help_text="14-digit FSSAI licence or registration number, needed for packed food")
+    shelf_life_days = models.PositiveIntegerField(null=True, blank=True)
     variety = models.CharField(max_length=60, blank=True)
     grade = models.CharField(max_length=10, choices=Grade.choices, default=Grade.UNGRADED)
     quantity = models.DecimalField(max_digits=12, decimal_places=3)
@@ -110,3 +116,63 @@ class EnquiryMessage(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+
+
+class Pool(models.Model):
+    """Group selling: an FPO pools small amounts from many members' books into one big lot and lists it once.
+
+    Each member's share stays in their own Farmer Book until the lot is sold; then each gets a sale entry for their share,
+    less the FPO's fee. Buyers see one listing, "pooled from N farmers".
+    """
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Collecting shares"
+        LISTED = "listed", "Listed for sale"
+        SOLD = "sold", "Sold, paying members"
+        SETTLED = "settled", "Members paid"
+        CANCELLED = "cancelled", "Cancelled"
+
+    organisation = models.ForeignKey("profiles.Organisation", on_delete=models.CASCADE, related_name="pools")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    product = models.CharField(max_length=60)
+    grade = models.CharField(max_length=10, default="ungraded")
+    unit = models.CharField(max_length=8, default="quintal")
+    price = models.DecimalField(max_digits=12, decimal_places=2, help_text="Asking price per unit")
+    target_kg = models.DecimalField(max_digits=14, decimal_places=3, null=True, blank=True)
+    fee_pct = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="FPO's fee, % of the sale")
+    description = models.CharField(max_length=300, blank=True)
+    collect_by = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN, db_index=True)
+    listing = models.OneToOneField(Listing, null=True, blank=True, on_delete=models.SET_NULL, related_name="pool")
+    sold_kg = models.DecimalField(max_digits=14, decimal_places=3, null=True, blank=True)
+    sold_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text="Price per unit actually received")
+    buyer_note = models.CharField(max_length=160, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    settled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class PoolShare(models.Model):
+    class Status(models.TextChoices):
+        PROPOSED = "proposed", "Waiting for the farmer"
+        CONFIRMED = "confirmed", "In the lot"
+        WITHDRAWN = "withdrawn", "Withdrawn"
+
+    pool = models.ForeignKey(Pool, on_delete=models.CASCADE, related_name="shares")
+    farmer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="pool_shares")
+    crop_cycle = models.ForeignKey("farmerbook.CropCycle", on_delete=models.CASCADE, related_name="+")
+    quantity_kg = models.DecimalField(max_digits=14, decimal_places=3)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PROPOSED)
+    proposed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(default=timezone.now)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    sold_kg = models.DecimalField(max_digits=14, decimal_places=3, null=True, blank=True)
+    payout = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    sale = models.ForeignKey("farmerbook.Sale", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        constraints = [models.UniqueConstraint(fields=["pool", "crop_cycle"], name="uniq_pool_share_per_cycle")]

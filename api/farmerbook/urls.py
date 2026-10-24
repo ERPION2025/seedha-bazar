@@ -10,6 +10,7 @@ router.register("activities", views.ActivityViewSet, basename="activity")
 router.register("expenses", views.ExpenseViewSet, basename="expense")
 router.register("harvests", views.HarvestViewSet, basename="harvest")
 router.register("sales", views.SaleViewSet, basename="sale")
+router.register("processings", views.ProcessingViewSet, basename="processing")
 
 urlpatterns = [
     path("ledger", views.LedgerView.as_view()),

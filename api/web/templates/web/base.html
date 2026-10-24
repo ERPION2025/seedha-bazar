@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="{% static 'web/app.css' %}">
 {% block head %}{% endblock %}
 </head>
-<body>
+<body class="has-nav">
 <header class="top"><div class="wrap">
   <a class="brand" href="/"><i>सी</i>{% t "Seedha Bazar" %}</a>
   <nav class="langs" aria-label="Language">{% for code, name in lang_choices %}<a href="?lang={{ code }}"{% if code == lang %} class="on" aria-current="true"{% endif %}>{{ name }}</a>{% endfor %}</nav>
@@ -20,6 +20,11 @@
     <a class="login" href="/login/">{% t "Sign in" %}</a>
   {% endif %}
 </div></header>
+<div class="shell">
+<aside class="side" aria-label="{% t "Menu" %}"><nav>
+  {% for i in nav.all %}<a href="{{ i.url }}"{% if i.active %} class="on" aria-current="page"{% endif %}><span class="ic" aria-hidden="true">{{ i.icon }}</span><span>{% t i.label %}</span>{% if i.badge %}<span class="n">{{ i.badge }}</span>{% endif %}</a>{% endfor %}
+</nav></aside>
+<div class="shell-main">
 {% block subnav %}{% endblock %}
 {% block hero %}{% endblock %}
 <main class="wrap{% block mainclass %}{% endblock %}">
@@ -27,10 +32,26 @@
   {% block content %}{% endblock %}
 </main>
 {% block after %}{% endblock %}
+</div>
+</div>
 <footer><div class="wrap">
   <p><b>{% t "Seedha Bazar" %}</b> — {% t "Direct market, fair price, your farmer brother" %}</p>
-  <p><a href="/for-farmers/">{% t "For farmers" %}</a> · <a href="/for-fpos/">{% t "For FPOs and NGOs" %}</a> · <a href="/for-buyers/">{% t "For buyers" %}</a> · <a href="/market/">{% t "Marketplace" %}</a> · <a href="/rates/">{% t "Rates" %}</a> · <a href="/calculator/">{% t "Harvest calculator" %}</a> · <a href="/privacy/">{% t "Privacy" %}</a></p>
+  <p><a href="/for-farmers/">{% t "For farmers" %}</a> · <a href="/for-fpos/">{% t "For FPOs and NGOs" %}</a> · <a href="/for-buyers/">{% t "For buyers" %}</a> · <a href="/market/">{% t "Marketplace" %}</a> · <a href="/rates/">{% t "Rates" %}</a> · <a href="/calculator/">{% t "Harvest calculator" %}</a> · <a href="/value/">{% t "Earn more" %}</a> · <a href="/news/">{% t "News" %}</a> · <a href="/schemes/">{% t "Government schemes" %}</a> · <a href="/insurance/">{% t "Crop insurance" %}</a> · <a href="/videos/">{% t "Videos" %}</a> · <a href="/map/">{% t "Map" %}</a> · <a href="/games/">{% t "Games" %}</a> · <a href="/login/?as=kvk">{% t "KVK sign in" %}</a> · <a href="/privacy/">{% t "Privacy" %}</a></p>
 </div></footer>
+<nav class="bnav" aria-label="{% t "Menu" %}">
+  {% for i in nav.main %}<a href="{{ i.url }}"{% if i.active %} class="on" aria-current="page"{% endif %}><span class="ic" aria-hidden="true">{{ i.icon }}</span><span class="lb">{% t i.label %}</span>{% if i.badge %}<span class="n">{{ i.badge }}</span>{% endif %}</a>{% endfor %}
+  <button type="button" class="{% if nav.more_active %}on{% endif %}" id="more-btn" aria-expanded="false" aria-controls="more-sheet"><span class="ic" aria-hidden="true">☰</span><span class="lb">{% t "More" %}</span>{% if nav.more_badge %}<span class="n">{{ nav.more_badge }}</span>{% endif %}</button>
+</nav>
+<div class="more-sheet" id="more-sheet" hidden><div class="more-panel" role="dialog" aria-modal="true" aria-label="{% t "More" %}">
+  <div class="row between"><b>{% t "More" %}</b><button type="button" class="sbv-x" id="more-close" aria-label="{% t "Close" %}">✕</button></div>
+  <div class="more-grid">{% for i in nav.more %}<a href="{{ i.url }}"{% if i.active %} class="on"{% endif %}><span class="ic" aria-hidden="true">{{ i.icon }}</span><span>{% t i.label %}</span>{% if i.badge %}<span class="n">{{ i.badge }}</span>{% endif %}</a>{% endfor %}</div>
+</div></div>
+<script>(function(){var b=document.getElementById("more-btn"),s=document.getElementById("more-sheet"),c=document.getElementById("more-close");if(!b)return;
+function set(o){s.hidden=!o;b.setAttribute("aria-expanded",o);if(o){var f=s.querySelector("a");f&&f.focus();}else b.focus();}
+b.addEventListener("click",function(){set(s.hidden);});c.addEventListener("click",function(){set(false);});
+s.addEventListener("click",function(e){if(e.target===s)set(false);});document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!s.hidden)set(false);});})();</script>
+{{ voice|json_script:"sb-voice" }}
+<script src="{% static 'web/voice.js' %}" defer></script>
 {% if SUPPORT_WHATSAPP %}<a class="wa" href="https://wa.me/{{ SUPPORT_WHATSAPP }}" data-track="whatsapp_click" rel="noopener">{% t "Help on WhatsApp" %}</a>{% endif %}
 {% if GA4_ID or META_PIXEL_ID %}
 <div class="cc" id="cc" hidden><div class="wrap"><span>{% t "We use cookies to learn which ads bring farmers here. Allow?" %}</span><button class="btn small" id="cc-yes" type="button">{% t "Allow" %}</button><button class="btn small ghost" id="cc-no" type="button">{% t "No thanks" %}</button></div></div>

@@ -1,0 +1,32 @@
+{% extends "web/fpo/base.html" %}{% load web_tags %}
+{% block title %}{% crop pool.product %}{% endblock %}
+{% block content %}
+<p><a href="/fpo/pools/">← {% t "Group selling" %}</a></p>
+<div class="row between"><h1 style="margin:0">{{ pool.product|emoji_of }} {% crop pool.product %}</h1><span class="pill sun">{% t pool.get_status_display %}</span></div>
+<div class="card tint"><div class="stats flat"><div class="stat"><small>{% t "In the lot" %}</small><div class="big">{{ total_unit|num }}</div><small>{% t pool.unit %}</small></div>
+  <div class="stat"><small>{% t "Asking price" %}</small><div class="big">{{ pool.price|inr }}</div><small>/ {% t pool.unit %}</small></div>
+  <div class="stat"><small>{% t "Lot value" %}</small><div class="big">{{ value|inr }}</div></div></div>
+  {% if pool.listing %}<p style="margin:8px 0 0"><a href="/market/{{ pool.listing.pk }}/">{% t "How buyers see it" %} ↗</a></p>{% endif %}</div>
+
+<div class="card"><h3>{% t "Members in the lot" %}</h3>
+{% for s in shares %}<div class="line"><div><b>{{ s.farmer.farmer_profile.name|default:s.farmer.phone }}</b> · {{ s.quantity_kg|quintal }} q<br><span class="mute">{% t s.get_status_display %}{% if s.payout is not None %} · {% t "Share" %} {{ s.payout|inr }}{% if s.paid_at %} · ✔ {% t "Paid" %}{% endif %}{% endif %}</span></div>
+  <div>{% if s.payout is not None and not s.paid_at %}<form method="post" action="paid/">{% csrf_token %}<input type="hidden" name="share" value="{{ s.pk }}"><button class="btn small">{% t "Mark paid" %}</button></form>
+  {% elif s.status != "withdrawn" and pool.status in "open listed" %}<form method="post" action="withdraw/">{% csrf_token %}<input type="hidden" name="share" value="{{ s.pk }}"><button class="link-btn" style="color:var(--red)">{% t "Remove" %}</button></form>{% endif %}</div></div>
+{% empty %}<p class="mute">{% t "No one yet. Add members' stock below." %}</p>{% endfor %}</div>
+
+{% if pool.status == "open" or pool.status == "listed" %}
+{% if candidates %}<div class="card"><h3>{% t "Members who have this in their book" %}</h3>
+{% for c in candidates %}<form method="post" action="add/" class="line">{% csrf_token %}<input type="hidden" name="cycle" value="{{ c.cycle.pk }}">
+  <div><b>{{ c.owner_name|default:"—" }}</b> · {{ c.owner_village }}<br><span class="mute">{% t "free" %}: {{ c.free_unit|num }} {% t pool.unit %}</span></div>
+  <div class="row"><input name="qty" inputmode="decimal" value="{{ c.free_unit }}" style="width:90px"><button class="btn small">{% t "Add" %}</button></div></form>{% endfor %}</div>{% endif %}
+<div class="row"><form method="post" action="publish/">{% csrf_token %}<button class="btn">{% if pool.listing %}{% t "Update the listing" %}{% else %}{% t "List the lot for sale" %}{% endif %}</button></form>
+  <form method="post" action="cancel/">{% csrf_token %}<button class="btn ghost">{% t "Cancel the lot" %}</button></form></div>
+<div class="card sun" style="margin-top:14px"><h3>{% t "Sold? Share the money" %}</h3>
+  <form method="post" action="settle/">{% csrf_token %}
+    <div class="field"><label>{% t "Quantity sold" %} ({% t pool.unit %})</label><input name="sold" inputmode="decimal" value="{{ total_unit }}"></div>
+    <div class="field"><label>{% t "Price received (₹ per unit)" %}</label><input name="price" inputmode="decimal" value="{{ pool.price }}"></div>
+    <div class="field"><label>{% t "Buyer (optional)" %}</label><input name="buyer" maxlength="160"></div>
+    <p class="hint">{% t "Each member gets a share in proportion to what they put in, less the FPO fee, written as a sale in their Farmer Book." %}</p>
+    <button class="btn">{% t "Record the sale" %}</button></form></div>
+{% endif %}
+{% endblock %}

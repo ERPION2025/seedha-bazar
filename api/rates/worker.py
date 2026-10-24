@@ -41,11 +41,46 @@ def tick(now=None) -> bool:
     return True
 
 
+def news_tick(now=None) -> bool:
+    """Read the news and video feeds when they are due (every NEWS_REFRESH_HOURS)."""
+    from knowledge import engine  # lazy: the worker serves both rates and news
+
+    if not engine.due(now):
+        return False
+    out = engine.run_all()
+    log.info("news read: %s", out)
+    return True
+
+
+def issues_tick(now=None) -> int:
+    """Remind centres about problems waiting a day; once a day, delete voice notes and photos past their keep period."""
+    from issues import services as issue_services
+
+    n = issue_services.remind_overdue(now)
+    now = now or timezone.now()
+    if now.hour == 3 and now.minute < 10:
+        issue_services.purge_media()
+    return n
+
+
+def weather_tick(now=None):
+    from weather import services as weather_services  # lazy: the worker serves several jobs
+
+    out = weather_services.tick(now)
+    if out is not None:
+        from storage.services import remind_due  # warehouse loan reminders ride on the same daily run
+        remind_due()
+    if out:
+        log.info("weather alerts: %s", out)
+    return out
+
+
 def loop(poll_seconds: int = 600):
-    log.info("rates worker started; refresh every %s hours", settings.RATES_REFRESH_HOURS)
+    log.info("worker started; rates every %s hours, news every %s hours", settings.RATES_REFRESH_HOURS, settings.NEWS_REFRESH_HOURS)
     while True:
-        try:
-            tick()
-        except Exception:
-            log.exception("rates worker pass failed")
+        for job in (tick, news_tick, issues_tick, weather_tick):
+            try:
+                job()
+            except Exception:
+                log.exception("worker job %s failed", job.__name__)
         time.sleep(poll_seconds)

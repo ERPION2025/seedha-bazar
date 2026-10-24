@@ -1,0 +1,27 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% crop crop %}{% endblock %}
+{% block content %}
+<p><a href="/value/">← {% t "Earn more from your produce" %}</a></p>
+<h1>{{ emoji }} {% crop crop %}</h1>
+{% if quote and quote.typical %}<div class="card tint"><b>📈 {% t "Rate near you today" %}: {{ quote.typical|inr }}</b> {% t "per quintal" %}<br><span class="hint">{% t "Reported on {date}" date=quote.as_of|date:"j M" %}</span></div>
+{% else %}<div class="card"><p class="mute" style="margin:0">{% t "No mandi rate found for this. The money shown below is from the starter estimates only." %}</p></div>{% endif %}
+<form method="get" class="card"><label for="q">{% t "How much do you have? (quintal)" %}</label>
+  <div class="row"><input id="q" name="qty" inputmode="decimal" value="{% if qty %}{{ qty|num:2 }}{% endif %}" placeholder="10" style="max-width:140px"><button class="btn small">{% t "Work it out" %}</button></div></form>
+<h2>{% t "What it can become" %}</h2>
+{% for o in options %}
+<div class="card">
+  <div class="row between"><h3 style="margin:0">{{ o.emoji }} {% crop o.to %}</h3>
+    {% if o.multiple %}<span class="pill sun">{% t "about {n}x the raw value" n=o.multiple|num:1 %}</span>{% endif %}</div>
+  <p style="margin:8px 0 0">{{ o.how }}</p>
+  <div class="stats flat" style="margin-top:10px">
+    <div class="stat"><small>{% t "From 100 kg you get" %}</small><div class="big">{{ o.kg_out|num:1 }} {% t "kg" %}</div></div>
+    <div class="stat"><small>{% t "Sells for" %}</small><div class="big">{{ o.price.low|inr }}–{{ o.price.high|inr }}</div><small>/ {% t "kg" %}</small></div>
+    {% if o.gain is not None %}<div class="stat"><small>{% t "Extra money from 100 kg" %}</small><div class="big {% if o.gain < 0 %}neg{% else %}pos{% endif %}">{{ o.gain|inr }}</div></div>{% endif %}
+  </div>
+  {% if qty and o.total_gain is not None %}<p class="card tint" style="margin:10px 0 0"><b>{% t "For {qty} quintal" qty=qty|num:2 %}:</b> {{ o.total_kg|num:1 }} {% t "kg" %} · {% t "sells for about" %} {{ o.total_revenue|inr }} · {% t "processing costs about" %} {{ o.total_cost|inr }} · <b class="{% if o.total_gain < 0 %}neg{% else %}pos{% endif %}">{% t "extra" %} {{ o.total_gain|inr }}</b></p>{% endif %}
+  <p class="mute" style="margin:10px 0 0">🔧 {% for n in o.needs %}{% t n %}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+  <p class="hint" style="margin:6px 0 0">{% if o.price.source == "listings" %}{% t "Price from {n} live offers on Seedha Bazar." n=o.price.n %}{% else %}{% t "Starter estimate. Check with your buyer before you invest." %}{% endif %}</p>
+</div>
+{% endfor %}
+{% if can_record %}<a class="btn sun block" href="/farmer/book/">{% t "Record processing in my Farmer Book" %}</a>{% endif %}
+{% endblock %}

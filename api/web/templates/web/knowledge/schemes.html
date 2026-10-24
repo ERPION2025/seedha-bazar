@@ -1,0 +1,15 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Government schemes" %}{% endblock %}
+{% block content %}
+<h1>🏛️ {% t "Government schemes" %}</h1>
+<p class="mute">{% t "Schemes that matter most to farmers and FPOs: buying at support price, insurance, credit, storage and processing. Short summaries to help you decide. The official page has the final rules." %}</p>
+<div class="chip-row" style="margin-top:0">{% for k, label in topic_tabs %}<a class="chip{% if topic == k %} on{% endif %}" href="?{% if k %}topic={{ k }}{% endif %}">{% t label %}</a>{% endfor %}</div>
+{% for s in rows %}
+<a class="door" href="/schemes/{{ s.slug }}/"><div class="card">
+  <div class="row between"><h3 style="margin:0">{{ s.t_name }}</h3><span class="pill grey">{% if s.level == "central" %}{% t "Central" %}{% else %}{{ s.state }}{% endif %}</span></div>
+  <p style="margin:6px 0 6px">{{ s.t_short }}</p>
+  <div class="row">{% for a in s.audience %}<span class="pill">{% if a == "farmer" %}{% t "Farmers" %}{% elif a == "fpo" %}{% t "FPOs" %}{% else %}{% t "NGOs" %}{% endif %}</span>{% endfor %}</div>
+</div></a>
+{% empty %}<div class="card sun"><p style="margin:0">{% t "No schemes in this group yet." %}</p></div>{% endfor %}
+<div class="card tint"><b>📞 {% t "Kisan Call Centre" %}: 1800-180-1551</b><br><span class="hint">{% t "Free advice in your language from agriculture experts." %}</span></div>
+{% endblock %}

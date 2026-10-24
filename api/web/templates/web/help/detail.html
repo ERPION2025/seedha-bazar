@@ -1,0 +1,20 @@
+{% extends base_tpl %}{% load static web_tags %}
+{% block title %}{% t "Ask an expert" %}{% endblock %}
+{% block content %}
+<p><a href="/help/">← {% t "Ask an expert" %}</a></p>
+<div class="row between"><h1 style="margin:0">{% t i.get_category_display %}{% if i.crop %} · {% crop i.crop %}{% endif %}</h1><span class="pill sun">{% t i.get_status_display %}</span></div>
+<p class="mute">{{ i.created_at|date:"j M Y, H:i" }}{% if i.centre %} · {{ i.centre.name }}{% endif %}{% if i.urgent %} · <span class="neg">{% t "Urgent" %}</span>{% endif %}</p>
+<div class="msg me" style="max-width:100%">{{ i.description|linebreaksbr }}{% if i.via_voice %} <span class="hint">🎤</span>{% endif %}
+  {% if i.voice_note %}<br><audio controls preload="none" src="/help/media/issue/{{ i.pk }}/voice_note/"></audio>{% endif %}
+  {% if i.photo %}<br><img src="/help/media/issue/{{ i.pk }}/photo/" alt="" style="max-width:100%;border-radius:10px;margin-top:6px">{% endif %}</div>
+{% for r in replies %}<div class="msg {% if r.by_id == user.pk %}me{% endif %}"><span class="mute" style="font-size:.85rem">{% if r.by_id != user.pk %}🧑‍🔬 {% t r.get_kind_display %} · {% endif %}{{ r.created_at|date:"j M H:i" }}</span><br>{{ r.text|linebreaksbr }}
+  {% if r.voice_note %}<br><audio controls preload="none" src="/help/media/reply/{{ r.pk }}/voice_note/"></audio>{% endif %}</div>{% endfor %}
+{% if i.status != "closed" %}
+<form method="post" action="reply/" enctype="multipart/form-data" class="card" style="margin-top:12px">{% csrf_token %}
+  <div class="field"><label for="rt">{% t "Write a message" %}</label><textarea id="rt" name="text" rows="3" maxlength="2000" data-voice="1"></textarea></div>
+  <input type="hidden" name="via_voice" value="0">
+  <div class="row"><button type="button" class="btn small ghost" data-record>🎙️ {% t "Record" %}</button><span class="mute" data-record-status></span><input type="file" name="voice_note" accept="audio/*" data-record-input hidden></div>
+  <div class="row" style="margin-top:10px"><button class="btn">{% t "Send" %}</button>{% if i.status == "advised" %}<button class="btn ghost" name="status" value="resolved">✔ {% t "This solved my problem" %}</button>{% endif %}</div>
+</form>{% endif %}
+<script src="{% static 'web/voice_input.js' %}" defer></script>
+{% endblock %}

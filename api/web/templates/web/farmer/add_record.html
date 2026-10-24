@@ -1,11 +1,12 @@
 {% extends "web/farmer/base.html" %}{% load web_tags %}
-{% block title %}{% if kind == "expense" %}{% t "Add expense" %}{% elif kind == "harvest" %}{% t "Add harvest" %}{% elif kind == "sale" %}{% t "Add sale" %}{% else %}{% t "Add work or reminder" %}{% endif %}{% endblock %}
+{% block title %}{% if kind == "expense" %}{% t "Add expense" %}{% elif kind == "harvest" %}{% t "Add harvest" %}{% elif kind == "sale" %}{% t "Add sale" %}{% elif kind == "process" %}{% t "Process this stock" %}{% else %}{% t "Add work or reminder" %}{% endif %}{% endblock %}
 {% block mainclass %} narrow{% endblock %}
 {% block content %}
 <p><a href="/farmer/book/{{ cycle.client_id }}/">← {% crop cycle.crop %}</a></p>
-<h1>{% if kind == "expense" %}💸 {% t "Add expense" %}{% elif kind == "harvest" %}🌾 {% t "Add harvest" %}{% elif kind == "sale" %}🧾 {% t "Add sale" %}{% else %}📅 {% t "Add work or reminder" %}{% endif %}</h1>
+<h1>{% if kind == "expense" %}💸 {% t "Add expense" %}{% elif kind == "harvest" %}🌾 {% t "Add harvest" %}{% elif kind == "sale" %}🧾 {% t "Add sale" %}{% elif kind == "process" %}⚙️ {% t "Process this stock" %}{% else %}📅 {% t "Add work or reminder" %}{% endif %}</h1>
 <form method="post" class="card">{% csrf_token %}
   {% include "web/partials/form_body.html" %}
+  {% if kind == "process" %}<p class="hint">{% t "The crop you put in comes off your stock. What you made goes into your stock, and the cost counts in your profit." %}</p>{% endif %}
   {% if kind == "sale" %}<p class="hint">{% t "The total is worked out for you: quantity × rate." %}</p>{% endif %}
   <button class="btn block">{% t "Save" %}</button>
 </form>

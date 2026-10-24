@@ -1,0 +1,31 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Compare crop insurance" %}{% endblock %}
+{% block content %}
+<p><a href="/insurance/">← {% t "Crop insurance" %}</a></p>
+<h1>🛡️ {% t "Compare crop insurance" %}</h1>
+{% if org and farmer %}<div class="card tint"><b>{% t "For member" %}: {{ farmer.farmer_profile.name }}</b> · {{ farmer.farmer_profile.village }}</div>{% endif %}
+<form method="get" class="card">{% include "web/partials/form_body.html" %}{% if cycle %}<input type="hidden" name="cycle" value="{{ cycle.client_id }}">{% endif %}{% if org %}<input type="hidden" name="for" value="{{ farmer.pk }}">{% endif %}
+  <button class="btn block">{% t "Work it out" %}</button></form>
+{% if estimate %}<div class="card"><p style="margin:0">{% t "Your crop is worth about {value} at today's rate of {rate} per quintal." value=estimate.value|inr rate=estimate.rate|inr %}</p></div>{% endif %}
+{% for q in options %}
+<div class="card">
+  <div class="row between"><h3 style="margin:0">{% t q.plan.get_scheme_display %}</h3>{% if q.plan.notified %}<span class="pill">✔ {% t "Notified for your area" %}</span>{% else %}<span class="pill sun">{% t "National rule" %}</span>{% endif %}</div>
+  {% if q.sum_insured %}
+  <div class="stats flat" style="margin-top:10px">
+    <div class="stat"><small>{% t "You pay" %}</small><div class="big">{{ q.premium|inr }}</div><small>{{ q.plan.farmer_share_pct|num }}%</small></div>
+    <div class="stat"><small>{% t "Cover" %}</small><div class="big pos">{{ q.sum_insured|inr }}</div></div>
+    <div class="stat"><small>{% t "Cover for each rupee you pay" %}</small><div class="big">{{ q.times }}×</div></div>
+  </div>
+  <p style="margin:8px 0 0">{% t "If half the crop is lost, the claim could be around {amount}." amount=q.half_loss|inr %}</p>
+  {% if q.basis == "estimate" %}<p class="hint" style="margin:6px 0 0">{% t "The cover is worked out from your crop's value. The real sum insured is fixed by your state for each crop and district." %}</p>{% endif %}
+  {% else %}<p class="mute" style="margin:8px 0 0">{% t "Tell us the harvest you expect or the value of the crop to see the cost." %}</p>{% endif %}
+  <p class="mute" style="margin:8px 0 0">{% t q.plan.risks %}</p>
+  <p class="mute" style="margin:6px 0 0">{% if q.plan.insurer %}🏢 {{ q.plan.insurer }} · {% endif %}{% if q.days_left is not None %}{% if q.days_left >= 0 %}<b class="{% if q.days_left < 7 %}neg{% endif %}">{% t "Last date in {n} days" n=q.days_left %}</b>{% else %}<span class="neg">{% t "Enrolment closed" %}</span>{% endif %}{% else %}{% t "Ask your bank or CSC for the last date in your district." %}{% endif %}</p>
+  {% if farmer and q.sum_insured %}
+  <form method="post" action="/insurance/apply/" style="margin-top:12px">{% csrf_token %}<input type="hidden" name="plan" value="{{ q.plan.pk }}"><input type="hidden" name="query" value="{{ query }}">{% if org %}<input type="hidden" name="for" value="{{ farmer.pk }}">{% endif %}
+    {% if not org %}{% with form=apply_form %}{% include "web/partials/form_body.html" %}{% endwith %}{% endif %}
+    <button class="btn sun block">🛡️ {% t "Opt in with this plan" %}</button></form>
+  {% elif not user.is_authenticated and q.sum_insured %}<a class="btn small" style="margin-top:10px" href="/login/?as=farmer&next=/insurance/">{% t "Sign in to opt in" %}</a>{% endif %}
+</div>
+{% endfor %}
+{% endblock %}
