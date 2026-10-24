@@ -11,7 +11,7 @@ from . import messaging
 from .errors import ApiError
 from .models import OtpChallenge, Role, User
 
-CHANNELS = {"sms", "whatsapp", "voice"}
+CHANNELS = {"sms", "whatsapp", "voice", "email"}
 
 
 def _hash(phone: str, code: str) -> str:
@@ -31,7 +31,12 @@ def static_code_for(phone: str) -> str | None:
 def request_otp(phone: str, channel: str, ip: str | None, language: str = "hi") -> dict:
     """Create and send a code. The reply never says whether the number is registered."""
     if channel not in CHANNELS:
-        raise ApiError("bad_channel", "Channel must be sms, whatsapp or voice")
+        raise ApiError("bad_channel", "Channel must be sms, whatsapp, voice or email")
+    email = ""
+    if channel == "email":
+        email = User.objects.filter(phone=phone).values_list("email", flat=True).first() or ""
+        if not email:
+            raise ApiError("no_email", "No email address is saved for this account. Use the mobile number.", 400)
     now = timezone.now()
     hour_ago = now - timedelta(hours=1)
 
@@ -59,9 +64,13 @@ def request_otp(phone: str, channel: str, ip: str | None, language: str = "hi") 
         expires_at=now + timedelta(seconds=settings.OTP_TTL_SECONDS),
     )
     if not fixed:  # a fixed code is public, so there is nothing to deliver
-        messaging.send_otp(phone, code, channel, language)
+        if channel == "email":
+            messaging.send_otp_email(email, code, language)
+        else:
+            messaging.send_otp(phone, code, channel, language)
     out = {"sent": True, "channel": channel, "expires_in": settings.OTP_TTL_SECONDS, "resend_in": settings.OTP_RESEND_COOLDOWN_SECONDS}
-    if settings.DEBUG and settings.OTP_BACKEND == "console" and not fixed:
+    console = "console" in settings.EMAIL_BACKEND if channel == "email" else settings.OTP_BACKEND == "console"
+    if settings.DEBUG and console and not fixed:
         out["dev_code"] = code  # local development only: the website shows it, so testers need not read the server log
     return out
 

@@ -1,0 +1,32 @@
+{% load web_tags %}{% comment %}The same footer on every page: who it is for, produce on sale, services, and the company. Links a visitor can read are plain;
+links that need sign-in carry rel="nofollow" for visitors, so search engines spend their time on the open pages.{% endcomment %}
+<footer class="ft"><div class="wrap">
+  <div class="ft-cols">
+    <div class="ft-brand">
+      <a class="ft-logo" href="{{ SITE_URL }}/"><i>सी</i>{% t "Seedha Bazar" %}</a>
+      <p>{% t "Direct market, fair price, your farmer brother" %}</p>
+      <p class="ft-small">{% t "Seedha Bazar is run by {company}." company=company.name %}</p>
+    </div>
+    <nav class="ft-col" aria-label="{% t "Who it is for" %}"><h2>{% t "Who it is for" %}</h2>
+      <a href="{{ SITE_URL }}/for-farmers/">{% t "For farmers" %}</a>
+      <a href="{{ SITE_URL }}/for-fpos/">{% t "For FPOs" %}</a>
+      <a href="{{ SITE_URL }}/for-ngos/">{% t "For NGOs" %}</a>
+      <a href="{{ SITE_URL }}/for-buyers/">{% t "For buyers" %}</a>
+      <a href="{{ INSTITUTION_URL }}/">{% t "For KVKs and research agencies" %}</a>
+    </nav>
+    <nav class="ft-col ft-market" aria-label="{% t "Marketplace" %}"><h2>{% t "Marketplace" %}</h2>
+      {% for k in footer_produce %}<a href="{{ SITE_URL }}/produce/{{ k }}/">{% crop k as cname %}{% t "Buy {crop}" crop=cname %}</a>{% endfor %}
+      <a href="{{ SITE_URL }}/produce/"><b>{% t "All produce" %} →</b></a>
+    </nav>
+    <nav class="ft-col" aria-label="{% t "Services" %}"><h2>{% t "Services" %}</h2>
+      {% for label, url in footer_services %}<a href="{{ SITE_URL }}{{ url }}"{% if not user.is_authenticated %} rel="nofollow"{% endif %}>{% t label %}</a>{% endfor %}
+    </nav>
+    <div class="ft-col ft-company"><h2>{% t "Contact" %}</h2>
+      <address><b>{{ company.name }}</b><br>{{ company.address }}</address>
+      <a href="mailto:{{ company.email }}">✉️ {{ company.email }}</a>
+      <a href="tel:+91{{ company.phone }}">📞 {{ company.phone }}</a>
+    </div>
+  </div>
+  <div class="ft-bottom"><span>© {% now "Y" %} {{ company.name }}</span><span>{% if user.is_authenticated %}<a href="{{ home_url }}">{% t "My page" %}</a> · {% endif %}<a href="{{ SITE_URL }}/privacy/">{% t "Privacy" %}</a></span></div>
+</div></footer>
+<script type="application/ld+json">{{ company_ld|safe }}</script>

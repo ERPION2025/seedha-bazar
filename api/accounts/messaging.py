@@ -57,5 +57,18 @@ def send_otp(phone: str, code: str, channel: str, language: str = "hi") -> None:
     get_backend().send(phone, text, channel, code)
 
 
+EMAIL_SUBJECT = {"hi": "सीधा बाज़ार साइन-इन कोड", "mr": "सीधा बाज़ार साइन-इन कोड", "en": "Seedha Bazar sign-in code"}
+
+
+def send_otp_email(email: str, code: str, language: str = "hi") -> None:
+    """The same code by email (EMAIL_BACKEND / EMAIL_HOST settings). Used by Institution Connect staff who choose email."""
+    from django.core.mail import send_mail
+
+    lang = language if language in MESSAGES else "en"
+    body = MESSAGES[lang].format(code=code) + "\n\n" + {"hi": "यह कोड 5 मिनट में समाप्त हो जाएगा।", "mr": "हा कोड 5 मिनिटांत संपेल.",
+                                                        "en": "The code expires in 5 minutes."}[lang]
+    send_mail(EMAIL_SUBJECT[lang], body, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
+
+
 def send_notice(phone: str, text: str) -> None:
     get_backend().send(phone, text, "sms", None)

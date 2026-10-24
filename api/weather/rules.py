@@ -31,22 +31,22 @@ def advise(crop: str, stage: str, days: list[dict], season: str = "") -> list[di
         stage = "growing"
     out, seen = [], set()
 
-    def add(kind, day, advice, value):
+    def add(kind, day, advice, value, critical=False):
         if kind not in seen:
             seen.add(kind)
-            out.append({"kind": kind, "day": day, "advice": advice, "value": value})
+            out.append({"kind": kind, "day": day, "advice": advice, "value": value, "severity": "critical" if critical else "warning"})
 
     for d in days[:5]:
         rain, prob = d.get("rain_mm") or 0, d.get("rain_prob") or 0
         if rain >= 25 or (rain >= 15 and prob >= 70):
-            add("rain", d["date"], RAIN.get(stage, RAIN["growing"]), f"{rain:.0f} mm")
+            add("rain", d["date"], RAIN.get(stage, RAIN["growing"]), f"{rain:.0f} mm", critical=rain >= 50 or stage in ("harvest", "stored", "sowing"))
         if d.get("tmin") is not None and d["tmin"] <= 4 and crop in FROST_SENSITIVE and stage in ("sowing", "growing", "flowering", "filling", "orchard"):
-            add("frost", d["date"], FROST, f"{d['tmin']:.0f}°C")
+            add("frost", d["date"], FROST, f"{d['tmin']:.0f}°C", critical=d["tmin"] <= 2 or stage in ("flowering", "filling"))
         hot = 34 if crop in HEAT_SENSITIVE_RABI and stage in ("flowering", "filling") else 40
         if d.get("tmax") is not None and d["tmax"] >= hot and stage in ("sowing", "growing", "flowering", "filling", "orchard"):
-            add("heat", d["date"], HEAT.get(stage, HEAT["default"]), f"{d['tmax']:.0f}°C")
+            add("heat", d["date"], HEAT.get(stage, HEAT["default"]), f"{d['tmax']:.0f}°C", critical=d["tmax"] >= hot + 4)
         if (d.get("gust") or 0) >= 45 and stage in ("growing", "flowering", "filling", "harvest", "orchard"):
-            add("wind", d["date"], WIND, f"{d['gust']:.0f} km/h")
+            add("wind", d["date"], WIND, f"{d['gust']:.0f} km/h", critical=d["gust"] >= 60)
         hum, tmax = d.get("humidity") or 0, d.get("tmax") or 0
         if hum >= 85 and 15 <= tmax <= 28 and stage in ("growing", "flowering", "filling"):
             if crop in BLIGHT_PRONE:

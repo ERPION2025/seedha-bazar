@@ -1,0 +1,23 @@
+{% extends fpo|yesno:"web/fpo/base.html,web/farmer/base.html" %}{% load web_tags %}
+{% block title %}{{ g.name }}{% endblock %}
+{% block content %}
+<p><a href="{% if fpo %}/fpo/groups/{% else %}/farmer/groups/{% endif %}">← {% t "Group farming" %}</a></p>
+<h1>👥 {{ g.name }}</h1>
+<p class="mute">{% crop g.crop %} · {% t g.get_season_display %} {{ g.year }} · {{ g.village }} {{ g.district }}{% if g.organisation %} · 🏢 {{ g.organisation.name }}{% endif %}{% if g.centre %} · 🏛️ {{ g.centre.name }}{% endif %}</p>
+<div class="stats4"><div class="card stat"><small>{% t "Farmers" %}</small><div class="big">{{ s.members }}</div></div><div class="card stat"><small>{% t "Land" %}</small><div class="big">{{ s.acres|num }}</div><small>{% t "acre" %}</small></div>
+  <div class="card stat"><small>{% t "Expected harvest" %}</small><div class="big">{% if s.expected_q %}{{ s.expected_q|num:0 }}{% else %}—{% endif %}</div><small>{% t "quintal" %}</small></div><div class="card stat"><small>{% t "Trust" %}</small><div class="big">{{ s.trust }}</div><small>/100</small></div></div>
+{% if signal %}<div class="card tint"><b>💰 {% t "Group lots of this crop sold at {pct}% of the mandi rate ({n} lots)." pct=signal.pct n=signal.lots %}</b></div>{% endif %}
+<div class="grid g2">
+<div class="card"><h3>{% t "Agreed practices" %}</h3>{% if g.seed_variety %}<p style="margin:0 0 6px">🌱 {% t "Seed" %}: <b>{{ g.seed_variety }}</b></p>{% endif %}{% for p in practices %}<div class="line"><span>✔ {% t p %}</span></div>{% empty %}<p class="mute">—</p>{% endfor %}{% if g.note %}<p class="mute" style="margin:8px 0 0">{{ g.note }}</p>{% endif %}</div>
+<div class="card"><h3>{% t "How the trust score is made" %}</h3>{% for p in s.parts %}<div class="line"><span>{% t p.label %}</span><b>{{ p.got }}/{{ p.of }}</b></div>{% endfor %}</div>
+</div>
+{% if fpo %}<form method="post" class="row">{% csrf_token %}<button class="btn" name="action" value="invite">📣 {% t "Tell growers in the district again" %}</button>
+  <a class="btn ghost" href="/fpo/pools/">🤝 {% t "Sell this group's harvest together" %}</a>
+  {% if g.status != "closed" %}<button class="btn ghost" name="action" value="closed">{% t "Close the group" %}</button>{% endif %}</form>
+{% elif me %}<form method="post" class="card">{% csrf_token %}<p style="margin:0 0 8px">✔ {% t "You are in this group with {acres} acres." acres=me.area_acres|num %}</p>
+  <label>{% t "Your acres under this crop" %} <input name="acres" type="number" step="0.1" min="0.1" value="{{ me.area_acres }}" style="max-width:120px"></label> <button class="btn small" name="action" value="join">{% t "Save" %}</button> <button class="link-btn" name="action" value="leave">{% t "Leave the group" %}</button></form>
+{% elif g.status != "closed" %}<form method="post" class="card tint">{% csrf_token %}<b>{% t "Join this group" %}</b>
+  <p class="hint">{% t "Members agree to the practices above. You can leave any time." %}</p>
+  <label>{% t "Your acres under this crop" %} <input name="acres" type="number" step="0.1" min="0.1" value="{{ fp.land_acres|default:1 }}" style="max-width:120px" required></label> <button class="btn" name="action" value="join">{% t "Join" %}</button></form>{% endif %}
+<div class="card scroll"><h3>{% t "Members" %}</h3><table class="tbl"><tbody>{% for m in members %}<tr><td>{{ m.name|first_name|default:"—" }}</td><td>{{ m.village }}</td><td>{{ m.acres|num }} {% t "acre" %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

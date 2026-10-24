@@ -141,15 +141,17 @@ def run_daily(today=None, send: bool = True) -> dict:
         new = []
         for a in alerts_for(fp.user, days, today):
             obj, created = Alert.objects.get_or_create(farmer=fp.user, crop=a["crop"], kind=a["kind"], day=date.fromisoformat(a["day"]),
-                                                       defaults={"crop_cycle": a["cycle"], "stage": a["stage"], "advice": a["advice"], "value": a["value"],
+                                                       defaults={"crop_cycle": a["cycle"], "stage": a["stage"], "advice": a["advice"], "value": a["value"], "severity": a["severity"],
                                                                  "state": fp.state, "district": fp.district})
             if created:
                 made += 1
                 new.append(obj)
         if send and new:
             u = fp.user
-            first = sorted(new, key=lambda x: (x.day, ["frost", "rain", "wind", "heat", "disease", "dry"].index(x.kind)))[0]
-            notify.send("sms", u.phone, "weather_alert", u.language, user=u, related=f"weather:{first.pk}",
+            first = sorted(new, key=lambda x: (x.severity != "critical", x.day, ["frost", "rain", "wind", "heat", "disease", "dry"].index(x.kind)))[0]
+            # Every channel the farmer allowed: phone notification (urgent for critical alerts), Messenger, WhatsApp, SMS.
+            notify.tell(u, "weather_alert", related=f"weather:{first.pk}", url="/weather/", critical=first.severity == "critical",
+                        title=tr(u.language, "Critical weather alert" if first.severity == "critical" else "Weather warning"),
                         crop=tr(u.language, catalog.name(first.crop)), date=first.day.strftime("%d %b"), advice=tr(u.language, first.advice),
                         link=f"{settings.SITE_URL}/weather/")
             Alert.objects.filter(pk__in=[x.pk for x in new]).update(sent_at=timezone.now())
@@ -173,3 +175,11 @@ def tick(now=None) -> dict | None:
     out = run_daily()
     Run.objects.get_or_create(day=timezone.localtime(now or timezone.now()).date(), defaults={"result": out})
     return out
+
+
+def active_alerts(user, today=None):
+    """Alerts for today and the next two days that the farmer has not dismissed, critical first."""
+    today = today or timezone.localdate()
+    rows = list(Alert.objects.filter(farmer=user, day__gte=today, day__lte=today + timedelta(days=2), acknowledged_at__isnull=True))
+    rows.sort(key=lambda a: (a.severity != "critical", a.day))
+    return rows

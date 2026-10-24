@@ -16,8 +16,9 @@ from .i18n import tr
 import catalog  # noqa: E402
 from rates.crops import CROPS  # noqa: E402
 
-UNIT_LABELS = [("quintal", "Quintal"), ("kg", "Kg"), ("tonne", "Tonne"), ("bag", "Bag")]
+UNIT_LABELS = [("quintal", "Quintal"), ("kg", "Kg"), ("tonne", "Tonne"), ("bag", "Bag"), ("litre", "Litre"), ("tray", "Tray of 30"), ("piece", "Piece")]
 assert set(UNITS) == {u for u, _ in UNIT_LABELS}
+CROP_UNIT_LABELS = UNIT_LABELS[:4]
 
 
 def crop_label(lang: str, value: str) -> str:
@@ -74,7 +75,8 @@ class FarmerProfileForm(LangForm):
     name = forms.CharField(label="Your name", max_length=120)
     village = forms.CharField(label="Village", max_length=120)
     block = forms.CharField(label="Block (tehsil)", max_length=80, required=False)
-    district = forms.CharField(label="District", max_length=80)
+    state = forms.ChoiceField(label="State", choices=[])
+    district = forms.CharField(label="District", max_length=80, widget=forms.TextInput(attrs={"list": "district-list", "autocomplete": "off"}))
     land_acres = forms.DecimalField(label="Land you farm (acres)", min_value=Decimal("0.01"), max_value=Decimal("100000"), decimal_places=2, widget=forms.NumberInput(attrs={"step": "0.01", "inputmode": "decimal"}))
     crops = forms.MultipleChoiceField(label="What do you grow?", choices=list(CROPS.items()), required=False, widget=forms.CheckboxSelectMultiple(attrs={"class": "chips"}))
     other_crops = forms.CharField(label="Other crops (separate with commas)", max_length=120, required=False)
@@ -85,14 +87,30 @@ class FarmerProfileForm(LangForm):
     def from_profile(cls, fp, lang):
         known = [c for c in fp.crops if c in CROPS]
         other = ", ".join(c for c in fp.crops if c not in CROPS)
-        return cls(lang=lang, initial={"name": fp.name, "village": fp.village, "block": fp.block, "district": fp.district,
+        return cls(lang=lang, grows_crops=not fp.segments or "crops" in fp.segments, initial={"name": fp.name, "village": fp.village, "block": fp.block, "district": fp.district, "state": fp.state,
                                        "land_acres": fp.land_acres, "crops": known, "other_crops": other, "discoverable": fp.discoverable,
                                        "share_with_extension": bool(fp.share_with_extension)})
 
+    def __init__(self, *args, grows_crops=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        from extension import geo
+        self.fields["state"].choices = [(s, s) for s in geo.states()] or [("Madhya Pradesh", "Madhya Pradesh")]
+        self.grows_crops = grows_crops
+        if not grows_crops:  # dairy, poultry, fish, bees, silk or pigs only: no crop questions
+            for name in ("crops", "other_crops"):
+                del self.fields[name]
+            self.fields["land_acres"].required = False
+            self.fields["land_acres"].min_value = Decimal("0")
+
     def clean(self):
         data = super().clean()
-        if not split_crops(data.get("crops") or [], data.get("other_crops")):
+        if self.grows_crops and not split_crops(data.get("crops") or [], data.get("other_crops")):
             self.add_error("crops", "Pick at least one crop")
+        from extension import geo
+        if data.get("state") and data.get("district"):
+            ok_, other = geo.check_place(data["state"], data["district"])
+            if not ok_:
+                self.add_error("district", tr(self.lang, "This district is not in {state}.", state=data["state"]) + (" " + tr(self.lang, "Did you mean {state}?", state=other) if other else ""))
         return data
 
 
@@ -165,7 +183,7 @@ class ExpenseForm(LangForm):
 
 class QuantityForm(LangForm):
     quantity = forms.DecimalField(label="Quantity", min_value=Decimal("0.001"), decimal_places=3, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal", "autofocus": True}))
-    unit = forms.ChoiceField(label="Unit", choices=UNIT_LABELS, initial="quintal")
+    unit = forms.ChoiceField(label="Unit", choices=CROP_UNIT_LABELS, initial="quintal")
     bag_weight_kg = forms.DecimalField(label="Weight of one bag (kg)", required=False, min_value=Decimal("0.1"), decimal_places=2, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
     date = date_field("Date", initial=today)
 
@@ -286,7 +304,7 @@ class ListingForm(LangForm):
     variety = forms.CharField(label="Variety (optional)", max_length=60, required=False)
     grade = forms.ChoiceField(label="Quality", choices=list(Listing.Grade.choices), initial="ungraded", required=False)
     quantity = forms.DecimalField(label="How much is for sale?", min_value=Decimal("0.001"), decimal_places=3, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
-    unit = forms.ChoiceField(label="Unit", choices=UNIT_LABELS, initial="quintal")
+    unit = forms.ChoiceField(label="Unit", choices=CROP_UNIT_LABELS, initial="quintal")
     bag_weight_kg = forms.DecimalField(label="Weight of one bag (kg)", required=False, min_value=Decimal("0.1"), decimal_places=2, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
     price = forms.DecimalField(label="Your price (₹ per unit chosen above)", min_value=Decimal("0.01"), max_value=Decimal("10000000"), decimal_places=2, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
     state = forms.CharField(label="State", max_length=60)
@@ -302,9 +320,11 @@ class ListingForm(LangForm):
 
     SEMI_ONLY = ("packaging", "pack_size_g", "brand", "fssai_no")
 
-    def __init__(self, *args, processed=False, **kwargs):
+    def __init__(self, *args, processed=False, units=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.processed = processed
+        if units:  # livelihood products sell in their own units (milk by the litre, eggs by the tray...)
+            self.fields["unit"].choices = [(u, label) for u, label in UNIT_LABELS if u in units]
         if not processed:
             for name in self.SEMI_ONLY:
                 del self.fields[name]
@@ -343,6 +363,83 @@ class AnnouncementForm(LangForm):
     pinned = forms.BooleanField(label="Pin to the top", required=False)
 
 
+class InstitutionForm(LangForm):
+    """Add or change an institution. The district list follows the chosen state (the page reloads when the state changes)."""
+
+    name = forms.CharField(label="Institution name", max_length=200, widget=forms.TextInput(attrs={"placeholder": "KVK Rewa"}))
+    kind = forms.ChoiceField(label="Type", choices=[("kvk", "Krishi Vigyan Kendra (KVK)"), ("research", "Research centre / ICAR institute"), ("university", "Agricultural university"), ("department", "Agriculture department office")])
+    state = forms.ChoiceField(label="State", choices=[])
+    districts = forms.MultipleChoiceField(label="Districts it looks after", choices=[], widget=forms.CheckboxSelectMultiple(attrs={"class": "chips"}))
+    host = forms.CharField(label="Host institution (optional)", max_length=200, required=False)
+    address = forms.CharField(label="Address (optional)", max_length=300, required=False)
+    phone = forms.CharField(label="Phone (optional)", max_length=40, required=False)
+    email = forms.EmailField(label="Email (optional)", required=False)
+    website = forms.URLField(label="Website (optional)", required=False)
+    lat = forms.FloatField(label="Latitude (optional)", required=False, min_value=6, max_value=38)
+    lon = forms.FloatField(label="Longitude (optional)", required=False, min_value=68, max_value=98)
+    verified = forms.BooleanField(label="Active: its staff can sign in", required=False, initial=True)
+
+    def __init__(self, *args, state: str = "Madhya Pradesh", **kwargs):
+        super().__init__(*args, **kwargs)
+        from extension import geo
+        self.fields["state"].choices = [(s, s) for s in geo.states()]
+        self.fields["districts"].choices = [(d, d) for d in geo.districts_of(state)]
+
+
+class InstitutionStaffForm(LangForm):
+    name = forms.CharField(label="Name", max_length=120)
+    phone = forms.CharField(label="Mobile number", max_length=20, widget=forms.TextInput(attrs={"inputmode": "tel"}))
+    email = forms.EmailField(label="Email (for email codes, optional)", required=False)
+    role = forms.ChoiceField(label="Role", choices=[("head", "Head / Senior scientist"), ("expert", "Subject matter specialist"), ("staff", "Staff")], initial="expert")
+    speciality = forms.CharField(label="Speciality (optional)", max_length=80, required=False)
+
+    def clean_phone(self):
+        from accounts.phone import InvalidPhone, normalise_phone
+        try:
+            return normalise_phone(self.cleaned_data["phone"])
+        except InvalidPhone:
+            raise forms.ValidationError("Enter a valid 10-digit mobile number")
+
+
+class AdminForm(LangForm):
+    name = forms.CharField(label="Name", max_length=120, required=False)
+    phone = forms.CharField(label="Mobile number", max_length=20, widget=forms.TextInput(attrs={"inputmode": "tel"}))
+    email = forms.EmailField(label="Email")
+    password = forms.CharField(label="Password (at least 10 characters)", min_length=10, max_length=128, widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}))
+    owner = forms.BooleanField(label="Owner rights: can add and remove admins", required=False)
+
+    def clean_phone(self):
+        from accounts.phone import InvalidPhone, normalise_phone
+        try:
+            return normalise_phone(self.cleaned_data["phone"])
+        except InvalidPhone:
+            raise forms.ValidationError("Enter a valid 10-digit mobile number")
+
+
+class SystemNoticeForm(LangForm):
+    audience = forms.ChoiceField(label="Send to", choices=[("all", "Everyone"), ("farmers", "Farmers"), ("orgs", "FPOs and NGOs"), ("buyers", "Buyers"), ("inst", "KVKs and agencies")])
+    state = forms.ChoiceField(label="State (optional)", choices=[], required=False)
+    title = forms.CharField(label="Title", max_length=120, widget=forms.TextInput(attrs={"placeholder": "New: group farming"}))
+    text = forms.CharField(label="Message", max_length=400, widget=forms.Textarea(attrs={"rows": 3}))
+    url = forms.CharField(label="Page to open (optional, e.g. /farmer/groups/)", max_length=200, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from extension import geo
+        self.fields["state"].choices = [("", "All states")] + [(s, s) for s in geo.states()]
+
+    def clean_url(self):
+        u = (self.cleaned_data.get("url") or "").strip()
+        if u and not (u.startswith("/") and not u.startswith("//")):
+            raise forms.ValidationError("Use a page of this site, starting with /")
+        return u
+
+
+class ConsoleLoginForm(LangForm):
+    login = forms.CharField(label="Mobile number or email", max_length=120, widget=forms.TextInput(attrs={"autocomplete": "username"}))
+    password = forms.CharField(label="Password", max_length=128, widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}))
+
+
 class CentreForm(LangForm):
     name = forms.CharField(label="Centre name", max_length=200)
     kind = forms.ChoiceField(label="Type", choices=[("kvk", "Krishi Vigyan Kendra (KVK)"), ("research", "Research centre / ICAR institute"), ("university", "Agricultural university"), ("department", "Agriculture department office")])
@@ -368,3 +465,9 @@ class CentreStaffForm(LangForm):
             return normalise_phone(self.cleaned_data["phone"])
         except InvalidPhone:
             raise forms.ValidationError("Enter a valid 10-digit mobile number")
+
+
+class PolicyForm(LangForm):
+    max_sessions = forms.IntegerField(label="Devices one person can be signed in on at once", min_value=1, max_value=10, initial=2)
+    session_days = forms.IntegerField(label="Days before signing in again", min_value=1, max_value=365, initial=30)
+    facebook_login = forms.BooleanField(label="Allow 'Continue with Facebook'", required=False)

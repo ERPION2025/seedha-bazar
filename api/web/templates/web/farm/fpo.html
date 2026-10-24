@@ -1,0 +1,10 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Members' farms" %}{% endblock %}
+{% block content %}
+<h1>{% t "Members' farms" %}</h1>
+<p class="mute">{% t "Dairy, poultry, fish, bees, silk and pigs your members keep, and what they produced in the last 30 days." %}</p>
+<div class="grid g2">{% for r in rows %}<div class="card"><h3 style="margin:0">{{ r.cfg.emoji }} {% t r.cfg.label %}</h3>
+  <p class="mute" style="margin:4px 0 0">{% t "{n} farmers" n=r.farmers %} · {% t r.cfg.count %}: <b>{{ r.head }}</b>{% if r.made %} · {% t r.cfg.produce.2 %}: <b>{{ r.made|num }}</b>{% endif %}</p></div>
+{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No member has added a farm unit yet. Members add them under My farm." %}</p></div>{% endfor %}</div>
+{% if tasks %}<h2>⏰ {% t "Reminders due for members" %}</h2><div class="card">{% for t in tasks %}<div class="line"><span>{{ t.unit.owner.farmer_profile.name|first_name }} · {{ t.unit.name }} · {% t t.text %}</span><span class="mute">{{ t.date|date:"j M" }}</span></div>{% endfor %}</div>{% endif %}
+{% endblock %}

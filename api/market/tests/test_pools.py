@@ -48,7 +48,7 @@ class PoolTests(TestCase):
         pool.refresh_from_db()
         li = pool.listing
         self.assertEqual((li.quantity, li.organisation, li.status), (D("20.000"), self.org, "active"))
-        self.assertContains(Client().get("/market/?lang=en"), "Pooled from 3 farmers")
+        self.assertContains(self.ac.get("/market/?lang=en"), "Pooled from 3 farmers")
         # sold 18 q at 2,700; 2% fee -> 2,646 a quintal to members, in proportion 4:6:10
         self.ac.post(f"/fpo/pools/{pool.pk}/settle/", {"sold": "18", "price": "2700", "buyer": "Rao Mills"})
         pool.refresh_from_db()

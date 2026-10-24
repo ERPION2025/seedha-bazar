@@ -43,9 +43,14 @@ def store_or_sell(quantity_kg: D, price_now_q: D, months: int, storage_rate_q_mo
 
 
 def warehouses_near(state: str, district: str):
-    qs = Warehouse.objects.filter(state__iexact=state)
-    near = list(qs.filter(Q(district__iexact=district) | Q(district__istartswith=(district or "").split("(")[0].strip())))
-    rest = [w for w in qs.exclude(pk__in=[w.pk for w in near])[:20]]
+    """WDRA-registered warehouses in the district (active ones first, biggest first), then a few more from the state."""
+    from django.db.models import Case, IntegerField, Value, When
+
+    qs = (Warehouse.objects.filter(state__iexact=state).exclude(wdra_status__in=["Not listed", "Cancelled", "Surrendered"])
+          .annotate(rank=Case(When(wdra_status__iexact="Active", then=Value(0)), When(wdra_status="", then=Value(1)), default=Value(2), output_field=IntegerField()))
+          .order_by("rank", "-capacity_mt"))
+    near = list(qs.filter(Q(district__iexact=district) | Q(district__istartswith=(district or "").split("(")[0].strip()))[:60])
+    rest = list(qs.exclude(pk__in=[w.pk for w in near])[:20])
     return near, rest
 
 
@@ -114,3 +119,52 @@ def remind_due(today=None) -> int:
             p.save(update_fields=["reminded_at"])
             n += 1
     return n
+
+
+def tidy(s: str) -> str:
+    """WDRA writes many names in capitals; show them in plain Title Case."""
+    s = " ".join((s or "").replace(",,", ",").split()).strip(" ,.-")
+    return s.title() if s.isupper() or s.islower() else s
+
+
+def locality(w) -> str:
+    """A short 'where is it': the first useful parts of the address, without khasra numbers and repeats of the district."""
+    import re
+
+    parts = [tidy(p) for p in re.split(r"[,;]", w.address or "") if p.strip()]
+    keep = []
+    for p in parts:
+        low = p.lower()
+        if re.search(r"\b(khasra|kh\.?\s?no|survey|s\.?\s?no|plot|ph\.?\s?no|patwari)\b", low) or low in (w.district or "").lower() or "district" in low:
+            continue
+        p = re.sub(r"^(vill(age)?|gram|post|tehsil|teh)\.?\s*[-:.]?\s*", "", p, flags=re.I).strip()
+        if p and p.lower() not in [k.lower() for k in keep]:
+            keep.append(p)
+        if len(keep) == 2:
+            break
+    return ", ".join(keep)
+
+
+def warehouse_list(state: str, district: str = "", q: str = "", active_only: bool = True, near: list[str] | None = None):
+    """Registered warehouses to choose from: in a district (or the whole state), matching a place or name, active first.
+
+    Warehouses whose address mentions the person's own village or block come first."""
+    from django.db.models import Case, IntegerField, Value, When
+
+    qs = Warehouse.objects.filter(state__iexact=state).exclude(wdra_status__in=["Not listed", "Cancelled", "Surrendered"])
+    if district:
+        qs = qs.filter(Q(district__iexact=district) | Q(district__istartswith=district.split("(")[0].strip()))
+    if active_only:
+        qs = qs.filter(Q(wdra_status__iexact="Active") | Q(wdra_status=""))
+    for word in (q or "").split()[:4]:
+        qs = qs.filter(Q(address__icontains=word) | Q(name__icontains=word) | Q(operator__icontains=word))
+    near_q = Q()
+    for word in [w for w in (near or []) if w and len(w) > 2]:
+        near_q |= Q(address__icontains=word)
+    rank = [When(near_q, then=Value(0))] if near_q else []
+    return qs.annotate(near=Case(*rank, default=Value(1), output_field=IntegerField())).order_by("near", "-capacity_mt", "name")
+
+
+def warehouse_districts(state: str) -> list[str]:
+
+    return sorted({d.strip().title() for d in Warehouse.objects.filter(state__iexact=state).exclude(wdra_status__in=["Not listed"]).values_list("district", flat=True) if d})

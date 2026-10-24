@@ -1,0 +1,11 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "System notices" %}{% endblock %}
+{% block content %}
+<h1>📢 {% t "System notices" %}</h1>
+<p class="mute">{% t "A notice from Seedha Bazar goes to the bell of everyone you choose, and pops up on their phone if they allowed notifications. No SMS is sent." %}</p>
+<p class="hint">{% t "Everyone" %}: {{ counts.all }} · {% t "Farmers" %}: {{ counts.farmers }} · {% t "FPOs and NGOs" %}: {{ counts.orgs }} · {% t "Buyers" %}: {{ counts.buyers }} · {% t "KVKs and agencies" %}: {{ counts.inst }}</p>
+<form method="post" class="card tint">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn">{% t "Send" %}</button></form>
+<h2>{% t "Sent" %}</h2>
+{% for n in rows %}<div class="card"><div class="row between"><b>{{ n.title }}</b><span class="mute">{{ n.created_at|date:"j M Y H:i" }} · {% t n.get_audience_display %}{% if n.state %} · {{ n.state }}{% endif %} · {% t "{n} people" n=n.sent %}</span></div><p style="margin:4px 0 0">{{ n.text }}</p></div>
+{% empty %}<p class="mute">{% t "Nothing sent yet." %}</p>{% endfor %}
+{% endblock %}

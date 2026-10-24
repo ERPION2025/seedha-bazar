@@ -1,0 +1,6 @@
+{% load web_tags %}<div class="wh">
+  <div class="wh-main"><b class="wh-name">{{ w.label }}</b>
+    <span class="wh-place">📍 {% if w.place %}{{ w.place }}, {% endif %}{{ w.district|title }}</span>
+    <span class="wh-facts">{% if w.capacity_mt %}<span>{{ w.capacity_mt|num:0 }} {% t "tonnes" %}</span>{% endif %}{% if w.valid_until %}<span>{% t "Valid until" %} {{ w.valid_until|date:"M Y" }}</span>{% endif %}{% if not w.active %}<span class="wh-off">{% t "Inactive" %}</span>{% endif %}</span></div>
+  {% if w.phone %}<a class="btn small wh-call" href="tel:{{ w.phone }}" aria-label="{% t "Call" %} {{ w.label }}">📞 {% t "Call" %}</a>{% endif %}
+</div>

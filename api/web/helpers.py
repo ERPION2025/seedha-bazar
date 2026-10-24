@@ -41,7 +41,7 @@ def role_required(*roles, staff=False):
         def wrapper(request, *args, **kwargs):
             u = request.user
             if not u.is_authenticated:
-                return redirect("/login/")
+                return redirect("/console/login/" if staff else "/login/")
             allowed = (u.is_staff or u.role == "admin") if staff else u.role in roles
             if not allowed or u.status != "active":
                 return redirect(home_for(u))

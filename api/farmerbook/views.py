@@ -164,8 +164,16 @@ def ledger_for(user, cycle_id=None) -> dict:
     general = Expense.objects.filter(owner=user, crop_cycle__isnull=True, deleted_at__isnull=True).aggregate(t=Sum("amount"))["t"] or Decimal("0")
     total_exp = sum((Decimal(r["expenses"]) for r in rows), Decimal("0")) + (general if not cycle_id else Decimal("0"))
     total_rev = sum((Decimal(r["revenue"]) for r in rows), Decimal("0"))
+    units = []
+    if not cycle_id:  # dairy, poultry, fish, bees, silk, pigs: their money joins the same profit and loss
+        from farming.farm import money
+        units = [{"unit": r["unit"].name, "livelihood": r["livelihood"], "revenue": _money(r["income"]), "expenses": _money(r["expenses"]), "profit": _money(r["net"])}
+                 for r in money(user)]
+        total_exp += sum((Decimal(u["expenses"]) for u in units), Decimal("0"))
+        total_rev += sum((Decimal(u["revenue"]) for u in units), Decimal("0"))
     return {
         "cycles": rows,
+        "units": units,
         "general_expenses": _money(general),
         "totals": {"expenses": _money(total_exp), "revenue": _money(total_rev), "profit": _money(total_rev - total_exp)},
     }

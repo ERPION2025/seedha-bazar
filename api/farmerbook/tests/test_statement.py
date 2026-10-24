@@ -32,7 +32,7 @@ class StatementTests(TestCase):
         self.assertIn(self.f.phone, page)
         self.assertIn(s.digest, page)
         anon = Client()
-        self.assertEqual(anon.get(f"/statement/{s.code}/").status_code, 404)  # the full copy is private
+        self.assertEqual(anon.get(f"/statement/{s.code}/").status_code, 302)  # the full copy is private: sign in first
         v = anon.get(f"/verify/{s.code}/?lang=en").content.decode()
         self.assertIn("has not been changed", v)
         self.assertNotIn(self.f.phone, v)

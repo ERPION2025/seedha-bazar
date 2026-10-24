@@ -149,17 +149,19 @@ class PageTests(TestCase):
 
     def test_pages_render_in_every_language_for_everyone(self):
         farmer, buyer = make_farmer(), make_buyer()
-        for who in (None, farmer, buyer):
+        for who in (farmer, buyer):  # nothing opens before sign-in
             c = Client()
             if who:
                 c.force_login(who)
             for lang in ("hi", "mr", "en"):
                 for path in ("/news/", "/news/?topic=price", "/news/?language=en", "/schemes/", "/schemes/?topic=bulk_purchase", "/schemes/pmfby/", "/videos/"):
                     self.assertEqual(c.get(f"{path}{'&' if '?' in path else '?'}lang={lang}").status_code, 200, (path, lang))
-        page = Client().get("/schemes/pmfby/?lang=hi").content.decode()
+        c = Client()
+        c.force_login(farmer)
+        page = c.get("/schemes/pmfby/?lang=hi").content.decode()
         self.assertIn("पीएम फसल बीमा योजना", page)
         self.assertIn("pmfby.gov.in", page)
-        self.assertIn("youtube-nocookie.com/embed/abc123", Client().get("/videos/").content.decode())
+        self.assertIn("youtube-nocookie.com/embed/abc123", c.get("/videos/").content.decode())
 
     def test_home_pages_show_news_for_you(self):
         c = Client()

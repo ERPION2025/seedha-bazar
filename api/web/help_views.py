@@ -1,5 +1,6 @@
 """Ask an expert: farmers and FPOs raise a problem (typed, spoken or as a voice note); the district's KVK answers."""
 from django import forms
+from django.conf import settings
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -87,7 +88,7 @@ def detail(request, pk):
     side = services.can_see(request.user, issue)
     if side != "owner":
         if side == "centre":
-            return redirect(f"/kvk/issues/{issue.pk}/")
+            return redirect(f"{settings.INSTITUTION_URL}/issues/{issue.pk}/")
         raise Http404
     Issue.objects.filter(pk=issue.pk).update(farmer_seen_at=timezone.now())
     return render(request, "web/help/detail.html", {"i": issue, "replies": issue.replies.exclude(kind="note").select_related("by"), "base_tpl": base_for(request.user)})
@@ -103,7 +104,7 @@ def reply(request, pk):
     except ApiError as e:
         warn(request, error_text(request, e))
     side = services.can_see(request.user, issue)
-    return redirect(f"/kvk/issues/{issue.pk}/" if side == "centre" else f"/help/{issue.pk}/")
+    return redirect(f"/issues/{issue.pk}/" if side == "centre" else f"/help/{issue.pk}/")
 
 
 def media(request, kind, pk, field):

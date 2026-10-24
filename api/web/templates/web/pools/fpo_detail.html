@@ -6,7 +6,7 @@
 <div class="card tint"><div class="stats flat"><div class="stat"><small>{% t "In the lot" %}</small><div class="big">{{ total_unit|num }}</div><small>{% t pool.unit %}</small></div>
   <div class="stat"><small>{% t "Asking price" %}</small><div class="big">{{ pool.price|inr }}</div><small>/ {% t pool.unit %}</small></div>
   <div class="stat"><small>{% t "Lot value" %}</small><div class="big">{{ value|inr }}</div></div></div>
-  {% if pool.listing %}<p style="margin:8px 0 0"><a href="/market/{{ pool.listing.pk }}/">{% t "How buyers see it" %} ↗</a></p>{% endif %}</div>
+  {% if pool.listing %}<p style="margin:8px 0 0"><a href="/market/{{ pool.listing.pk }}/">{% t "How buyers see it" %} ↗</a> {% if pool.status == "listed" %}{% include "web/partials/share_button.html" with kind="lot" ref=pool.pk %}{% endif %}</p>{% endif %}</div>
 
 <div class="card"><h3>{% t "Members in the lot" %}</h3>
 {% for s in shares %}<div class="line"><div><b>{{ s.farmer.farmer_profile.name|default:s.farmer.phone }}</b> · {{ s.quantity_kg|quintal }} q<br><span class="mute">{% t s.get_status_display %}{% if s.payout is not None %} · {% t "Share" %} {{ s.payout|inr }}{% if s.paid_at %} · ✔ {% t "Paid" %}{% endif %}{% endif %}</span></div>

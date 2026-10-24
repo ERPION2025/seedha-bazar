@@ -1,0 +1,5 @@
+{% load web_tags %}<a class="door" href="{{ base }}{{ g.id }}/"><div class="card">
+  <div class="row between"><h3 style="margin:0">{% crop g.crop %} · {{ g.village|default:g.district }}</h3><span class="pill">{% t "Trust" %} {{ g.trust }}/100</span></div>
+  <p class="mute" style="margin:4px 0">{{ g.season }} {{ g.year }} · {% t "{n} farmers" n=g.members %} · {{ g.acres|num }} {% t "acre" %}{% if g.expected_q %} · ~{{ g.expected_q|num:0 }} {% t "quintal" %}{% endif %}</p>
+  <div class="row">{% if g.org %}<span class="pill grey">🏢 {{ g.org }}</span>{% endif %}{% if g.kvk %}<span class="pill grey">🏛️ {{ g.kvk }}</span>{% endif %}{% if g.status == "forming" %}<span class="pill sun">{% t "Forming: farmers can join" %}</span>{% endif %}</div>
+</div></a>

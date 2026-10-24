@@ -1,0 +1,12 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Notifications" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="margin:0">🔔 {% t "Notifications" %}</h1><a href="/notifications/settings/">⚙️ {% t "Settings" %}</a></div>
+{% if kinds|length > 1 %}<nav class="chip-row" aria-label="{% t "Show" %}"><a class="chip{% if not kind %} on{% endif %}" href="/notifications/">{% t "All" %}</a>{% for k, label in kinds %}<a class="chip{% if k == kind %} on{% endif %}" href="?kind={{ k }}">{% t label %}</a>{% endfor %}</nav>{% endif %}
+{% if unread_n %}<form method="post" action="/notifications/read-all/" class="row between" style="margin:8px 0">{% csrf_token %}<span class="mute">{% t "{n} unread" n=unread_n %}</span><button class="link-btn" style="color:var(--g-dark)">{% t "Mark all as read" %}</button></form>{% endif %}
+<div class="inbox">{% for i in rows %}<a class="inbox-item{% if not i.read_at %} unread{% endif %}{% if i.critical %} critical{% endif %}" href="/notifications/{{ i.pk }}/">
+  <span class="inbox-kind" aria-hidden="true">{% if i.kind == "notice" %}🏛️{% elif i.kind == "system" %}📢{% elif i.kind == "advisory" %}🌱{% elif i.kind == "weather" %}🌦️{% elif i.kind == "order" %}📦{% elif i.kind == "group" %}👥{% elif i.kind == "input" %}🌾{% elif i.kind == "issue" %}⚠️{% else %}🔔{% endif %}</span>
+  <span class="inbox-body"><b>{{ i.title }}</b><span>{{ i.text }}</span><small>{% t i.get_kind_display %} · {{ i.created_at|date:"j M, H:i" }}</small></span>
+</a>{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No notifications yet. Notices from your KVK and Seedha Bazar, weather warnings and order updates will appear here." %}</p></div>{% endfor %}</div>
+{% endblock %}

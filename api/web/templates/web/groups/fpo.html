@@ -1,0 +1,10 @@
+{% extends "web/fpo/base.html" %}{% load web_tags %}
+{% block title %}{% t "Group farming" %}{% endblock %}
+{% block content %}
+<h1>👥 {% t "Group farming" %}</h1>
+<p class="mute">{% t "Bring members who grow the same crop into one group: same seed, sown together, inputs bought in bulk, produce sold as one lot. Buyers see the group's size and trust score on your profile." %}</p>
+<div class="stats4"><div class="card stat"><small>{% t "Groups" %}</small><div class="big">{{ summary.groups }}</div></div><div class="card stat"><small>{% t "Farmers in groups" %}</small><div class="big">{{ summary.farmers }}</div></div><div class="card stat"><small>{% t "Land in groups" %}</small><div class="big">{{ summary.acres|num:0 }}</div><small>{% t "acre" %}</small></div></div>
+<div class="grid g2">{% for g in rows %}{% include "web/groups/_card.html" with base="/fpo/groups/" %}{% empty %}<p class="mute">{% t "No groups yet." %}</p>{% endfor %}</div>
+<details class="card"{% if form.errors or not rows %} open{% endif %}><summary><b>➕ {% t "Start a group" %}</b></summary>
+<form method="post" style="margin-top:10px">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn">{% t "Start the group" %}</button></form></details>
+{% endblock %}

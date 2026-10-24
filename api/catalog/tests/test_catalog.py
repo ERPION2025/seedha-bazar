@@ -167,7 +167,7 @@ class ProcessedListingTests(TestCase):
     def test_browse_filters_by_kind_and_packaging_and_shows_the_reference(self):
         self.c.post("/farmer/sell/new/", {**self.FORM, "stock": self.cycle.pk, "product": "atta"})
         market_services.save_listing(self.farmer, {"crop": "wheat", "quantity": Decimal("5"), "unit": "quintal", "price": Decimal("2500"), "state": "Madhya Pradesh", "district": "Rewa", "source_cycle": self.cycle})
-        anon = Client()
+        anon = self.c  # everything is behind sign-in now
         self.assertContains(anon.get("/market/?kind=semi&lang=en"), "Wheat flour (atta)")
         self.assertNotContains(anon.get("/market/?kind=semi&lang=en"), ">Wheat<")
         self.assertEqual(len(anon.get("/market/?kind=raw").context["rows"]), 1)

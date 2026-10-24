@@ -14,6 +14,8 @@
   <div class="card stat"><small>{% t "Acres" %}</small><div class="big">{{ acres|num:1 }}</div></div>
 </div>
 
+{% if ask_livelihoods %}<a class="door" href="/start/"><div class="card sun"><b>🧭 {% t "What do your members do?" %}</b><p style="margin:4px 0 0">{% t "Choose crops, dairy, poultry, fish, bees, silk or pigs, and see only the tools for them." %}</p></div></a>{% endif %}
+{% if grows_crops %}<a class="door" href="/fpo/groups/"><div class="card tint"><b>👥 {% t "Group farming" %}</b>{% if groups.groups %}<p style="margin:4px 0 0">{% t "{g} crop groups: {n} farmers on {acres} acres grow the same way and sell as one lot." g=groups.groups n=groups.farmers acres=groups.acres|num:0 %}</p>{% else %}<p style="margin:4px 0 0">{% t "Start a crop group: members who grow the same crop buy and sell together at a better rate. Buyers see it on your profile." %}</p>{% endif %}</div></a>{% endif %}
 {% if requests %}<div class="card sun"><b>{% t "{n} farmers want to join." n=requests %}</b> <a class="btn small" href="/fpo/requests/">{% t "Review" %}</a></div>{% endif %}
 {% if waiting %}<div class="card"><b>{% t "{n} farmers have not entered their code yet." n=waiting %}</b> <a href="/fpo/farmers/">{% t "See who" %}</a></div>{% endif %}
 
@@ -39,7 +41,7 @@
 {% news_for_home %}
 {% if org.verified and not org.lat %}<div class="card tint"><b>📍 {% t "Put your office on the map" %}</b><p class="mute" style="margin:4px 0 8px">{% t "Buyers and your district's KVK can then find you. Stand at the office and tap the button." %}</p>
   <form method="post" action="/fpo/location/" id="org-loc">{% csrf_token %}<input type="hidden" name="lat"><input type="hidden" name="lon"><button type="button" class="btn small" onclick="var f=this.form;navigator.geolocation&&navigator.geolocation.getCurrentPosition(function(p){f.lat.value=p.coords.latitude;f.lon.value=p.coords.longitude;f.submit();},function(){},{enableHighAccuracy:true,timeout:15000})">📍 {% t "Use my location" %}</button></form></div>{% endif %}
-<div class="quick" style="margin-bottom:14px"><a class="btn ghost" href="/fpo/pools/">🤝 {% t "Group selling" %}</a><a class="btn ghost" href="/weather/">🌦️ {% t "Weather" %}</a><a class="btn ghost" href="/help/">🧑‍🔬 {% t "Ask an expert" %}</a><a class="btn ghost" href="/inputs/">🌱 {% t "Seeds and inputs" %}</a><a class="btn ghost" href="/map/">🗺️ {% t "Map" %}</a><a class="btn ghost" href="/insights/">📊 {% t "My district" %}</a></div>
+<div class="quick" style="margin-bottom:14px">{% if grows_crops %}<a class="btn ghost" href="/fpo/pools/">🤝 {% t "Group selling" %}</a>{% else %}<a class="btn ghost" href="/fpo/farm/">🐄 {% t "Members' farms" %}</a>{% endif %}<a class="btn ghost" href="/weather/">🌦️ {% t "Weather" %}</a><a class="btn ghost" href="/help/">🧑‍🔬 {% t "Ask an expert" %}</a>{% if grows_crops %}<a class="btn ghost" href="/inputs/">🌱 {% t "Seeds and inputs" %}</a>{% endif %}<a class="btn ghost" href="/map/">🗺️ {% t "Map" %}</a><a class="btn ghost" href="/insights/">📊 {% t "My district" %}</a></div>
 {% if top_crops %}<div class="card"><h3>{% t "What your members grow" %}</h3>
   <div class="row">{% for c, n in top_crops %}<span class="pill">{% crop c %} · {{ n }}</span>{% endfor %}</div></div>{% endif %}
 

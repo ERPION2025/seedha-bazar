@@ -1,0 +1,17 @@
+{% extends "web/base.html" %}{% load web_tags %}
+{% block title %}{% crop crop as cname %}{% t "Buy {crop} directly from farmers and FPOs" crop=cname %}{% endblock %}
+{% block desc %}{% crop crop as cname %}{% t "{crop} on sale directly from verified farmers and FPOs, with today's mandi price for comparison. Ask the seller and sign an agreement on Seedha Bazar." crop=cname %}{% endblock %}
+{% block content %}
+<p><a href="/produce/">← {% t "All produce" %}</a></p>
+{% crop crop as cname %}<h1>{{ emoji }} {% t "Buy {crop} directly from farmers and FPOs" crop=cname %}</h1>
+<div class="stats4">
+  <div class="card stat"><small>{% t "On sale now" %}</small><div class="big">{{ n }}</div><small>{% t "lots" %}</small></div>
+  {% if ref %}<div class="card stat"><small>{% t "Mandi price today" %}</small><div class="big">{{ ref.typical|inr }}</div><small>{% t "per quintal" %}</small></div>{% endif %}
+</div>
+{% if districts %}<p class="mute">📍 {% t "From" %}: {{ districts|join:", " }}</p>{% endif %}
+{% if rows %}<div class="grid g2">{% for li in rows %}{% include "web/partials/listing_card.html" %}{% endfor %}</div>
+{% else %}<div class="card"><p class="mute" style="margin:0">{% t "Nothing on sale right now. Sign in as a buyer to post what you need; farmers and FPOs near you are told." %}</p></div>{% endif %}
+<div class="card tint" style="margin-top:16px"><p style="margin:0 0 10px">{% t "Seller names and phone numbers are shared only after both sides sign the agreement." %}</p>
+  <div class="row"><a class="btn" href="/login/?as=buyer&next=/market/?crop={{ crop }}">{% t "Sign in as a buyer" %}</a><a class="btn ghost" href="/login/?as=farmer">{% t "Sell {crop} here" crop=cname %}</a></div></div>
+{% if related %}<h2>{% t "Also on sale" %}</h2><div class="chip-row">{% for k in related %}<a class="chip" href="/produce/{{ k }}/">{% crop k %}</a>{% endfor %}</div>{% endif %}
+{% endblock %}

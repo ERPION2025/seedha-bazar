@@ -1,0 +1,9 @@
+{% load static web_tags %}<div class="wx-banner {% if wx_alerts.0.severity == "critical" %}critical{% else %}warning{% endif %}" role="alert" id="wx-banner"
+  data-critical="{% if wx_alerts.0.severity == "critical" %}1{% endif %}" data-alarm="{% if alarm_on %}1{% endif %}" data-key="{% for a in wx_alerts %}{{ a.pk }}-{% endfor %}" data-sound="{% static 'web/sounds/alert.wav' %}"><div class="wrap">
+  {% for a in wx_alerts %}<div class="wx-row"><span class="wx-ic" aria-hidden="true">{% if a.severity == "critical" %}🚨{% else %}⚠️{% endif %}</span>
+    <div><b>{% if a.severity == "critical" %}{% t "Critical weather alert" %}{% else %}{% t "Weather warning" %}{% endif %} · {% crop a.crop %} · {{ a.day|date:"j M" }}{% if a.value %} · {{ a.value }}{% endif %}</b><br>{% t a.advice %}</div></div>{% endfor %}
+  <div class="row" style="margin-top:8px"><button type="button" class="btn small" id="wx-stop" hidden>🔕 {% t "Stop the alarm" %}</button>
+    <form method="post" action="/weather/seen/">{% csrf_token %}{% for a in wx_alerts %}<input type="hidden" name="alert" value="{{ a.pk }}">{% endfor %}<button class="btn small ghost">✔ {% t "I have seen it" %}</button></form>
+    <a class="btn small ghost" href="/weather/">{% t "Details" %}</a></div>
+</div></div>
+<script src="{% static 'web/alarm.js' %}" defer></script>

@@ -1,0 +1,9 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "My shared posts" %}{% endblock %}
+{% block content %}
+<h1>📣 {% t "My shared posts" %}</h1>
+<p class="mute">{% t "Every post you share is a free ad. Here is how many people opened it and joined." %}</p>
+<div class="row" style="margin-bottom:12px">{% include "web/partials/share_button.html" with kind="stock" ref="" label="Share my stock" %}{% include "web/partials/share_button.html" with kind="achievement" ref="" label="Share my scores" %}</div>
+{% for s in rows %}<a class="door" href="/s/{{ s.code }}/" target="_blank"><div class="card line"><div><b>{{ s.title }}</b><br><span class="mute">{% t s.get_kind_display %} · {{ s.created_at|date:"j M" }}</span></div><span>👁 {{ s.views }} · 🧑‍💼 {{ s.signups }}</span></div></a>
+{% empty %}<p class="mute">{% t "Nothing shared yet." %}</p>{% endfor %}
+{% endblock %}

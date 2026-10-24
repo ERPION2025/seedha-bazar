@@ -21,7 +21,7 @@ D = Decimal
 
 
 def _s(x) -> str:
-    return str((x or D(0)).quantize(D("0.01")))
+    return str(D(str(x or 0)).quantize(D("0.01")))
 
 
 def build(user, start, end) -> dict:
@@ -54,6 +54,15 @@ def build(user, start, end) -> dict:
                      "expense_by": {k: _s(v) for k, v in sorted(by_cat.items())}, "verified_fpo": _s(verified)})
         tot_inc += inc
         tot_exp += exp
+    from farming.farm import money as farm_money
+    from farming.livelihoods import LIVELIHOODS
+    for r in farm_money(user, start, end):  # dairy, poultry, fish, bees, silk, pigs
+        u = r["unit"]
+        rows.append({"crop": u.livelihood, "crop_name": f"{LIVELIHOODS[u.livelihood]['emoji']} {u.name}", "season": LIVELIHOODS[u.livelihood]["label"], "plot": "",
+                     "area_acres": _s(u.area_acres or D(0)), "sown": u.started_on.isoformat(), "harvest_kg": "", "per_acre_kg": "", "sold_kg": "", "income": _s(r["income"]),
+                     "expenses": _s(r["expenses"]), "net": _s(r["net"]), "expense_by": {k: _s(v) for k, v in sorted(r["by"].items())}, "verified_fpo": _s(D(0))})
+        tot_inc += r["income"]
+        tot_exp += r["expenses"]
     general = Expense.objects.filter(owner=user, crop_cycle__isnull=True, deleted_at__isnull=True, date__range=(start, end)).aggregate(t=Sum("amount"))["t"] or D(0)
     tot_exp += general
     # Sales confirmed by buyers through Seedha Bazar orders

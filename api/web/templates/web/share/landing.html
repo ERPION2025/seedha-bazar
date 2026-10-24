@@ -1,0 +1,14 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{{ s.title }}{% endblock %}
+{% block head %}<meta property="og:type" content="website"><meta property="og:title" content="{{ s.title }}"><meta property="og:description" content="{{ s.lines|join:' · ' }}">
+<meta property="og:url" content="{{ og_url }}">{% if og_image %}<meta property="og:image" content="{{ og_image }}"><meta property="og:image:width" content="1080"><meta property="og:image:height" content="1080">{% endif %}
+<meta name="twitter:card" content="summary_large_image">{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+{% if og_image %}<img src="{{ og_image }}" alt="{{ s.title }}" style="width:100%;border-radius:var(--r);display:block;margin-bottom:14px">{% endif %}
+<h1>{{ s.title }}</h1>
+{% for l in s.lines %}<p style="margin:4px 0">{{ l }}</p>{% endfor %}
+<div class="card sun" style="margin-top:14px">{% if buyer %}<h3>{% t "Buy directly from farmers and FPOs" %}</h3><p>{% t "Become a buyer on Seedha Bazar to see this offer, ask the seller and get the best lots first. It is free." %}</p>
+  <a class="btn block" href="{{ join_url }}">{% t "Become a buyer and get this offer first" %}</a>
+  {% else %}<h3>{% t "Join Seedha Bazar" %}</h3><p>{% t "Free for farmers: your Farmer Book, mandi rates, weather alerts, buyers and games." %}</p><a class="btn block" href="{{ join_url }}">{% t "Join free" %}</a>{% endif %}</div>
+{% endblock %}

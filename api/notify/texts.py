@@ -5,6 +5,36 @@ template and keep the {placeholders} in the same order. Keep them short.
 """
 
 TEXTS = {
+    "farm_task": {
+        "en": "Seedha Bazar reminder, {place}: {advice} {link}",
+        "hi": "सीधा बाज़ार याद दिलाता है, {place}: {advice} {link}",
+        "mr": "सीधा बाज़ार आठवण, {place}: {advice} {link}",
+    },
+    "system_notice": {
+        "en": "Seedha Bazar: {advice}",
+        "hi": "सीधा बाज़ार: {advice}",
+        "mr": "सीधा बाज़ार: {advice}",
+    },
+    "advisory": {
+        "en": "Seedha Bazar: advice from {centre} for {place}: {advice} More: {link}",
+        "hi": "सीधा बाज़ार: {place} के लिए {centre} की सलाह: {advice} और: {link}",
+        "mr": "सीधा बाज़ार: {place} साठी {centre} चा सल्ला: {advice} अधिक: {link}",
+    },
+    "kvk_notice": {
+        "en": "Seedha Bazar: message from {centre}: {advice}",
+        "hi": "सीधा बाज़ार: {centre} का संदेश: {advice}",
+        "mr": "सीधा बाज़ार: {centre} चा संदेश: {advice}",
+    },
+    "group_invite": {
+        "en": "Seedha Bazar: a {crop} farming group is starting in {place}. Join to buy seed and sell together at a better rate: {link}",
+        "hi": "सीधा बाज़ार: {place} में {crop} का समूह खेती दल बन रहा है। जुड़ें, साथ में बीज खरीदें और अच्छे दाम पर साथ बेचें: {link}",
+        "mr": "सीधा बाज़ार: {place} मध्ये {crop} चा गट शेती गट सुरू होत आहे. सामील व्हा, एकत्र बियाणे घ्या आणि चांगल्या दराने एकत्र विका: {link}",
+    },
+    "interest_news": {
+        "en": "Seedha Bazar, for you: {headline} More: {link}",
+        "hi": "सीधा बाज़ार, आपके लिए: {headline} और: {link}",
+        "mr": "सीधा बाज़ार, तुमच्यासाठी: {headline} अधिक: {link}",
+    },
     "pledge_due": {
         "en": "Seedha Bazar: your warehouse loan or receipt for {product} falls due on {date}. Plan to repay or sell: {link}",
         "hi": "सीधा बाज़ार: {product} के गोदाम ऋण या रसीद की तारीख {date} है। चुकाने या बेचने की योजना बनाएँ: {link}",

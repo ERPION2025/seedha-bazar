@@ -68,17 +68,42 @@ def weather_tick(now=None):
 
     out = weather_services.tick(now)
     if out is not None:
-        from storage.services import remind_due  # warehouse loan reminders ride on the same daily run
+        from engagement import voice
+        from storage.services import remind_due  # daily jobs ride on the same once-a-day run
         remind_due()
+        from farming.farm import send_reminders
+        send_reminders()
+        voice.notify_new_matches()
+        voice.purge_audio()
     if out:
         log.info("weather alerts: %s", out)
+    return out
+
+
+def advisory_tick(now=None) -> dict:
+    """District advisories: the mKisan feed every few hours; IMD warnings once IMD has whitelisted us."""
+    from advisory import services as advisory_services
+
+    out = advisory_services.tick(now)
+    if out:
+        log.info("advisories: %s", out)
+    return out
+
+
+def warehouse_tick(now=None):
+    """WDRA's registered-warehouse list: a few states a day, so every state is refreshed about weekly."""
+    from storage import wdra
+
+    out = wdra.tick(now)
+    if out is not None:
+        log.info("WDRA states refreshed: %s", out)
     return out
 
 
 def loop(poll_seconds: int = 600):
     log.info("worker started; rates every %s hours, news every %s hours", settings.RATES_REFRESH_HOURS, settings.NEWS_REFRESH_HOURS)
     while True:
-        for job in (tick, news_tick, issues_tick, weather_tick):
+        for job in (tick, news_tick, issues_tick, weather_tick, advisory_tick, warehouse_tick):
             try:
                 job()
             except Exception:

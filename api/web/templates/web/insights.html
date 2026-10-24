@@ -2,7 +2,7 @@
 {% block title %}{% t "My district" %}{% endblock %}
 {% block content %}
 <h1>📊 {% t "My district" %}{% if district %} · {{ district }}{% endif %}</h1>
-{% if activity %}<div class="grid g2">
+{% if activity %}<div style="margin-bottom:10px">{% include "web/partials/share_button.html" with kind="achievement" ref="" label="Share my scores" %}</div><div class="grid g2">
   <div class="card"><h3>⚡ {% t "Activity" %}: {{ activity.score }}/100</h3><p class="hint">{% t "How much you use Seedha Bazar in the last 30 days" %}</p>
     {% for p in activity.parts %}<div style="margin:8px 0"><div class="row between"><span>{% t p.label %} <span class="mute">({{ p.count }})</span></span><b>{{ p.got }}/{{ p.of }}</b></div><div class="scorebar"><span style="width:{% widthratio p.got p.of 100 %}%"></span></div></div>{% endfor %}</div>
   <div class="card"><h3>🏅 {% t "Performance" %}: {{ performance.score }}/100</h3><p class="hint">{% t "How well your farm does" %}</p>

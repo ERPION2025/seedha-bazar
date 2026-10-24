@@ -9,8 +9,8 @@ Prices and yields for processed goods are STARTER ESTIMATES for planning. They a
 platform replace them with real prices as they appear (see pricing.py). Staff should review them before launch.
 """
 
-RAW, FRESH, SEMI = "raw", "fresh", "semi"
-KINDS = (RAW, FRESH, SEMI)
+RAW, FRESH, SEMI, LIVE = "raw", "fresh", "semi", "live"
+KINDS = (RAW, FRESH, SEMI, LIVE)
 
 # key: (english, hindi, marathi, emoji, kind)
 PRODUCTS = {
@@ -63,6 +63,14 @@ PRODUCTS = {
     "guava_jam": ("Guava jam / jelly", "अमरूद जैम / जेली", "पेरूचा जाम / जेली", "🍐", "semi"), "aonla_candy": ("Amla candy", "आँवला कैंडी", "आवळा कँडी", "🟢", "semi"),
     "custard_apple_pulp": ("Custard apple pulp", "सीताफल पल्प", "सीताफळ गर", "🍏", "semi"), "orange_juice": ("Orange juice / squash", "संतरा जूस / स्क्वैश", "संत्र्याचा रस / स्क्वॅश", "🍊", "semi"),
     "anardana": ("Anardana (dried pomegranate seed)", "अनारदाना", "अनारदाना", "🍎", "semi"),
+    # Livelihoods beyond crops: dairy, poultry, fish, bees, silk, pigs ("live" keeps them out of crop lists and mandi rates)
+    "milk": ("Milk", "दूध", "दूध", "🥛", LIVE), "ghee": ("Ghee", "घी", "तूप", "🧈", LIVE), "paneer": ("Paneer", "पनीर", "पनीर", "🧀", LIVE),
+    "eggs": ("Eggs", "अंडे", "अंडी", "🥚", LIVE), "broiler": ("Broiler chicken (live)", "ब्रॉयलर मुर्गा (ज़िंदा)", "ब्रॉयलर कोंबडी (जिवंत)", "🐔", LIVE),
+    "desi_chicken": ("Desi chicken (live)", "देसी मुर्गा (ज़िंदा)", "गावठी कोंबडी (जिवंत)", "🐓", LIVE),
+    "fish": ("Fish (rohu, catla, mrigal)", "मछली (रोहू, कतला, मृगल)", "मासे (रोहू, कटला, मृगळ)", "🐟", LIVE),
+    "honey": ("Honey", "शहद", "मध", "🍯", LIVE), "beeswax": ("Beeswax", "मधुमक्खी का मोम", "मधमाशीचे मेण", "🕯️", LIVE),
+    "cocoons": ("Silk cocoons", "रेशम कोया", "रेशीम कोष", "🐛", LIVE), "silk_yarn": ("Raw silk yarn", "कच्चा रेशम धागा", "कच्चा रेशीम धागा", "🧵", LIVE),
+    "pigs": ("Pigs (live)", "सूअर (ज़िंदा)", "डुक्कर (जिवंत)", "🐖", LIVE), "piglets": ("Piglets", "सूअर के बच्चे", "डुक्कराची पिल्ले", "🐷", LIVE),
 }
 
 # Which raw or fresh product each conversion starts from, and what comes out.

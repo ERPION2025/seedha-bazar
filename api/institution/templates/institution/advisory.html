@@ -1,0 +1,10 @@
+{% extends "institution/scoped.html" %}{% load web_tags %}
+{% block title %}{% t "Advisory" %}{% endblock %}
+{% block content %}
+<p><a href="/weather/">← {% t "Alerts and weather" %}</a></p>
+<h1>{{ a.title|default:a.issuer|default:a.get_source_display }}</h1>
+<p class="mute">{{ a.get_source_display }} · {{ a.published_at|date:"j M Y H:i" }}{% if a.author %} · {{ a.author }}{% if a.designation %} ({{ a.designation }}){% endif %}{% endif %}{% if a.district %} · {{ a.district }}, {{ a.state }}{% endif %}</p>
+<div class="card"><p style="margin:0;white-space:pre-line">{{ a.text }}</p></div>
+<div class="row"><span class="pill grey">{% t a.get_kind_display %}</span><span class="pill grey">{% t a.get_severity_display %}</span>{% for c in a.crops %}<span class="pill grey">{% crop c %}</span>{% endfor %}{% if a.notified %}<span class="pill">{% t "{n} people told" n=a.notified %}</span>{% endif %}</div>
+{% if a.url %}<p><a href="{{ a.url }}" target="_blank" rel="noopener noreferrer">{% t "Source" %} ↗</a></p>{% endif %}
+{% endblock %}

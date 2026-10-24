@@ -1,0 +1,16 @@
+{% extends "institution/base.html" %}{% load web_tags %}
+{% block title %}{% t "Sign in" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Institution Connect sign in" %}</h1>
+<p class="mute">{% t "For KVKs, agricultural universities and research agencies. Choose how to get your 6-digit code: on the mobile number or the email Seedha Bazar registered for you." %}</p>
+<form method="post" class="card" id="inst-login">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <button class="btn block">{% t "Send the code" %}</button>
+</form>
+<p class="mute">{% t "Only staff of KVKs and research agencies added by Seedha Bazar can sign in here." %}</p>
+<script>(function(){var f=document.getElementById("inst-login");if(!f)return;
+function sync(){var by=(f.querySelector("input[name=by]:checked")||{}).value||"mobile";
+["phone","email"].forEach(function(n){var i=f.querySelector("[name="+n+"]");if(!i)return;var box=i.closest(".field");if(box)box.hidden=(n==="phone")!==(by==="mobile");});}
+f.addEventListener("change",sync);sync();})();</script>
+{% endblock %}

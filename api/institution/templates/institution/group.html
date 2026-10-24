@@ -1,0 +1,18 @@
+{% extends "institution/scoped.html" %}{% load web_tags %}
+{% block title %}{{ g.name }}{% endblock %}
+{% block content %}
+<p><a href="/groups/">← {% t "Group farming" %}</a></p>
+<h1>👥 {{ g.name }}</h1>
+<p class="mute">{% crop g.crop %} · {{ g.get_season_display }} {{ g.year }} · {{ g.village|default:"" }} {{ g.district }}{% if g.organisation %} · {{ g.organisation.name }}{% endif %}{% if g.seed_variety %} · {% t "Seed" %}: {{ g.seed_variety }}{% endif %}</p>
+<div class="stats4"><div class="card stat"><small>{% t "Farmers" %}</small><div class="big">{{ s.members }}</div></div><div class="card stat"><small>{% t "Land" %}</small><div class="big">{{ s.acres|num }}</div><small>{% t "acre" %}</small></div>
+  <div class="card stat"><small>{% t "Expected harvest" %}</small><div class="big">{% if s.expected_q %}{{ s.expected_q|num:0 }}{% else %}—{% endif %}</div><small>{% t "quintal" %}</small></div><div class="card stat"><small>{% t "Trust" %}</small><div class="big">{{ s.trust }}</div><small>/100</small></div></div>
+<div class="grid g2">
+<div class="card"><h3>{% t "How the trust score is made" %}</h3>{% for p in s.parts %}<div class="line"><span>{% t p.label %}</span><b>{{ p.got }}/{{ p.of }}</b></div>{% endfor %}</div>
+<div class="card"><h3>{% t "Agreed practices" %}</h3>{% for p in practices %}<div class="line"><span>✔ {% t p %}</span></div>{% empty %}<p class="mute">—</p>{% endfor %}
+  {% if signal %}<p style="margin:10px 0 0">{% t "Group lots of this crop sold at {pct}% of the mandi rate ({n} lots)." pct=signal.pct n=signal.lots %}</p>{% endif %}</div>
+</div>
+<form method="post" class="card tint">{% csrf_token %}{% if g.centre_id == centre.pk %}<p style="margin:0 0 8px">🏛️ {% t "Your centre guides this group." %}</p><button class="btn ghost" name="action" value="stop">{% t "Stop guiding" %}</button>
+  {% else %}<p style="margin:0 0 8px">{% t "Guide this group: your advice reaches all its members, and buyers see that a KVK guides it." %}</p><button class="btn" name="action" value="guide">🏛️ {% t "Guide this group" %}</button>{% endif %}</form>
+<div class="card scroll"><table class="tbl"><thead><tr><th>{% t "Farmer" %}</th><th>{% t "Village" %}</th><th>{% t "Land" %}</th><th></th></tr></thead><tbody>
+{% for m in members %}<tr><td>{{ m.fp.name|first_name|default:"—" }}</td><td>{{ m.fp.village }}</td><td>{{ m.acres|num }} {% t "acre" %}</td><td>{% if m.fp.share_with_extension %}<a class="btn small" href="/farmers/{{ m.fp.user_id }}/">{% t "Open" %}</a>{% else %}<span class="mute">🔒</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

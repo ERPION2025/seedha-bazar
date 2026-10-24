@@ -63,3 +63,44 @@ class MemoryBackend(Backend):
     def send(self, message):
         self.outbox.append(message)
         return f"mem-{message.pk}"
+
+
+class WhatsAppCloudBackend(Backend):
+    """WhatsApp Business Cloud API (Meta). Sends the approved utility template WHATSAPP_TEMPLATE with our text as its one variable.
+
+    Business-initiated WhatsApp messages must use a template approved by Meta; free text works only within 24 hours of the
+    person's last message. Set WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID; see Console > Settings.
+    """
+
+    name = "whatsapp-cloud"
+    LANG = {"hi": "hi", "mr": "mr", "en": "en"}
+
+    def send(self, message):
+        digits = "".join(c for c in message.phone if c.isdigit())
+        to = digits if len(digits) > 10 else "91" + digits
+        body = {"messaging_product": "whatsapp", "to": to, "type": "template",
+                "template": {"name": settings.WHATSAPP_TEMPLATE, "language": {"code": self.LANG.get(message.language, "hi")},
+                             "components": [{"type": "body", "parameters": [{"type": "text", "text": message.text[:1000]}]}]}}
+        url = f"https://graph.facebook.com/{settings.FACEBOOK_GRAPH_VERSION}/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
+        req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST",
+                                     headers={"Authorization": f"Bearer {settings.WHATSAPP_TOKEN}", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=15, context=ssl_context()) as resp:
+            data = json.loads(resp.read())
+        return (data.get("messages") or [{}])[0].get("id", "")
+
+
+class MessengerBackend(Backend):
+    """Facebook Messenger from the Seedha Bazar Page. `message.phone` carries the person's Page-scoped id (PSID).
+
+    Meta lets a Page message someone freely only within 24 hours of their last message to it; callers check that first.
+    """
+
+    name = "messenger"
+
+    def send(self, message):
+        body = {"recipient": {"id": message.phone}, "messaging_type": "RESPONSE", "message": {"text": message.text[:1900]}}
+        url = f"https://graph.facebook.com/{settings.FACEBOOK_GRAPH_VERSION}/me/messages?access_token={settings.FACEBOOK_PAGE_TOKEN}"
+        req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST", headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=15, context=ssl_context()) as resp:
+            data = json.loads(resp.read())
+        return data.get("message_id", "")

@@ -136,7 +136,7 @@ class JourneyTests(TestCase):
         self.assertEqual(stranger.post(f"/insurance/{app.pk}/close/").status_code, 404)
 
     def test_pages_render_in_every_language(self):
-        for who in (None, self.farmer):
+        for who in (self.farmer,):  # nothing opens before sign-in
             c = Client()
             if who:
                 c.force_login(who)

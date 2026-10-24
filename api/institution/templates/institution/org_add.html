@@ -1,0 +1,9 @@
+{% extends "institution/scoped.html" %}{% load web_tags %}
+{% block title %}{% t "Add an FPO or NGO" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<p><a href="/orgs/">← {% t "FPOs and NGOs"  %}</a></p>
+<h1>➕ {% t "Add an FPO or NGO" %}</h1>
+<p class="mute">{% t "Your centre vouches for it, so it goes live at once. Its agent signs in on Seedha Bazar with their own mobile number." %}</p>
+<form method="post" class="card">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn block">{% t "Add" %}</button></form>
+{% endblock %}

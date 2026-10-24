@@ -1,8 +1,9 @@
 {% extends "web/base.html" %}{% load web_tags %}
-{% block title %}{% t "For FPOs and NGOs" %}{% endblock %}
+{% block title %}{% if ngo %}{% t "For NGOs working with farmers" %}{% else %}{% t "For FPOs and NGOs" %}{% endif %}{% endblock %}
+{% block desc %}{% if ngo %}{% t "NGOs bring the farmers they work with online: records, group selling to verified buyers, weather alerts and KVK advice in Hindi and Marathi." %}{% else %}{% t "FPOs add members, pool their produce into large lots, sell to verified buyers and track every member's crop, in Hindi and Marathi." %}{% endif %}{% endblock %}
 {% block hero %}
 <section class="hero"><div class="wrap">
-  <h1>{% t "Bring all your members online without chasing them one by one" %}</h1>
+  <h1>{% if ngo %}{% t "Help the farmers you work with keep records and sell better" %}{% else %}{% t "Bring all your members online without chasing them one by one" %}{% endif %}</h1>
   <p>{% t "Add farmers by phone number, or share one link and let them join. You see members, crops and acres in one place." %}</p>
   <div class="row" style="margin-top:20px"><a class="btn sun" href="/login/?as=fpo" data-track="cta_fpo">{% t "Register your FPO or NGO" %}</a></div>
 </div></section>

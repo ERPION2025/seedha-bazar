@@ -1,4 +1,4 @@
-{% extends "web/base.html" %}{% load web_tags %}
+{% extends base_template %}{% load web_tags %}
 {% block title %}{% t "Enter the code" %}{% endblock %}
 {% block mainclass %} narrow{% endblock %}
 {% block content %}
@@ -11,6 +11,6 @@
 </form>
 <form method="post" action="/login/resend/" class="row">{% csrf_token %}
   <button class="btn small ghost">{% t "Send a new code" %}</button>
-  <a href="/login/">{% t "Change number" %}</a>
+  <a href="/login/">{% if site_name == "institution" %}{% t "Change" %}{% else %}{% t "Change number" %}{% endif %}</a>
 </form>
 {% endblock %}

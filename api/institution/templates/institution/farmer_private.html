@@ -1,0 +1,2 @@
+{% extends "institution/scoped.html" %}{% load web_tags %}
+{% block content %}<p><a href="/farmers/">← {% t "Farmers" %}</a></p><h1>🔒 {{ fp.name|first_name }}</h1><div class="card"><p style="margin:0">{% t "This farmer has not chosen to share their book with the centre. You see only what they wrote here." %}</p></div>{% endblock %}

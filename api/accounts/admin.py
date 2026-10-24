@@ -5,10 +5,10 @@ from .models import AuditEvent, Device, User
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ("phone", "role", "status", "language", "date_joined")
-    list_filter = ("role", "status", "language")
-    search_fields = ("phone",)
-    exclude = ("password", "pin_hash")
+    list_display = ("phone", "email", "role", "status", "is_staff", "language", "date_joined")
+    list_filter = ("role", "status", "is_staff", "language")
+    search_fields = ("phone", "email")
+    exclude = ("password", "pin_hash")  # passwords are set in Console > Admins or with `manage.py create_owner`
 
 
 @admin.register(Device)

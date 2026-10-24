@@ -1,0 +1,10 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Add to my farm" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<p><a href="/farm/">← {% t "My farm" %}</a></p>
+<h1>{% t "Add to my farm" %}</h1>
+<form method="post" class="card" id="unit-form">{% csrf_token %}<input type="hidden" name="action" value="save">{% include "web/partials/form_body.html" %}<button class="btn block">{% t "Save" %}</button></form>
+<script>(function(){var f=document.getElementById("unit-form"),s=f&&f.querySelector("select[name=livelihood]");if(!s)return;
+s.addEventListener("change",function(){location.href="/farm/new/?livelihood="+encodeURIComponent(s.value);});})();</script>
+{% endblock %}

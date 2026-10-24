@@ -1,0 +1,13 @@
+{% extends "institution/scoped.html" %}{% load web_tags %}
+{% block title %}{{ fp.name }}{% endblock %}
+{% block content %}
+<p><a href="/farmers/">← {% t "Farmers" %}</a></p>
+<h1>🧑‍🌾 {{ fp.name }}</h1>
+<p class="mute">{{ fp.village }}, {{ fp.district }} · {{ fp.land_acres|num }} {% t "acre" %} · 📞 <a href="tel:{{ fp.user.phone }}">{{ fp.user.phone }}</a>{% if fp.organisation %} · 🏢 {{ fp.organisation.name }}{% endif %} · {% t "Profile level {n} of 3" n=fp.level %}</p>
+{% if card.groups %}<div class="card tint"><b>👥 {% t "Farms in a group" %}</b>{% for g in card.groups %}<p style="margin:4px 0 0">{% crop g.crop %}: {% t "{n} farmers, {acres} acres together" n=g.members acres=g.acres|num %}{% if g.kvk %} · 🏛️ {% t "guided by {kvk}" kvk=g.kvk %}{% endif %} · <a href="/groups/{{ g.id }}/">{% t "Open" %}</a></p>{% endfor %}</div>{% endif %}
+{% if card.stock %}<div class="card"><h3>{% t "In stock now" %}</h3>{% for k, kg in card.stock.items %}<div class="line"><span>{% crop k %}</span><b>{{ kg|quintal }} {% t "quintal" %}</b></div>{% endfor %}</div>{% endif %}
+<div class="card scroll"><h3>{% t "Crops in the book" %}</h3><table class="tbl"><thead><tr><th>{% t "Crop" %}</th><th>{% t "Status" %}</th><th>{% t "Harvested" %}</th><th>{% t "Per acre" %}</th><th>{% t "Spent" %}</th><th>{% t "Sold for" %}</th></tr></thead><tbody>
+{% for c in cycles %}<tr><td>{% crop c.crop %}<br><span class="mute">{{ c.plot }}</span></td><td>{{ c.status }}</td><td>{{ c.harvested_kg|quintal }} q</td><td>{% if c.per_acre %}{{ c.per_acre|quintal }} q<br><span class="mute">{% t "better than {n}% in the district" n=c.pct %}</span>{% else %}—{% endif %}</td><td>{{ c.expenses|inr }}</td><td>{{ c.revenue|inr }}</td></tr>{% empty %}<tr><td colspan="6" class="mute">—</td></tr>{% endfor %}</tbody></table></div>
+<div class="grid g2"><div class="card"><h3>{% t "Problems" %}</h3>{% for i in issues %}<div class="line"><a href="/issues/{{ i.pk }}/">{% t i.get_category_display %} · {{ i.created_at|date:"j M" }}</a><span class="pill grey">{% t i.get_status_display %}</span></div>{% empty %}<p class="mute">—</p>{% endfor %}</div>
+<div class="card"><h3>{% t "Crop insurance" %}</h3>{% for a in insurance %}<div class="line"><span>{% crop a.crop %} · {{ a.year }}</span><span class="pill grey">{% t a.get_status_display %}</span></div>{% empty %}<p class="mute">—</p>{% endfor %}</div></div>
+{% endblock %}

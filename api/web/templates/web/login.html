@@ -2,11 +2,15 @@
 {% block title %}{% t "Sign in" %}{% endblock %}
 {% block mainclass %} narrow{% endblock %}
 {% block content %}
-<h1>{% if door == "fpo" %}{% t "FPO and NGO sign in" %}{% elif door == "kvk" %}{% t "KVK and research centre sign in" %}{% elif door == "buyer" %}{% t "Buyer sign in" %}{% else %}{% t "Farmer sign in" %}{% endif %}</h1>
+<p class="mute" style="margin:4px 0 8px">{% t "Who are you? Choose, then sign in with your mobile number." %}</p>
+<nav class="doors" aria-label="{% t "Sign in as" %}">
+  <a href="?as=farmer"{% if door == "farmer" %} class="on" aria-current="page"{% endif %}><span aria-hidden="true">🧑‍🌾</span>{% t "Farmer" %}</a>
+  <a href="?as=fpo"{% if door == "fpo" %} class="on" aria-current="page"{% endif %}><span aria-hidden="true">🏢</span>{% t "FPO or NGO" %}</a>
+  <a href="?as=buyer"{% if door == "buyer" %} class="on" aria-current="page"{% endif %}><span aria-hidden="true">🛒</span>{% t "Buyer" %}</a>
+</nav>
+<h1>{% if door == "fpo" %}{% t "FPO and NGO sign in" %}{% elif door == "buyer" %}{% t "Buyer sign in" %}{% else %}{% t "Farmer sign in" %}{% endif %}</h1>
 <p class="mute">{% t "Enter your mobile number. We send a 6-digit code. No password needed." %}</p>
-<div class="card tint" style="padding:12px 14px"><b>📍 {% t "Allow location to see rates near you" %}</b>
-  <p class="hint" style="margin:2px 0 0">{% t "Optional. We keep only your district, not your exact position." %}</p>
-  {% include "web/partials/location_bar.html" with auto="1" %}</div>
+{% if linking_facebook %}<div class="card tint"><b>🔗 {% t "Linking Facebook: {name}" name=linking_facebook.name %}</b><p class="hint" style="margin:4px 0 0">{% t "Enter your mobile number once. After this, 'Continue with Facebook' signs you in." %}</p></div>{% endif %}
 <form method="post" class="card">{% csrf_token %}
   {% include "web/partials/form_body.html" %}
   <button class="btn block" name="channel" value="sms">{% t "Send code by SMS" %}</button>
@@ -16,6 +20,7 @@
     {% if "voice" in channels %}<button class="link-btn" style="color:var(--g-dark)" name="channel" value="voice">{% t "Call me with the code" %}</button>{% endif %}
   </p>{% endif %}
 </form>
-<p class="mute">{% t "I am" %}:
-  <a href="?as=farmer">{% t "a farmer" %}</a> · <a href="?as=fpo">{% t "an FPO or NGO" %}</a> · <a href="?as=buyer">{% t "a buyer" %}</a></p>
+{% if facebook and not linking_facebook %}<a class="btn block fb" href="/auth/facebook/?as={{ door }}">{% t "Continue with Facebook" %}</a>
+<p class="hint">{% t "The first time, we also ask for your mobile number, so we can send you codes and alerts." %}</p>{% endif %}
+{% if door == "fpo" %}<p class="mute">{% t "New FPO or NGO? Sign in, then register your organisation. Seedha Bazar checks it before it goes live." %}</p>{% endif %}
 {% endblock %}

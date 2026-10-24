@@ -1,0 +1,11 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Signed-in sessions" %}{% endblock %}
+{% block content %}
+<h1>🔐 {% t "Signed-in sessions" %}</h1>
+<form method="get" class="row card" style="padding:12px 14px"><input name="q" value="{{ q }}" placeholder="{% t "Mobile number" %}" style="flex:1;min-width:140px"><label class="check-line"><input type="checkbox" name="active" value="1"{% if active %} checked{% endif %}> {% t "Only active" %}</label><button class="btn small">{% t "Search" %}</button></form>
+<div class="card scroll"><table class="tbl"><thead><tr><th>{% t "User" %}</th><th>{% t "Method" %}</th><th>{% t "Started" %}</th><th>{% t "Last seen" %}</th><th>{% t "Network address" %}</th><th>{% t "Device" %}</th><th>{% t "Status" %}</th><th></th></tr></thead><tbody>
+{% for s in rows %}<tr><td>{{ s.user.phone }}<br><span class="mute">{{ s.user.get_role_display }}</span></td><td>{{ s.get_method_display }}</td><td>{{ s.created_at|date:"j M H:i" }}</td><td>{{ s.last_seen|date:"j M H:i" }}</td><td>{{ s.ip|default:"—" }}</td><td class="mute" style="max-width:220px;font-size:.8rem">{{ s.user_agent|truncatechars:70 }}</td>
+  <td>{% if s.ended_at %}<span class="pill grey">{{ s.end_reason }} · {{ s.ended_at|date:"j M H:i" }}</span>{% else %}<span class="pill">{% t "Active" %}</span>{% endif %}</td>
+  <td>{% if not s.ended_at %}<form method="post" action="/console/sessions/{{ s.pk }}/end/">{% csrf_token %}<input type="hidden" name="back" value="{{ request.get_full_path }}"><button class="btn small ghost">{% t "Sign out" %}</button></form>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="8" class="mute">{% t "Nothing here." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

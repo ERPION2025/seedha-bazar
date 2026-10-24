@@ -48,7 +48,7 @@ class CentreCase(TestCase):
     def setUp(self):
         self.centre = make_centre()
         self.expert = ext.provision_staff("9811100001", self.centre, "expert", "Plant protection")
-        self.kc = Client()
+        self.kc = Client(HTTP_HOST="connect.testserver")  # Institution Connect is its own site
         self.kc.force_login(self.expert)
         self.farmer = make_farmer()
         self.fc = Client()
@@ -58,10 +58,13 @@ class CentreCase(TestCase):
 class PortalTests(CentreCase):
     def test_staff_are_agronomists_and_land_on_the_control_centre(self):
         self.assertEqual(self.expert.role, Role.AGRONOMIST)
-        self.assertRedirects(self.kc.get("/login/"), "/kvk/", fetch_redirect_response=False)
-        self.assertEqual(self.fc.get("/kvk/").status_code, 302)  # farmers cannot open it
+        self.assertRedirects(self.kc.get("/login/"), "/", fetch_redirect_response=False)
+        self.assertRedirects(self.fc.get("/kvk/issues/"), "http://connect.localhost:8000/issues/", fetch_redirect_response=False)  # old links move
+        fk = Client(HTTP_HOST="connect.testserver")
+        fk.force_login(self.farmer)
+        self.assertRedirects(fk.get("/"), "/login/", fetch_redirect_response=False)  # farmers cannot use it
         for lang in ("hi", "mr", "en"):
-            for path in ("/kvk/", "/kvk/issues/", "/kvk/offers/", "/kvk/farmers/", "/kvk/orgs/", "/kvk/map/"):
+            for path in ("/", "/issues/", "/offers/", "/farmers/", "/farmers/add/", "/orgs/", "/orgs/add/", "/map/", "/weather/", "/loans/", "/notices/", "/groups/"):
                 self.assertEqual(self.kc.get(f"{path}?lang={lang}").status_code, 200, path)
 
     def test_the_district_picture_adds_up_farmers_stock_and_yields(self):
@@ -75,21 +78,21 @@ class PortalTests(CentreCase):
         self.assertEqual(scope.district_picture(make_centre(name="Other", districts=["Satna"]))["farmers"], 0)
 
     def test_individual_books_need_the_farmers_yes(self):
-        page = self.kc.get(f"/kvk/farmers/{self.farmer.pk}/?lang=en").content.decode()
+        page = self.kc.get(f"/farmers/{self.farmer.pk}/?lang=en").content.decode()
         self.assertIn("has not chosen to share", page)
         self.fc.post("/farmer/sharing/", {"share": "1"})
         stocked_cycle(self.farmer, 7, crop="wheat")
-        page = self.kc.get(f"/kvk/farmers/{self.farmer.pk}/?lang=en").content.decode()
+        page = self.kc.get(f"/farmers/{self.farmer.pk}/?lang=en").content.decode()
         self.assertIn(self.farmer.phone, page)
         self.assertIn("7 quintal", page)
         far = make_farmer("9000000103")
         fp = far.farmer_profile
         fp.district, fp.share_with_extension = "Satna", True
         fp.save()
-        self.assertEqual(self.kc.get(f"/kvk/farmers/{far.pk}/").status_code, 404)  # outside the geofence
+        self.assertEqual(self.kc.get(f"/farmers/{far.pk}/").status_code, 404)  # outside the geofence
 
     def test_kvk_door_only_lets_in_registered_centre_staff(self):
-        r = Client().post("/login/?as=kvk&lang=en", {"phone": "9811100099", "channel": "sms"})
+        r = Client(HTTP_HOST="connect.testserver").post("/login/?lang=en", {"phone": "9811100099", "channel": "sms"})
         self.assertContains(r, "not registered for a KVK")
 
 
@@ -148,17 +151,17 @@ class IssueTests(CentreCase):
 
 class InputTests(CentreCase):
     def test_offer_reaches_farmers_in_the_district_who_request_and_get_approved(self):
-        r = self.kc.post("/kvk/offers/", {"kind": "seed", "name": "Wheat seed HI-1544", "crop": "wheat", "quantity": "500", "unit": "kg", "per_person_limit": "40",
+        r = self.kc.post("/offers/", {"kind": "seed", "name": "Wheat seed HI-1544", "crop": "wheat", "quantity": "500", "unit": "kg", "per_person_limit": "40",
                                           "price": "0", "audience": "all", "valid_until": (TODAY + timedelta(days=10)).isoformat(), "notify": "on"})
         o = InputOffer.objects.get()
-        self.assertRedirects(r, "/kvk/offers/", fetch_redirect_response=False)
+        self.assertRedirects(r, "/offers/", fetch_redirect_response=False)
         self.assertTrue(Message.objects.filter(phone=self.farmer.phone, template="input_offer").exists())
         self.assertContains(self.fc.get("/inputs/?lang=en"), "Wheat seed HI-1544")
         self.fc.post(f"/inputs/{o.pk}/ask/", {"quantity": "50"})
         self.assertEqual(InputRequest.objects.count(), 0)  # over the per-person limit
         self.fc.post(f"/inputs/{o.pk}/ask/", {"quantity": "40"})
         req = InputRequest.objects.get()
-        self.kc.post(f"/kvk/offers/{o.pk}/act/", {"request": req.pk, "action": "approved", "note": "Collect on Monday"})
+        self.kc.post(f"/offers/{o.pk}/act/", {"request": req.pk, "action": "approved", "note": "Collect on Monday"})
         req.refresh_from_db()
         self.assertEqual((req.status, o.left), ("approved", D("460")))
         far = make_farmer("9000000105")
@@ -171,12 +174,12 @@ class InputTests(CentreCase):
 class MapTests(CentreCase):
     def test_public_map_shows_centres_and_fpos_never_farmers(self):
         org = Organisation.objects.create(name="Naigarhi FPO", code="naigarhi", district="Rewa", verified=True, lat=24.6, lon=81.2)
-        d = json.loads(Client().get("/map/data/?state=Madhya Pradesh").content)
+        d = json.loads(self.fc.get("/map/data/?state=Madhya Pradesh").content)
         self.assertEqual([c["name"] for c in d["centres"]], ["KVK Rewa"])
         self.assertEqual([o["name"] for o in d["orgs"]], ["Naigarhi FPO"])
         self.assertNotIn(self.farmer.phone, json.dumps(d))
-        self.assertEqual(Client().get("/map/?lang=hi").status_code, 200)
-        k = json.loads(self.kc.get("/kvk/map/data/").content)
+        self.assertEqual(self.fc.get("/map/?lang=hi").status_code, 200)
+        k = json.loads(self.kc.get("/map/data/").content)
         self.assertIn("Rewa", k["districts"])
         self.assertEqual(k["fpos"][0]["name"], "Naigarhi FPO")
 
@@ -200,7 +203,8 @@ class EngagementTests(CentreCase):
         stocked_cycle(self.farmer, 10, crop="wheat")
         self.assertGreater(scores.activity(self.farmer)["score"], a0)
         p = scores.performance(self.farmer)
-        self.assertEqual(len(p["parts"]), 5)
+        self.assertEqual(len(p["parts"]), 6)
+        self.assertEqual(sum(x["of"] for x in p["parts"]), 100)
         self.assertTrue(0 <= p["score"] <= 100)
 
     def test_games_render_save_capped_points_and_show_the_district_board(self):
@@ -212,11 +216,11 @@ class EngagementTests(CentreCase):
         gp = GamePlay.objects.get()
         self.assertEqual((gp.district, gp.used_voice), ("Rewa", True))
         self.assertContains(self.fc.get("/games/?lang=en"), "Ramesh")
-        self.assertEqual(Client().post("/games/quiz/score/", data="{}", content_type="application/json").status_code, 401)
+        self.assertEqual(Client().post("/games/quiz/score/", data="{}", content_type="application/json").status_code, 302)  # sign in first
         self.assertEqual(self.fc.get("/games/chess/").status_code, 404)
 
     def test_insights_page(self):
-        for c in (self.fc, Client()):
+        for c in (self.fc,):
             for lang in ("hi", "mr", "en"):
                 self.assertEqual(c.get(f"/insights/?lang={lang}").status_code, 200)
         self.assertContains(self.fc.get("/insights/?lang=en"), "Activity")
@@ -229,7 +233,7 @@ class NavigationTests(CentreCase):
         sc.force_login(staff())
         bc = Client()
         bc.force_login(make_buyer())
-        for c, home, item in ((self.fc, "/farmer/", "Ask an expert"), (self.kc, "/kvk/", "Problems"), (bc, "/buyer/", "Find producers"), (sc, "/console/", "KVKs"), (Client(), "/", "Calculator")):
+        for c, home, item in ((self.fc, "/farmer/", "Ask an expert"), (self.kc, "/", "Problems"), (bc, "/buyer/", "Find producers"), (sc, "/console/", "Institutions")):
             page = c.get(f"{home}?lang=en").content.decode()
             self.assertIn('class="side"', page)
             self.assertIn('class="bnav"', page)

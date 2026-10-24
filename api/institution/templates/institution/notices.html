@@ -1,0 +1,10 @@
+{% extends "institution/scoped.html" %}{% load web_tags %}
+{% block title %}{% t "Send a notice" %}{% endblock %}
+{% block content %}
+<h1>📣 {% t "Send a notice" %}</h1>
+<p class="mute">{% t "Reach {f} farmers and {o} FPO/NGO staff in your districts. They get it as a phone notification, or by SMS if they have not turned notifications on." f=counts.farmers o=counts.orgs %}</p>
+<form method="post" class="card tint">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn">{% t "Send" %}</button></form>
+<h2>{% t "Sent" %}</h2>
+{% for n in rows %}<div class="card"><div class="row between"><span class="mute">{{ n.created_at|date:"j M Y H:i" }} · {% t n.get_audience_display %}{% if n.crop %} · {% crop n.crop %}{% endif %} · {{ n.districts|join:", " }}</span><b>{% t "{n} people" n=n.sent %}</b></div><p style="margin:4px 0 0">{{ n.text }}</p></div>
+{% empty %}<p class="mute">{% t "Nothing sent yet." %}</p>{% endfor %}
+{% endblock %}

@@ -2,7 +2,7 @@
 
 Activity (0-100, last 30 days): how much they use Seedha Bazar: days active, Farmer Book entries, selling, learning, profile.
 Performance (0-100): how well the farm does: harvest per acre against the district, profit, sale price against the mandi,
-completed orders and their ratings, and whether crops are insured. Each part says how it was worked out.
+completed orders and their ratings, whether crops are insured, and group farming with neighbours. Each part says how it was worked out.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -54,7 +54,7 @@ def performance(user) -> dict:
 
     fp = getattr(user, "farmer_profile", None)
     parts = []
-    # 1. Harvest per acre against the district (40)
+    # 1. Harvest per acre against the district (35)
     pcts = []
     if fp and fp.district:
         ys = {y["crop"]: y for y in yields(fp.state, [fp.district]) if y["enough"]}
@@ -64,7 +64,7 @@ def performance(user) -> dict:
             s = cycle_summary(c)
             if y and c.plot.area_acres and D(s["harvested_kg"]) > 0:
                 pcts.append(percentile(D(s["harvested_kg"]) / c.plot.area_acres, [v for v, _ in y["values"]]))
-    parts.append(("Harvest per acre against your district", _cap(sum(pcts) / len(pcts) * 0.4, 40) if pcts else 0, 40,
+    parts.append(("Harvest per acre against your district", _cap(sum(pcts) / len(pcts) * 0.35, 35) if pcts else 0, 35,
                   f"{int(sum(pcts) / len(pcts))}%" if pcts else "—"))
     # 2. Profit (20): revenue against costs
     led = ledger_for(user)["totals"]
@@ -85,11 +85,15 @@ def performance(user) -> dict:
     done = Deal.objects.filter(seller=user, status="completed")
     rating = done.aggregate(a=Avg("buyer_rating"))["a"]
     parts.append(("Orders completed and buyer ratings", _cap(min(done.count(), 5) + (rating or 0), 10), 10, f"{done.count()}" + (f" · {rating:.1f}★" if rating else "")))
-    # 5. Crops insured (10)
+    # 5. Crops insured (5)
     from insurance.models import Application
     active = CropCycle.objects.filter(owner=user, deleted_at__isnull=True, status="active").count()
     insured = Application.objects.filter(farmer=user).exclude(status="closed").count()
-    parts.append(("Crops insured", _cap(min(insured, active) / active * 10, 10) if active else 0, 10, f"{min(insured, active)}/{active}" if active else "—"))
+    parts.append(("Crops insured", _cap(min(insured, active) / active * 5, 5) if active else 0, 5, f"{min(insured, active)}/{active}" if active else "—"))
+    # 6. Group farming (10): farming the crop with neighbours, in a group buyers can trust
+    from farming.services import score_part
+    got, note = score_part(user)
+    parts.append(("Group farming", _cap(got, 10), 10, note))
     return {"score": sum(p[1] for p in parts), "parts": [{"label": p[0], "got": p[1], "of": p[2], "count": p[3]} for p in parts]}
 
 

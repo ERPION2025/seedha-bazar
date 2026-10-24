@@ -1,0 +1,15 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Settings" %}{% endblock %}
+{% block content %}
+<h1>⚙️ {% t "Settings" %}</h1>
+<div class="card"><h3>{% t "User policies" %}</h3>
+  <form method="post">{% csrf_token %}{% include "web/partials/form_body.html" %}
+    <label class="check-line"><input type="checkbox" name="apply_now" value="1"> {% t "Apply the device limit to people signed in now (the oldest sessions are signed out)" %}</label>
+    <button class="btn">{% t "Save" %}</button> <a class="btn ghost" href="/console/sessions/?active=1">{% t "Signed-in sessions" %}</a></form>
+  <p class="hint">{% t "Signing in on one more device signs out the oldest one. Every sign-in is recorded with its time, method, network address and device." %}</p></div>
+<h2>{% t "Integrations" %}</h2>
+<p class="mute">{% t "Keys and tokens are set on the server (environment variables), never here. This list shows what is connected and how to connect the rest." %}</p>
+{% for i in integrations %}<details class="card"><summary class="row between" style="cursor:pointer"><b>{{ i.name }}</b><span class="pill {% if i.ok %}{% else %}sun{% endif %}">{% if i.ok %}✔ {% t "Connected" %}{% else %}{% t "Not connected" %}{% endif %}{% if i.free %} · {% t "free" %}{% endif %}</span></summary>
+  <p class="mute" style="margin:8px 0 4px">{% for e in i.env %}<code>{{ e }}</code>{% if not forloop.last %} · {% endif %}{% endfor %}</p>
+  <ol style="margin:0;padding-left:20px">{% for s in i.steps %}<li>{{ s }}</li>{% endfor %}</ol></details>{% endfor %}
+{% endblock %}

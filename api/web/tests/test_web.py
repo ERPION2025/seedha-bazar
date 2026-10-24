@@ -52,7 +52,7 @@ class TranslationTests(TestCase):
 
 
 class PublicPageTests(WebCase):
-    PAGES = ["/", "/for-farmers/", "/for-fpos/", "/for-buyers/", "/calculator/", "/privacy/", "/login/"]
+    PAGES = ["/login/", "/privacy/"]  # all that opens before signing in
 
     def test_pages_render_in_all_languages(self):
         for lang in ("hi", "mr", "en"):
@@ -61,16 +61,48 @@ class PublicPageTests(WebCase):
                 self.assertEqual(r.status_code, 200, (path, lang))
                 self.assertContains(r, f'<html lang="{lang}">')
 
+    def test_everything_else_starts_at_sign_in(self):
+        self.assertRedirects(self.client.get("/"), "/login/", fetch_redirect_response=False)
+        for path in ("/rates/", "/market/", "/calculator/", "/news/", "/schemes/", "/weather/", "/map/", "/games/", "/storage/"):
+            r = self.client.get(path)
+            self.assertEqual(r.status_code, 302, path)
+            self.assertTrue(r["Location"].startswith("/login/"), path)
+
+    def test_no_menu_before_sign_in(self):
+        r = self.client.get("/login/?lang=en")
+        for link in ('class="side"', 'class="bnav"', 'href="/rates/"', 'href="/market/"'):
+            self.assertNotContains(r, link)
+        for door in ("?as=farmer", "?as=fpo", "?as=buyer"):
+            self.assertContains(r, door)
+        self.assertNotContains(r, "?as=kvk")  # Institution Connect is a separate site
+        self.assertRedirects(self.client.get("/login/?as=kvk"), "http://connect.localhost:8000/login/", fetch_redirect_response=False)
+
+    def test_menus_follow_the_role(self):
+        web_login(self.client)
+        self.assertRedirects(self.client.get("/farmer/"), "/start/", fetch_redirect_response=False)  # a new farmer first says what they do
+        self.client.post("/start/", {"segments": ["crops"]})
+        r = self.client.get("/farmer/?lang=en")
+        self.assertContains(r, 'href="/farmer/book/"')
+        self.assertContains(r, 'href="/farmer/groups/"')
+        self.assertNotContains(r, 'href="/kvk/loans/"')
+
+    def test_after_sign_in_the_page_asked_for_opens(self):
+        r = self.client.get("/rates/")
+        self.assertEqual(r["Location"], "/login/?next=/rates/")
+        self.client.get(r["Location"])
+        r = web_login(self.client)
+        self.assertEqual(r["Location"], "/rates/")
+
     def test_final_taglines(self):
-        self.assertContains(self.client.get("/?lang=hi"), "सीधा बाज़ार, सही दाम, अपना किसान भाई")
-        self.assertContains(self.client.get("/?lang=mr"), "थेट बाजार, योग्य भाव, आपला शेतकरी भाऊ")
+        self.assertContains(self.client.get("/login/?lang=hi"), "सीधा बाज़ार, सही दाम, अपना किसान भाई")
+        self.assertContains(self.client.get("/login/?lang=mr"), "थेट बाजार, योग्य भाव, आपला शेतकरी भाऊ")
 
     def test_language_choice_is_remembered(self):
-        self.client.get("/?lang=mr")
-        self.assertContains(self.client.get("/for-farmers/"), '<html lang="mr">')
+        self.client.get("/login/?lang=mr")
+        self.assertContains(self.client.get("/privacy/"), '<html lang="mr">')
 
     def test_default_language_is_hindi(self):
-        self.assertContains(self.client.get("/"), '<html lang="hi">')
+        self.assertContains(self.client.get("/login/"), '<html lang="hi">')
 
     def test_health_and_api_still_work(self):
         self.assertEqual(self.client.get("/health/").status_code, 200)
@@ -80,17 +112,20 @@ class PublicPageTests(WebCase):
 class LeadTests(WebCase):
     VALID = {"name": "Asha", "phone": "98 7654 3210", "city": "Pune", "consent": "on", "website": ""}
 
+    def setUp(self):
+        super().setUp()
+        self.client.get("/login/?utm_source=google")
+        web_login(self.client)
+
     def test_buyer_lead_saved_with_attribution(self):
-        self.client.get("/for-buyers/?utm_source=facebook&utm_campaign=kodo")
         r = self.client.post("/lead/buyer/", self.VALID)
         self.assertRedirects(r, "/thanks/?kind=buyer", fetch_redirect_response=False)
         lead = Lead.objects.get()
         self.assertEqual((lead.kind, lead.phone), ("buyer", "9876543210"))
-        self.assertEqual(lead.attribution["utm_source"], "facebook")
+        self.assertEqual(lead.attribution["utm_source"], "google")
 
     def test_attribution_keeps_first_touch(self):
-        self.client.get("/?utm_source=google")
-        self.client.get("/?utm_source=facebook")
+        self.client.get("/rates/?utm_source=facebook")
         self.client.post("/lead/fpo/", self.VALID)
         self.assertEqual(Lead.objects.get().attribution["utm_source"], "google")
 
@@ -121,6 +156,7 @@ class SignInTests(WebCase):
     def test_new_farmer_signs_up_through_consent(self):
         r = web_login(self.client)
         self.assertRedirects(r, "/farmer/", fetch_redirect_response=False)
+        self.client.post("/start/", {"segments": ["crops"]})
         u = User.objects.get(phone=FARMER)
         self.assertEqual((u.role, u.status), (Role.FARMER, UserStatus.ACTIVE))
         self.assertTrue(u.consented_at)
@@ -218,8 +254,9 @@ class SignInTests(WebCase):
 
 class AccessTests(WebCase):
     def test_anonymous_goes_to_login(self):
-        for path in ("/farmer/", "/farmer/book/", "/fpo/", "/console/", "/buyer/"):
-            self.assertRedirects(self.client.get(path), "/login/", fetch_redirect_response=False)
+        for path in ("/farmer/", "/farmer/book/", "/fpo/", "/buyer/"):
+            self.assertRedirects(self.client.get(path), f"/login/?next={path}", fetch_redirect_response=False)
+        self.assertRedirects(self.client.get("/console/"), "/console/login/", fetch_redirect_response=False)  # the owner console signs in with a password
 
     def test_wrong_role_goes_home(self):
         web_login(self.client)
@@ -243,6 +280,7 @@ class FarmerFlowTests(WebCase):
     def setUp(self):
         super().setUp()
         web_login(self.client)
+        self.client.post("/start/", {"segments": ["crops"], "next": "/farmer/"})  # a new farmer first says what they do
         self.user = User.objects.get(phone=FARMER)
 
     def crop(self):
@@ -257,7 +295,7 @@ class FarmerFlowTests(WebCase):
 
     def test_next_step_walks_a_new_farmer_forward(self):
         self.assertContains(self.client.get("/farmer/"), "/farmer/profile/")
-        self.client.post("/farmer/profile/", {"name": "Ramesh", "village": "Naigarhi", "district": "Rewa", "land_acres": "3.5", "crops": ["wheat"], "other_crops": "kodo"})
+        self.client.post("/farmer/profile/", {"name": "Ramesh", "village": "Naigarhi", "state": "Madhya Pradesh", "district": "Rewa", "land_acres": "3.5", "crops": ["wheat"], "other_crops": "kodo"})
         self.assertEqual(self.user.farmer_profile.level, 1)
         self.assertEqual(self.user.farmer_profile.crops, ["wheat", "kodo"])
         self.assertContains(self.client.get("/farmer/"), "/farmer/fpo/")
@@ -388,7 +426,7 @@ class FpoFlowTests(WebCase):
         self.assertRedirects(self.client.get("/fpo/farmers/"), "/fpo/register/", fetch_redirect_response=False)
 
     def test_registration_creates_unverified_org(self):
-        self.assertRedirects(self.register(), "/fpo/", fetch_redirect_response=False)
+        self.assertRedirects(self.register(), "/start/", fetch_redirect_response=False)  # next: what the members do
         org = Organisation.objects.get()
         self.assertFalse(org.verified)
         self.assertEqual(org.code, "naigarhi-kis")
@@ -573,23 +611,27 @@ class CsrfTests(TestCase):
     def test_forms_reject_posts_without_a_token(self):
         c = Client(enforce_csrf_checks=True)
         self.assertEqual(c.post("/login/", {"phone": FARMER}).status_code, 403)
-        self.assertEqual(c.post("/lead/buyer/", {}).status_code, 403)
+        self.assertEqual(c.post("/logout/", {}).status_code, 403)
 
 
 class VoiceTests(WebCase):
     def test_every_page_carries_the_listen_helper_in_its_language(self):
-        for path in ("/", "/login/", "/rates/", "/calculator/", "/market/", "/privacy/"):
-            for lang in ("hi", "mr", "en"):
-                r = self.client.get(f"{path}?lang={lang}")
-                self.assertContains(r, 'id="sb-voice"', msg_prefix=path)
-                self.assertContains(r, "web/voice.js", msg_prefix=path)
+        for signed_in, paths in ((False, ("/login/", "/privacy/")), (True, ("/farmer/", "/rates/", "/calculator/", "/market/"))):
+            if signed_in:
+                web_login(self.client)
+                self.client.post("/start/", {"segments": ["crops"]})
+            for path in paths:
+                for lang in ("hi", "mr", "en"):
+                    r = self.client.get(f"{path}?lang={lang}")
+                    self.assertContains(r, 'id="sb-voice"', msg_prefix=path)
+                    self.assertContains(r, "web/voice.js", msg_prefix=path)
         import json
 
-        body = self.client.get("/?lang=hi").content.decode()
+        body = self.client.get("/rates/?lang=hi").content.decode()
         cfg = json.loads(re.search(r'<script id="sb-voice" type="application/json">(.*?)</script>', body, re.S).group(1))
         self.assertEqual(cfg["speech"], "hi-IN")
         self.assertEqual(cfg["t"]["Read this screen"], "यह स्क्रीन पढ़कर सुनाएँ")
-        self.assertContains(self.client.get("/?lang=mr"), "mr-IN")
+        self.assertContains(self.client.get("/rates/?lang=mr"), "mr-IN")
 
     def test_login_shows_trial_code_for_farmers_only(self):
         with override_settings(OTP_STATIC_CODE="123456", OTP_BACKEND="accounts.messaging.MemoryBackend"):

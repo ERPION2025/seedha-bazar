@@ -1,0 +1,24 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{{ un.name }}{% endblock %}
+{% block content %}
+<p><a href="/farm/">← {% t "My farm" %}</a></p>
+<h1>{{ cfg.emoji }} {{ un.name }}</h1>
+<p class="mute">{% t cfg.label %} · {% t "Since" %} {{ un.started_on|date:"j M Y" }}{% if un.tag %} · {{ un.tag }}{% endif %}</p>
+<div class="stats4"><div class="card stat"><small>{% t cfg.count %}</small><div class="big">{{ s.head }}</div></div>
+  <div class="card stat"><small>{% t cfg.produce.2 %} · {% t "30 days" %}</small><div class="big">{{ s.produced|num }}</div></div>
+  <div class="card stat"><small>{% t "Earned" %}</small><div class="big">{{ s.income|inr }}</div></div><div class="card stat"><small>{% t "Spent" %}</small><div class="big">{{ s.expenses|inr }}</div></div></div>
+{% if tasks %}<div class="card sun"><h3>⏰ {% t "Reminders" %}</h3>{% for t in tasks %}<form method="post" class="line">{% csrf_token %}<input type="hidden" name="action" value="done"><input type="hidden" name="ref" value="{{ t.ref }}">
+  <span>{% t t.text %} <span class="mute">· {% if t.days == 0 %}{% t "Today" %}{% else %}{{ t.date|date:"j M" }}{% endif %}</span></span><button class="btn small ghost">✔ {% t "Done" %}</button></form>{% endfor %}</div>{% endif %}
+<form method="post" class="card" id="entry">{% csrf_token %}<input type="hidden" name="action" value="entry"><h3>{% t "Add an entry" %}</h3>
+  <div class="chips" role="radiogroup">{% for v, l in kinds %}<label><input type="radio" name="kind" value="{{ v }}"{% if forloop.first %} checked{% endif %}> {% t l %}</label>{% endfor %}</div>
+  <div class="grid g2" style="margin-top:10px"><div class="field"><label for="e-q">{% t "How much" %}</label><input id="e-q" type="number" step="any" min="0" name="quantity" inputmode="decimal"></div>
+    <div class="field"><label for="e-a">{% t "Amount (₹, optional)" %}</label><input id="e-a" type="number" step="any" min="0" name="amount" inputmode="decimal"></div>
+    <div class="field"><label for="e-d">{% t "Date" %}</label><input id="e-d" type="date" name="date" value="{{ today|date:"Y-m-d" }}" max="{{ today|date:"Y-m-d" }}"></div>
+    <div class="field"><label for="e-n">{% t "Note (optional)" %}</label><input id="e-n" type="text" name="note" maxlength="200"></div></div>
+  <button class="btn">{% t "Save" %}</button></form>
+{% if products and un.active %}<div class="card tint"><b>🛒 {% t "Sell what you produce" %}</b><div class="row" style="margin-top:8px">{% for p in products %}<a class="btn small" href="/farmer/sell/new/?farm_unit={{ un.pk }}&product={{ p }}">{% crop p %}</a>{% endfor %}</div></div>{% endif %}
+<h2>{% t "Diary" %}</h2>
+<div class="card scroll"><table class="tbl"><tbody>{% for e in entries %}<tr><td>{{ e.date|date:"j M" }}</td><td>{% t e.get_kind_display %}</td><td>{% if e.quantity is not None %}{{ e.quantity|num }}{% endif %}</td><td>{% if e.amount is not None %}{{ e.amount|inr }}{% endif %}</td><td class="mute">{{ e.note }}</td></tr>
+{% empty %}<tr><td class="mute">{% t "Nothing written yet." %}</td></tr>{% endfor %}</tbody></table></div>
+<form method="post" style="margin-top:12px">{% csrf_token %}{% if un.active %}<button class="link-btn" name="action" value="close">{% t "Close this (sold out or finished)" %}</button>{% else %}<button class="link-btn" name="action" value="reopen">{% t "Open again" %}</button>{% endif %}</form>
+{% endblock %}

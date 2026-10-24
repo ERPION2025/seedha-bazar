@@ -13,7 +13,7 @@
 <a class="door" href="/producers/{{ c.kind }}/{{ c.id }}/"><div class="card">
   <div class="row between"><h3 style="margin:0">{% if c.kind == "fpo" %}🏢{% else %}🧑‍🌾{% endif %} {{ c.name }}</h3>{% if c.verified %}<span class="pill">✔ {% t "Verified" %}</span>{% endif %}</div>
   <p class="mute" style="margin:4px 0 6px">📍 {% if c.village %}{{ c.village }}, {% endif %}{{ c.district }}{% if c.kind == "fpo" %} · {% t "{n} members" n=c.members %}{% endif %}</p>
-  <div class="row">{% for g in c.grows|slice:":5" %}<span class="pill grey">{% crop g %}</span>{% endfor %}</div>
+  <div class="row">{% for g in c.grows|slice:":5" %}<span class="pill grey">{% crop g %}</span>{% endfor %}{% if c.kind == "farmer" and c.groups %}<span class="pill">👥 {% t "Group farming" %}</span>{% elif c.kind == "fpo" and c.groups.groups %}<span class="pill">👥 {% t "{n} farmers in crop groups" n=c.groups.farmers %}</span>{% endif %}</div>
   {% if c.stock %}<p style="margin:8px 0 0"><b>{% t "In stock now" %}:</b> {% for k, kg in c.stock.items %}{% crop k %} {{ kg|quintal }} {% t "quintal" %}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
   {% if c.makes %}<p class="mute" style="margin:4px 0 0">⚙️ {% t "Makes" %}: {% for k in c.makes %}{% crop k %}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
 </div></a>{% empty %}

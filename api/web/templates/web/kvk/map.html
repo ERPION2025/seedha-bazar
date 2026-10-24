@@ -1,8 +1,0 @@
-{% extends "web/kvk/base.html" %}{% load static web_tags %}
-{% block title %}{% t "Map" %}{% endblock %}
-{% block content %}
-<h1>🗺️ {% t "District map" %}</h1>
-<div id="map" class="mapbox" data-mode="kvk" data-state="{{ centre.state }}" data-state-file="{{ state_file }}" data-geo-base="{% static 'web/geo/' %}" data-focus='{{ names|jsonify }}'></div>
-<p class="hint">{% t "Darker districts have more farmers on Seedha Bazar. Tap a district for its numbers. Orange: FPOs and NGOs. Red: problems with a shared field location." %}</p>
-{% include "web/partials/map_assets.html" %}
-{% endblock %}

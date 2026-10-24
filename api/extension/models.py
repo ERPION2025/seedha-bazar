@@ -48,6 +48,7 @@ class CentreMember(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="centre_memberships")
     centre = models.ForeignKey(Centre, on_delete=models.CASCADE, related_name="members")
+    name = models.CharField(max_length=120, blank=True)
     role = models.CharField(max_length=8, choices=Role.choices, default=Role.EXPERT)
     speciality = models.CharField(max_length=80, blank=True, help_text="e.g. Plant protection, Soil science, Horticulture")
 

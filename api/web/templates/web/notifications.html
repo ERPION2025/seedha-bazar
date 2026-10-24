@@ -1,0 +1,24 @@
+{% extends base_tpl %}{% load static web_tags %}
+{% block title %}{% t "Notification settings" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<p><a href="/notifications/">← {% t "Notifications" %}</a></p>
+<h1>⚙️ {% t "Notification settings" %}</h1>
+<p class="mute">{% t "Choose how Seedha Bazar reaches you about weather, prices, orders and your FPO." %}</p>
+<div class="card"><h3>📱 {% t "Notifications on this phone" %}</h3>
+  {% if push_ready %}<p class="mute" style="margin:0 0 8px">{% t "Get alerts even when the app is closed. Your phone will ask for permission." %} {% if devices %}({% t "{n} devices on" n=devices %}){% endif %}</p>
+  <div class="row"><button type="button" class="btn" id="push-on" data-key="{{ vapid }}">{% t "Turn on notifications" %}</button><button type="button" class="btn ghost" id="push-test" hidden>{% t "Send a test" %}</button></div>
+  <p class="hint" id="push-status" style="margin-top:8px"></p>
+  {% else %}<p class="mute" style="margin:0">{% t "Phone notifications are not set up on this server yet." %}</p>{% endif %}
+  <p class="hint">{% t "Phone notifications use your phone's notification sound. Our own alarm tone plays when the app is open." %} <button type="button" class="link-btn" style="color:var(--g-dark)" onclick="new Audio('{% static 'web/sounds/notify.wav' %}').play()">▶ {% t "Hear our tune" %}</button></p></div>
+<form method="post" class="card">{% csrf_token %}<h3>{% t "Other ways" %}</h3>
+  <label class="check-line"><input type="checkbox" name="alarm_sound" value="1"{% if pref.alarm_sound %} checked{% endif %}> 🚨 {% t "Play the alarm tone for critical weather alerts" %}</label>
+  <label class="check-line"><input type="checkbox" name="whatsapp" value="1"{% if pref.whatsapp %} checked{% endif %}> 💬 {% t "Send me WhatsApp messages" %}{% if not whatsapp_ready %} <span class="mute">({% t "starts when WhatsApp is connected" %})</span>{% endif %}</label>
+  <label class="check-line"><input type="checkbox" name="sms" value="1"{% if pref.sms %} checked{% endif %}> ✉️ {% t "Send me SMS" %}</label>
+  <button class="btn">{% t "Save" %}</button></form>
+<div class="card"><h3>Facebook Messenger</h3>
+  {% if pref.messenger_psid %}<p class="pos" style="margin:0">✔ {% t "Linked. Replies and alerts can reach you on Messenger." %}</p>
+  {% elif messenger_link %}<p class="mute">{% t "Tap the button and send the message in Messenger to link it." %}</p><a class="btn" href="{{ messenger_link }}" target="_blank" rel="noopener noreferrer">{% t "Get alerts on Messenger" %}</a>
+  {% else %}<p class="mute" style="margin:0">{% t "Messenger is not set up on this server yet." %}</p>{% endif %}</div>
+<script src="{% static 'web/push.js' %}" defer></script>
+{% endblock %}

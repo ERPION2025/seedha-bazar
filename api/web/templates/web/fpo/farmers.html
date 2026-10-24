@@ -2,7 +2,7 @@
 {% block title %}{% t "My farmers" %}{% endblock %}
 {% block content %}
 <div class="row between"><h1 style="margin:0">{% t "My farmers" %}</h1>{% if org.verified %}<a class="btn" href="/fpo/farmers/add/">+ {% t "Add farmer" %}</a>{% endif %}</div>
-<form method="get" class="row" style="margin:16px 0"><input type="text" name="q" value="{{ q }}" placeholder="{% t "Name, village or number" %}" style="flex:1"><button class="btn small">{% t "Search" %}</button></form>
+<form method="get" class="row" style="margin:16px 0"><input type="text" name="q" value="{{ q }}" placeholder="{% t "Name, village or number" %}" style="flex:1"><select name="seg" aria-label="{% t "Livelihood" %}"><option value="">{% t "All livelihoods" %}</option>{% for c, cfg in seg_options %}<option value="{{ c }}"{% if c == seg %} selected{% endif %}>{{ cfg.emoji }} {% t cfg.label %}</option>{% endfor %}</select><button class="btn small">{% t "Search" %}</button></form>
 <div class="card scroll"><table class="tbl">
   <thead><tr><th>{% t "Name" %}</th><th>{% t "Village" %}</th><th>{% t "Acres" %}</th><th>{% t "Crops" %}</th><th>{% t "Status" %}</th><th></th></tr></thead>
   <tbody>{% for fp in rows %}<tr>

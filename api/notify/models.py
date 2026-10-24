@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -8,6 +9,7 @@ class Message(models.Model):
     class Channel(models.TextChoices):
         SMS = "sms", "SMS"
         WHATSAPP = "whatsapp", "WhatsApp"
+        MESSENGER = "messenger", "Facebook Messenger"
 
     class Status(models.TextChoices):
         QUEUED = "queued", "Queued"
@@ -41,3 +43,87 @@ class OptOut(models.Model):
     phone = models.CharField(max_length=20, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
     reason = models.CharField(max_length=120, blank=True)
+
+
+class Preference(models.Model):
+    """How a person wants to be told: in-app alarm sound, phone notifications, WhatsApp, Facebook Messenger, SMS."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notify_pref")
+    alarm_sound = models.BooleanField(default=True, help_text="Play the Seedha Bazar alarm tone for critical alerts while the app is open")
+    push = models.BooleanField(default=False, help_text="Phone/browser notifications (needs the browser's permission)")
+    whatsapp = models.BooleanField(default=False, help_text="Agreed to messages on WhatsApp")
+    messenger_psid = models.CharField(max_length=64, blank=True, help_text="Facebook Messenger id for our Page, set when the person messages the Page from our link")
+    messenger_last_in = models.DateTimeField(null=True, blank=True, help_text="When they last messaged the Page (Meta's 24-hour window)")
+    sms = models.BooleanField(default=True)
+    prompt_answer = models.CharField(max_length=8, blank=True, help_text="The one-time question about phone notifications: yes, no, or blank if not asked yet")
+    prompted_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class PushSubscription(models.Model):
+    """A browser or installed-app endpoint that can receive notifications (Web Push)."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="push_subscriptions")
+    endpoint = models.URLField(max_length=600, unique=True)
+    p256dh = models.CharField(max_length=200)
+    auth = models.CharField(max_length=100)
+    user_agent = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    last_ok = models.DateTimeField(null=True, blank=True)
+    failures = models.PositiveSmallIntegerField(default=0)
+
+
+class InboxItem(models.Model):
+    """What the bell in the header shows: every notice a person gets (KVK notices, Seedha Bazar notices, advisories, weather,
+    orders...), kept in the app even when SMS or phone notifications are off."""
+
+    class Kind(models.TextChoices):
+        NOTICE = "notice", "From your KVK"
+        SYSTEM = "system", "From Seedha Bazar"
+        ADVISORY = "advisory", "Advice"
+        WEATHER = "weather", "Weather"
+        ORDER = "order", "Orders"
+        MARKET = "market", "Selling and buying"
+        GROUP = "group", "Groups"
+        INPUT = "input", "Seeds and inputs"
+        ISSUE = "issue", "Problems"
+        FARM = "farm", "Farm reminders"
+        OTHER = "other", "Other"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="inbox")
+    kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.OTHER, db_index=True)
+    title = models.CharField(max_length=160)
+    text = models.CharField(max_length=600)
+    url = models.CharField(max_length=300, blank=True, help_text="A path on the person's own site")
+    critical = models.BooleanField(default=False)
+    template = models.CharField(max_length=40, blank=True)
+    related = models.CharField(max_length=60, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "read_at"])]
+
+
+class SystemNotice(models.Model):
+    """A notice from Seedha Bazar itself, sent from the owner console to the bell of everyone chosen."""
+
+    class Audience(models.TextChoices):
+        ALL = "all", "Everyone"
+        FARMERS = "farmers", "Farmers"
+        ORGS = "orgs", "FPOs and NGOs"
+        BUYERS = "buyers", "Buyers"
+        INSTITUTIONS = "inst", "KVKs and agencies"
+
+    title = models.CharField(max_length=120)
+    text = models.CharField(max_length=400)
+    audience = models.CharField(max_length=8, choices=Audience.choices, default=Audience.ALL)
+    state = models.CharField(max_length=60, blank=True)
+    url = models.CharField(max_length=200, blank=True)
+    sent = models.PositiveIntegerField(default=0)
+    sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created_at"]

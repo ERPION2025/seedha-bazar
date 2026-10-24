@@ -30,6 +30,7 @@ class Listing(models.Model):
     seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="listings")
     organisation = models.ForeignKey("profiles.Organisation", null=True, blank=True, on_delete=models.SET_NULL, related_name="listings")
     source_cycle = models.ForeignKey("farmerbook.CropCycle", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    source_unit = models.ForeignKey("farming.FarmUnit", null=True, blank=True, on_delete=models.SET_NULL, related_name="+", help_text="Dairy, poultry, fish, honey, silk or pig unit it comes from")
     crop = models.CharField(max_length=60, db_index=True, help_text="Catalog key of what is sold: a crop, fresh produce, or a processed product")
     form = models.CharField(max_length=8, default="raw", db_index=True, help_text="raw, fresh or semi: set from the catalog")
     packaging = models.CharField(max_length=8, default="bulk", help_text="bulk (loose) or packed (retail packs); processed goods only")

@@ -13,7 +13,7 @@ VOICE_STRINGS = [
     "There is nothing to do on this page. Tap Read this screen to listen to it.", "Nothing on this screen to read.",
     "rupees", "percent",
     "Speak", "Speak instead of typing", "Your speech will be turned into text by your phone's browser (Chrome uses Google's speech service). Only the text is saved. Continue?",
-    "Voice note ready", "Record again", "Stop recording", "Recording...", "Choose the recording file below", "Microphone is blocked. Allow it in the browser settings.",
+    "Saving...", "Voice note ready", "Record again", "Stop recording", "Recording...", "Choose the recording file below", "Microphone is blocked. Allow it in the browser settings.",
 ]
 
 

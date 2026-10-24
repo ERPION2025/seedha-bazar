@@ -3,8 +3,8 @@
 {% block content %}
 <h1>🌦️ {% t "Weather for your village" %}</h1>
 {% if place %}<p class="mute">📍 {% if place.source == "osm" %}{{ village }}, {% endif %}{{ district }}{% if place.source != "osm" %} · {% t "district centre (your village was not found on the map)" %}{% endif %}</p>{% endif %}
-{% if alerts %}{% for a in alerts %}<div class="card {% if a.kind == "frost" or a.kind == "rain" %}warn{% else %}sun{% endif %}">
-  <b>{% crop a.crop %} · {% t a.stage_label %}</b> <span class="pill">{{ a.day }} · {{ a.value }}</span>
+{% if alerts %}{% for a in alerts %}<div class="card {% if a.severity == "critical" %}critical{% else %}sun{% endif %}">
+  <b>{% if a.severity == "critical" %}🚨 {% t "Critical weather alert" %}{% else %}⚠️ {% t "Weather warning" %}{% endif %} · {% crop a.crop %} · {% t a.stage_label %}</b> <span class="pill">{{ a.day }} · {{ a.value }}</span>
   <p style="margin:6px 0 0">{% t a.advice %}</p></div>{% endfor %}
 {% elif crops %}<div class="card tint"><p style="margin:0">✔ {% t "No weather risk for your crops in the next 5 days." %}</p></div>{% endif %}
 {% if days %}<div class="card scroll"><table class="tbl wx">
@@ -14,5 +14,10 @@
 {% else %}<div class="card sun"><p style="margin:0">{% t "Add your district to your profile, or share your location, to see your district." %}</p></div>{% endif %}
 {% if crops %}<div class="card"><h3>{% t "Your crops now" %}</h3>{% for c in crops %}<div class="line"><span>{% crop c.crop %}</span><span>{% t c.stage_label %}</span></div>{% endfor %}
   <p class="hint">{% t "Write the sowing date in your Farmer Book for advice that fits your crop's stage." %}</p></div>{% endif %}
+{% if advisories %}<h2>📢 {% t "Advice for {district}" district=district %}</h2>
+{% for a in advisories %}<div class="card{% if a.severity == "critical" %} warn{% elif a.severity == "warning" %} sun{% endif %}">
+  <div class="row between"><b>{% if a.source == "imd" %}☁️ IMD{% else %}🏛️ {{ a.issuer|default:a.get_source_display }}{% endif %}</b><span class="mute">{{ a.published_at|date:"j M" }}</span></div>
+  <p style="margin:4px 0 0">{% if a.title %}<b>{{ a.title }}</b> · {% endif %}{{ a.text|truncatechars:400 }}</p>
+  {% if a.crops %}<div class="row" style="margin-top:6px">{% for c in a.crops %}<span class="pill grey">{% crop c %}</span>{% endfor %}</div>{% endif %}</div>{% endfor %}{% endif %}
 {% if members_alerts %}<div class="card"><h3>{% t "Weather warnings for your members" %}</h3>{% for a in members_alerts %}<div class="line"><span>{{ a.farmer.farmer_profile.name|first_name }} · {% crop a.crop %} · {{ a.day|date:"j M" }}</span><span>{% t a.get_kind_display %} {{ a.value }}</span></div>{% endfor %}</div>{% endif %}
 {% endblock %}
