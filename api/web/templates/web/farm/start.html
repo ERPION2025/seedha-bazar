@@ -1,0 +1,13 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "What do you do?" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% if org %}{% t "What do your members do?" %}{% else %}{% t "What do you do?" %}{% endif %}</h1>
+<p class="mute">{% t "Choose all that apply. You will see only the tools for these. You can change this later in your profile." %}</p>
+<form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+  <div class="lh-grid">{% for code, cfg in options %}<label class="lh-tile"><input type="checkbox" name="segments" value="{{ code }}"{% if code in current %} checked{% endif %}>
+    <span class="lh-emoji" aria-hidden="true">{{ cfg.emoji }}</span><b>{% t cfg.label %}</b><small>{% t cfg.hint %}</small></label>{% endfor %}</div>
+  <p class="hint">{% t "Doing two or more? That is integrated farming: you will also see what each one earns." %}</p>
+  <button class="btn block">{% t "Continue" %}</button>
+</form>
+{% endblock %}

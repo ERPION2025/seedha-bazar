@@ -1,7 +1,7 @@
 from django.urls import path, re_path
 from django.views.generic import RedirectView
 
-from . import group_views, notify_views, pool_views, share_views, social, voice_views, statement_views, storage_views, weather_views
+from . import farm_views, group_views, notify_views, pool_views, share_views, social, voice_views, statement_views, storage_views, weather_views
 from . import auth_views, buyer_views, catalog_views, console_views, deals_views, engage_views, farmer_views, fpo_views, help_views, inputs_views, insurance_views, knowledge_views, location, market_views, public_views, rates_views
 
 urlpatterns = [
@@ -115,6 +115,11 @@ urlpatterns = [
     path("fpo/pools/", pool_views.fpo_list),
     path("fpo/pools/<int:pk>/", pool_views.fpo_detail),
     path("fpo/pools/<int:pk>/<str:action>/", pool_views.fpo_act),
+    path("start/", farm_views.start),
+    path("farm/", farm_views.farm),
+    path("farm/new/", farm_views.unit_new),
+    path("farm/<int:pk>/", farm_views.unit),
+    path("fpo/farm/", farm_views.fpo_farm),
     path("farmer/groups/", group_views.farmer_groups),
     path("farmer/groups/<int:pk>/", group_views.farmer_group),
     path("fpo/groups/", group_views.fpo_groups),

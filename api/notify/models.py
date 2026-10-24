@@ -87,6 +87,7 @@ class InboxItem(models.Model):
         GROUP = "group", "Groups"
         INPUT = "input", "Seeds and inputs"
         ISSUE = "issue", "Problems"
+        FARM = "farm", "Farm reminders"
         OTHER = "other", "Other"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="inbox")

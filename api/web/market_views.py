@@ -85,7 +85,7 @@ def card(listing, memo):
 
 
 # ---------- public browse ----------
-KIND_TABS = (("raw", "Grains and pulses"), ("fresh", "Fresh produce"), ("semi", "Processed goods"))
+KIND_TABS = (("raw", "Grains and pulses"), ("fresh", "Fresh produce"), ("live", "Dairy, poultry, fish, honey and silk"), ("semi", "Processed goods"))
 
 
 def browse(request):
@@ -231,6 +231,15 @@ def sell_pick(request):
 def listing_form(request, pk=None):
     u = request.user
     instance = get_object_or_404(Listing, pk=pk, seller=u) if pk else None
+    farm_unit = instance.source_unit if instance is not None else None
+    fu = request.GET.get("farm_unit") or request.POST.get("farm_unit") or ""
+    if instance is None and fu:
+        from farming.models import FarmUnit
+        farm_unit = FarmUnit.objects.filter(pk=fu, owner=u, active=True).first() if fu.isdigit() else None
+        if farm_unit is None:
+            return redirect("/farm/")
+    if farm_unit is not None:
+        return _listing_from_unit(request, farm_unit, instance)
     if instance is not None:
         cycle = instance.source_cycle
     else:
@@ -291,6 +300,38 @@ def listing_form(request, pk=None):
         "form": form, "instance": instance, "cycle": cycle, "crop": crop, "emoji": catalog.emoji(crop), "ref": ref, "free_kg": free, "processed": processed,
         "in_book_kg": stock.book_kg(cycle, crop) if cycle is not None else None, "owner_name": owner.name if owner and u.role == Role.AGENT else "",
         "base_tpl": base_for(u), "px": prefix_for(u)})
+
+
+def _listing_from_unit(request, unit, instance):
+    """Sell what a dairy, poultry, fish, bee, silk or pig unit produces: milk by the litre, eggs by the tray, fish by the kg..."""
+    from farming import livelihoods as lh
+
+    u = request.user
+    crop = instance.crop if instance is not None else (request.GET.get("product") or request.POST.get("product") or "")
+    if crop not in lh.LIVELIHOODS[unit.livelihood].get("products", {}):
+        return redirect(f"/farm/{unit.pk}/")
+    processed = catalog.kind(crop) == catalog.SEMI
+    units = lh.units_for(crop)
+    fp = u.farmer_profile
+    if instance is not None:
+        init = {k: getattr(instance, k) for k in ("grade", "quantity", "unit", "price", "state", "district", "village", "variety", "description", "available_from",
+                                                   "packaging", "pack_size_g", "brand", "fssai_no", "shelf_life_days")}
+    else:
+        init = {"state": fp.state, "district": fp.district, "village": fp.village, "unit": units[0], "available_from": timezone.localdate()}
+    form = f.ListingForm(request.POST or None, initial=init, lang=request.lang, processed=processed, units=units)
+    if request.method == "POST" and form.is_valid():
+        d = dict(form.cleaned_data)
+        d.update(crop=crop, grade=d.get("grade") or "ungraded", source_unit=unit if instance is None else None)
+        try:
+            li = services.save_listing(u, d, instance=instance, request=request)
+        except ApiError as e:
+            form.add_error(None, error_text(request, e))
+        else:
+            ok(request, "Listing saved. Buyers can see it now.")
+            return redirect(f"{prefix_for(u)}/sell/{li.pk}/")
+    return render(request, "web/market/listing_form.html", {"form": form, "instance": instance, "cycle": None, "crop": crop, "emoji": catalog.emoji(crop), "ref": None,
+                                                            "free_kg": None, "processed": processed, "in_book_kg": None, "owner_name": "", "farm_unit": unit,
+                                                            "base_tpl": base_for(u), "px": prefix_for(u)})
 
 
 @seller_required

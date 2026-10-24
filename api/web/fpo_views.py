@@ -70,7 +70,7 @@ def register(request):
     if request.method == "POST" and form.is_valid():
         services.register_org(request.user, form.cleaned_data, request)
         ok(request, "Thank you. We will check your registration and approve you soon.")
-        return redirect("/fpo/")
+        return redirect("/start/")  # next: what do the members do (crops, dairy, poultry...)
     return render(request, "web/fpo/register.html", {"form": form})
 
 
@@ -95,6 +95,8 @@ def dashboard(request):
     }
     from farming.services import org_summary
     ctx["groups"] = org_summary(org)
+    ctx["ask_livelihoods"] = not org.segments
+    ctx["grows_crops"] = not org.segments or "crops" in org.segments
     return render(request, "web/fpo/dashboard.html", ctx)
 
 
@@ -106,7 +108,10 @@ def farmers(request):
     qs = FarmerProfile.objects.filter(organisation=org).select_related("user").order_by("-updated_at")
     if q:
         qs = qs.filter(Q(name__icontains=q) | Q(village__icontains=q) | Q(user__phone__icontains=q))
-    return render(request, "web/fpo/farmers.html", {"org": org, "rows": qs[:300], "q": q})
+    from farming import livelihoods as lh
+    seg = request.GET.get("seg", "")
+    rows = [fp for fp in qs[:1000] if seg not in lh.CODES or seg in lh.of(fp)][:300]
+    return render(request, "web/fpo/farmers.html", {"org": org, "rows": rows, "q": q, "seg": seg, "seg_options": list(lh.LIVELIHOODS.items())})
 
 
 def farmer_data(d: dict, lang_default="hi") -> dict:

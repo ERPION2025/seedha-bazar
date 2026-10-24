@@ -42,16 +42,21 @@ def save_listing(seller, data: dict, org=None, instance: Listing | None = None, 
     except ValueError:
         raise ApiError("bag_weight_required", "Tell us how many kg one bag weighs", 400)
     cycle = data.get("source_cycle") or (instance.source_cycle if instance is not None else None)
-    product = crop_key(data["crop"])
+    unit = data.get("source_unit") or (instance.source_unit if instance is not None else None)
+    product = crop_key(data["crop"]) if data["crop"] not in catalog.PRODUCTS else data["crop"]
     if instance is not None and product != instance.crop:
         raise ApiError("product_fixed", "You cannot change what is being sold. List it again as a new listing.", 400)
-    if cycle is None and instance is None:
+    if unit is not None:  # from My farm: the seller's own active unit, and a product of that livelihood
+        from farming.livelihoods import LIVELIHOODS
+        if unit.owner_id != seller.pk or not unit.active or product not in LIVELIHOODS[unit.livelihood].get("products", {}):
+            raise ApiError("not_allowed", "You cannot do this.", 403)
+    elif cycle is None and instance is None:
         raise ApiError("stock_required", "You can list only what your Farmer Book shows. Write the harvest in the book first.", 400)
     if cycle is not None:
         available = stock.free_kg(cycle, product, exclude_listing=instance)
         if kg > available:
             raise ApiError("not_enough_stock", "That is more than the stock in your book that is not already listed.", 400, available_kg=str(available))
-    li = instance or Listing(seller=seller, organisation=org, source_cycle=cycle)
+    li = instance or Listing(seller=seller, organisation=org, source_cycle=cycle, source_unit=unit)
     for f in ("grade", "state", "district", "village", "variety", "description", "unit"):
         if f in data:
             setattr(li, f, data[f] if data[f] is not None else "")

@@ -79,6 +79,8 @@ class PublicPageTests(WebCase):
 
     def test_menus_follow_the_role(self):
         web_login(self.client)
+        self.assertRedirects(self.client.get("/farmer/"), "/start/", fetch_redirect_response=False)  # a new farmer first says what they do
+        self.client.post("/start/", {"segments": ["crops"]})
         r = self.client.get("/farmer/?lang=en")
         self.assertContains(r, 'href="/farmer/book/"')
         self.assertContains(r, 'href="/farmer/groups/"')
@@ -154,6 +156,7 @@ class SignInTests(WebCase):
     def test_new_farmer_signs_up_through_consent(self):
         r = web_login(self.client)
         self.assertRedirects(r, "/farmer/", fetch_redirect_response=False)
+        self.client.post("/start/", {"segments": ["crops"]})
         u = User.objects.get(phone=FARMER)
         self.assertEqual((u.role, u.status), (Role.FARMER, UserStatus.ACTIVE))
         self.assertTrue(u.consented_at)
@@ -277,6 +280,7 @@ class FarmerFlowTests(WebCase):
     def setUp(self):
         super().setUp()
         web_login(self.client)
+        self.client.post("/start/", {"segments": ["crops"], "next": "/farmer/"})  # a new farmer first says what they do
         self.user = User.objects.get(phone=FARMER)
 
     def crop(self):
@@ -422,7 +426,7 @@ class FpoFlowTests(WebCase):
         self.assertRedirects(self.client.get("/fpo/farmers/"), "/fpo/register/", fetch_redirect_response=False)
 
     def test_registration_creates_unverified_org(self):
-        self.assertRedirects(self.register(), "/fpo/", fetch_redirect_response=False)
+        self.assertRedirects(self.register(), "/start/", fetch_redirect_response=False)  # next: what the members do
         org = Organisation.objects.get()
         self.assertFalse(org.verified)
         self.assertEqual(org.code, "naigarhi-kis")
@@ -615,6 +619,7 @@ class VoiceTests(WebCase):
         for signed_in, paths in ((False, ("/login/", "/privacy/")), (True, ("/farmer/", "/rates/", "/calculator/", "/market/"))):
             if signed_in:
                 web_login(self.client)
+                self.client.post("/start/", {"segments": ["crops"]})
             for path in paths:
                 for lang in ("hi", "mr", "en"):
                     r = self.client.get(f"{path}?lang={lang}")

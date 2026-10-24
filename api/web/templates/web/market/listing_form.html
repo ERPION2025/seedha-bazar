@@ -14,6 +14,7 @@
 {% elif ref %}<div class="card"><b>📈 {% t "Mandi price near you" %}: {{ ref.typical|inr }}</b> {% t "per quintal" %}<br><span class="hint">{% t "Reported on {date}" date=ref.as_of|date:"j M" %}. {% t "Price a little above or below to suit your quality." %}</span></div>{% endif %}
 <form method="post" class="card">{% csrf_token %}
   {% if cycle and not instance %}<input type="hidden" name="stock" value="{{ cycle.pk }}"><input type="hidden" name="product" value="{{ crop }}">{% endif %}
+  {% if farm_unit and not instance %}<input type="hidden" name="farm_unit" value="{{ farm_unit.pk }}"><input type="hidden" name="product" value="{{ crop }}">{% endif %}
   {% include "web/partials/form_body.html" %}
   <button class="btn block">{% t "Save listing" %}</button>
 </form>

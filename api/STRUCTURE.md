@@ -56,6 +56,27 @@ One codebase and one database serve **two separate sites**. Change this structur
 - Seedha Bazar notices use the bell and phone notifications only, never paid SMS.
 - Phone notifications are asked for **once**, after sign-in (never on sign-in screens), through a small card: Allow or Not now. The answer is kept on the account and the device, and can be changed in Notifications → Settings.
 
+## 4b. Livelihoods: one pattern, many businesses
+
+- Farmers and FPOs/NGOs choose their livelihoods before setting up: crops, dairy, poultry, fisheries, beekeeping, sericulture, piggery. Two or more is integrated farming.
+  - New farmers are asked first.
+  - A new FPO is asked right after registering. Older FPOs see a card asking them.
+  - Older crop accounts count as crop farmers until they choose.
+- Everything that differs between livelihoods lives in one place, `farming/livelihoods.py`: unit types, what is counted, the ID field (ear tag, Madhukranti, licence), what is produced, which products are sold in which units, and the reminder schedule. A new livelihood is a new entry there, not new code.
+- **What each person sees:** menus and pages show only what fits.
+  - Crop-only tools are hidden from people without crops: Farmer Book, mandi rates, warehouse loans, insurance, group farming and selling, seeds, calculator.
+  - My farm is hidden from crop-only farmers.
+- **My farm** (`/farm/`) is one diary for every livelihood:
+  - units (herd, batch, pond, apiary, rearing, pig unit) with one-tap entries (produced, sold, feed, treatment, other cost, died, born);
+  - reminders from the schedule, sent to the bell and phone each morning, marked done with one tap.
+  - Reminders give general practice only; medicines and doses are always "with your vet" or "with the department".
+- **Connected to the existing modules:**
+  - farm money joins the Farmer Book profit and loss and the income statement;
+  - the farm sells into the marketplace (milk by the litre, eggs by the tray, fish, honey, cocoons, pigs);
+  - FPOs see members' farms, production and reminders; FPO and Institution farmer lists filter by livelihood;
+  - "Animals and livestock" problems go to the KVK as before.
+- No hardware, sensors or outside registries are needed; government IDs are optional text fields.
+
 ## 4a. Menus: one per role, nothing else
 
 Menus are defined in `web/menus.py`. Phones show the first 4 items in the bottom bar and the rest under "More".

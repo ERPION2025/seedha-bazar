@@ -92,7 +92,8 @@ def institution_moved(request, rest=""):
 
 
 # ---------- pages open to visitors and search engines (no menus; buying and everything else need sign-in) ----------
-FOOTER_PRODUCE = ["wheat", "rice", "soybean", "gram", "mustard", "maize", "tur", "moong", "kodo", "kutki", "onion", "potato", "tomato", "garlic", "turmeric", "atta"]
+FOOTER_PRODUCE = ["wheat", "rice", "soybean", "gram", "milk", "eggs", "fish", "honey", "kodo", "cocoons", "mustard", "maize", "tur", "moong", "kutki", "onion",
+                  "potato", "tomato", "garlic", "turmeric", "atta"]
 
 
 def for_ngos(request):
@@ -118,7 +119,7 @@ def produce_index(request):
 
     counts = _live_counts()
     groups = []
-    for kind, label in (("raw", "Grains and pulses"), ("fresh", "Fresh produce"), ("semi", "Processed goods")):
+    for kind, label in (("raw", "Grains and pulses"), ("fresh", "Fresh produce"), ("live", "Dairy, poultry, fish, honey and silk"), ("semi", "Processed goods")):
         rows = [{"key": k, "emoji": v[3], "n": counts.get(k, 0)} for k, v in catalog.PRODUCTS.items() if v[4] == kind]
         rows.sort(key=lambda r: (-r["n"], catalog.name(r["key"])))
         groups.append({"label": label, "rows": rows})

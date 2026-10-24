@@ -3,6 +3,7 @@
 {% block mainclass %} narrow{% endblock %}
 {% block content %}
 <h1>{% t "My profile" %}</h1>
+<p class="mute">{% t "What I do" %}: {% for c in segments %}{{ c.emoji }} {% t c.label %}{% if not forloop.last %}, {% endif %}{% endfor %} · <a href="/start/?next=/farmer/profile/">{% t "Change" %}</a></p>
 {% if groups %}<a class="door" href="/farmer/groups/"><div class="card tint"><b>👥 {% t "Farms in a group" %}</b>{% for g in groups %}<p style="margin:4px 0 0">{% crop g.crop %}: {% t "{n} farmers, {acres} acres together" n=g.members acres=g.acres|num %}</p>{% endfor %}<p class="hint" style="margin:6px 0 0">{% t "Buyers see this on your profile." %}</p></div></a>{% endif %}
 <form method="post" class="card">{% csrf_token %}
   {% include "web/partials/form_body.html" %}

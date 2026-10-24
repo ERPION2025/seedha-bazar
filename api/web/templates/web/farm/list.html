@@ -1,0 +1,16 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "My farm" %}{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="margin:0">{% t "My farm" %}</h1><a class="btn" href="/farm/new/">+ {% t "Add" %}</a></div>
+{% if tasks %}<div class="card sun"><h3>⏰ {% t "Reminders" %}</h3>{% for t in tasks %}<div class="line"><span><b>{{ t.unit.name }}</b> · {% t t.text %}</span>
+  <span class="mute">{% if t.late %}{% t "{n} days late" n=t.late %}{% elif t.days == 0 %}{% t "Today" %}{% else %}{{ t.date|date:"j M" }}{% endif %}</span></div>{% endfor %}</div>{% endif %}
+<div class="grid g2">{% for un in units %}<a class="door" href="/farm/{{ un.pk }}/"><div class="card{% if not un.active %} muted{% endif %}">
+  <div class="row between"><h3 style="margin:0">{{ un.cfg.emoji }} {{ un.name }}</h3>{% if not un.active %}<span class="pill grey">{% t "Closed" %}</span>{% endif %}</div>
+  <p class="mute" style="margin:4px 0">{% t un.cfg.count %}: <b>{{ un.s.head }}</b>{% if un.s.produced %} · {% t un.cfg.produce.2 %} ({% t "30 days" %}): <b>{{ un.s.produced|num }}</b>{% endif %}</p>
+  <p style="margin:0">{% t "Earned" %} {{ un.s.income|inr }} · {% t "Spent" %} {{ un.s.expenses|inr }}</p></div></a>
+{% empty %}<div class="card"><p style="margin:0 0 10px">{% t "Add your herd, birds, pond, bee boxes, silkworm rearing or pigs to keep a simple diary and get reminders." %}</p>
+  <div class="row">{% for code, cfg in segs %}<a class="btn ghost" href="/farm/new/?livelihood={{ code }}">{{ cfg.emoji }} {% t cfg.label %}</a>{% endfor %}</div></div>{% endfor %}</div>
+{% if whole %}<h2>🌱 {% t "Whole farm, last 12 months" %}</h2>
+<div class="card scroll"><table class="tbl"><thead><tr><th>{% t "Livelihood" %}</th><th>{% t "Earned" %}</th><th>{% t "Spent" %}</th><th>{% t "Profit" %}</th></tr></thead><tbody>
+{% for r in whole %}<tr><td>{{ r.emoji }} {% t r.label %}</td><td>{{ r.income|inr }}</td><td>{{ r.expenses|inr }}</td><td class="{% if r.net < 0 %}neg{% else %}pos{% endif %}"><b>{{ r.net|inr }}</b></td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% endblock %}

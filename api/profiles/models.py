@@ -19,6 +19,7 @@ class Organisation(models.Model):
     lat = models.FloatField(null=True, blank=True, help_text="Office location, set by the FPO from its phone")
     lon = models.FloatField(null=True, blank=True)
     contact_name = models.CharField(max_length=120, blank=True)
+    segments = models.JSONField(default=list, blank=True, help_text="Livelihoods its members follow")
     auto_approve_members = models.BooleanField(default=False, help_text="Farmers who join with this FPO's code are confirmed without a manual check")
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -54,6 +55,7 @@ class FarmerProfile(models.Model):
     state = models.CharField(max_length=60, default="Madhya Pradesh")
     land_acres = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     crops = models.JSONField(default=list, blank=True)
+    segments = models.JSONField(default=list, blank=True, help_text="Livelihoods: crops, dairy, poultry, fisheries, apiculture, sericulture, piggery")
     contact_is_family = models.BooleanField(default=False, help_text="Phone belongs to a family member")
     family_contact_name = models.CharField(max_length=120, blank=True)
     organisation = models.ForeignKey(Organisation, null=True, blank=True, on_delete=models.SET_NULL, related_name="farmers")
@@ -70,7 +72,12 @@ class FarmerProfile(models.Model):
     LEVEL1_FIELDS = ("name", "village", "district")
 
     def basics_complete(self) -> bool:
-        return all(getattr(self, f).strip() for f in self.LEVEL1_FIELDS) and self.land_acres is not None and bool(self.crops)
+        """Name, village, district, and for crop farmers their land and crops. Others need only their livelihoods."""
+        if not all(getattr(self, f).strip() for f in self.LEVEL1_FIELDS):
+            return False
+        if self.segments and "crops" not in self.segments:
+            return True
+        return self.land_acres is not None and bool(self.crops)
 
     def compute_level(self) -> int:
         if not self.basics_complete():

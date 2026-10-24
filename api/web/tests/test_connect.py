@@ -22,7 +22,7 @@ class SessionPolicyTests(WebCase):
         user = User.objects.get(phone=FARMER)
         self.assertEqual(LoginSession.objects.filter(user=user, ended_at__isnull=True).count(), 2)
         self.assertTrue(devices[0].get("/farmer/")["Location"].startswith("/login/"))  # the oldest was signed out
-        self.assertEqual(devices[2].get("/farmer/").status_code, 200)
+        self.assertEqual(devices[2].get("/notifications/").status_code, 200)
 
     def test_staff_change_the_limit_in_the_console(self):
         sc = Client()

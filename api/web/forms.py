@@ -16,8 +16,9 @@ from .i18n import tr
 import catalog  # noqa: E402
 from rates.crops import CROPS  # noqa: E402
 
-UNIT_LABELS = [("quintal", "Quintal"), ("kg", "Kg"), ("tonne", "Tonne"), ("bag", "Bag")]
+UNIT_LABELS = [("quintal", "Quintal"), ("kg", "Kg"), ("tonne", "Tonne"), ("bag", "Bag"), ("litre", "Litre"), ("tray", "Tray of 30"), ("piece", "Piece")]
 assert set(UNITS) == {u for u, _ in UNIT_LABELS}
+CROP_UNIT_LABELS = UNIT_LABELS[:4]
 
 
 def crop_label(lang: str, value: str) -> str:
@@ -86,18 +87,24 @@ class FarmerProfileForm(LangForm):
     def from_profile(cls, fp, lang):
         known = [c for c in fp.crops if c in CROPS]
         other = ", ".join(c for c in fp.crops if c not in CROPS)
-        return cls(lang=lang, initial={"name": fp.name, "village": fp.village, "block": fp.block, "district": fp.district, "state": fp.state,
+        return cls(lang=lang, grows_crops=not fp.segments or "crops" in fp.segments, initial={"name": fp.name, "village": fp.village, "block": fp.block, "district": fp.district, "state": fp.state,
                                        "land_acres": fp.land_acres, "crops": known, "other_crops": other, "discoverable": fp.discoverable,
                                        "share_with_extension": bool(fp.share_with_extension)})
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, grows_crops=True, **kwargs):
         super().__init__(*args, **kwargs)
         from extension import geo
         self.fields["state"].choices = [(s, s) for s in geo.states()] or [("Madhya Pradesh", "Madhya Pradesh")]
+        self.grows_crops = grows_crops
+        if not grows_crops:  # dairy, poultry, fish, bees, silk or pigs only: no crop questions
+            for name in ("crops", "other_crops"):
+                del self.fields[name]
+            self.fields["land_acres"].required = False
+            self.fields["land_acres"].min_value = Decimal("0")
 
     def clean(self):
         data = super().clean()
-        if not split_crops(data.get("crops") or [], data.get("other_crops")):
+        if self.grows_crops and not split_crops(data.get("crops") or [], data.get("other_crops")):
             self.add_error("crops", "Pick at least one crop")
         from extension import geo
         if data.get("state") and data.get("district"):
@@ -176,7 +183,7 @@ class ExpenseForm(LangForm):
 
 class QuantityForm(LangForm):
     quantity = forms.DecimalField(label="Quantity", min_value=Decimal("0.001"), decimal_places=3, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal", "autofocus": True}))
-    unit = forms.ChoiceField(label="Unit", choices=UNIT_LABELS, initial="quintal")
+    unit = forms.ChoiceField(label="Unit", choices=CROP_UNIT_LABELS, initial="quintal")
     bag_weight_kg = forms.DecimalField(label="Weight of one bag (kg)", required=False, min_value=Decimal("0.1"), decimal_places=2, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
     date = date_field("Date", initial=today)
 
@@ -297,7 +304,7 @@ class ListingForm(LangForm):
     variety = forms.CharField(label="Variety (optional)", max_length=60, required=False)
     grade = forms.ChoiceField(label="Quality", choices=list(Listing.Grade.choices), initial="ungraded", required=False)
     quantity = forms.DecimalField(label="How much is for sale?", min_value=Decimal("0.001"), decimal_places=3, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
-    unit = forms.ChoiceField(label="Unit", choices=UNIT_LABELS, initial="quintal")
+    unit = forms.ChoiceField(label="Unit", choices=CROP_UNIT_LABELS, initial="quintal")
     bag_weight_kg = forms.DecimalField(label="Weight of one bag (kg)", required=False, min_value=Decimal("0.1"), decimal_places=2, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
     price = forms.DecimalField(label="Your price (₹ per unit chosen above)", min_value=Decimal("0.01"), max_value=Decimal("10000000"), decimal_places=2, widget=forms.NumberInput(attrs={"step": "any", "inputmode": "decimal"}))
     state = forms.CharField(label="State", max_length=60)
@@ -313,9 +320,11 @@ class ListingForm(LangForm):
 
     SEMI_ONLY = ("packaging", "pack_size_g", "brand", "fssai_no")
 
-    def __init__(self, *args, processed=False, **kwargs):
+    def __init__(self, *args, processed=False, units=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.processed = processed
+        if units:  # livelihood products sell in their own units (milk by the litre, eggs by the tray...)
+            self.fields["unit"].choices = [(u, label) for u, label in UNIT_LABELS if u in units]
         if not processed:
             for name in self.SEMI_ONLY:
                 del self.fields[name]

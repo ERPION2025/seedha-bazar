@@ -54,6 +54,9 @@ def next_step(fp, cycles_count, has_records):
 
 @farmer_only
 def home(request):
+    from .farm_views import needs_start
+    if needs_start(request.user):
+        return redirect("/start/")
     fp = request.user.farmer_profile
     cycles = CropCycle.objects.filter(owner=request.user, deleted_at__isnull=True)
     has_records = Expense.objects.filter(owner=request.user, deleted_at__isnull=True).exists() or Harvest.objects.filter(owner=request.user, deleted_at__isnull=True).exists()
@@ -73,6 +76,8 @@ def home(request):
     ctx["wx"] = home_alert(request.user)
     from market.models import PoolShare
     ctx["pool_asks"] = PoolShare.objects.filter(farmer=request.user, status="proposed").count()
+    from farming import farm as farm_svc, livelihoods as lh
+    ctx["farm_tasks"] = farm_svc.tasks_for(request.user) if any(s in lh.ANIMAL_CODES for s in lh.of(request.user)) else []
     from farming import services as farming
     ctx["my_groups"] = farming.farmer_summary(request.user)
     ctx["groups_near"] = len(farming.near(request.user)) if not ctx["my_groups"] else 0
@@ -84,12 +89,14 @@ def home(request):
 @farmer_only
 def profile(request):
     fp = request.user.farmer_profile
-    form = f.FarmerProfileForm(request.POST, lang=request.lang) if request.method == "POST" else f.FarmerProfileForm.from_profile(fp, request.lang)
+    grows = not fp.segments or "crops" in fp.segments
+    form = f.FarmerProfileForm(request.POST, lang=request.lang, grows_crops=grows) if request.method == "POST" else f.FarmerProfileForm.from_profile(fp, request.lang)
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
         for k in ("name", "village", "block", "state", "district", "land_acres"):
             setattr(fp, k, d[k])
-        fp.crops = f.split_crops(d["crops"], d["other_crops"])
+        if grows:
+            fp.crops = f.split_crops(d["crops"], d["other_crops"])
         fp.discoverable = d.get("discoverable", False)
         fp.share_with_extension = d.get("share_with_extension", False)
         fp.save()
@@ -97,9 +104,11 @@ def profile(request):
         ok(request, "Profile saved.")
         return redirect("/farmer/")
     from extension import geo
+    from farming import livelihoods as lh
     from farming.services import farmer_summary
     return render(request, "web/farmer/profile.html", {"form": form, "fp": fp, "district_index": {s: geo.districts_of(s) for s in geo.states()},
-                                                       "groups": farmer_summary(request.user)})
+                                                       "groups": farmer_summary(request.user),
+                                                       "segments": [lh.LIVELIHOODS[c] for c in lh.of(request.user) if c in lh.LIVELIHOODS]})
 
 
 @farmer_only

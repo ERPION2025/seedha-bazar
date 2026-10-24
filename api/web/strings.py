@@ -15,7 +15,7 @@ SCAN_PY = ("auth_views.py", "farmer_views.py", "fpo_views.py", "console_views.py
            "rates_views.py", "market_views.py", "location.py", "rate_alerts.py", "catalog_views.py", "knowledge_views.py", "insurance_views.py", "deals_views.py",
            "help_views.py", "../institution/views.py", "inputs_views.py", "engage_views.py",
            "weather_views.py", "pool_views.py", "storage_views.py", "statement_views.py",
-           "share_views.py", "notify_views.py", "voice_views.py", "social.py", "group_views.py")
+           "share_views.py", "notify_views.py", "voice_views.py", "social.py", "group_views.py", "farm_views.py")
 
 
 def template_strings() -> set[str]:
@@ -45,11 +45,11 @@ def form_strings() -> set[str]:
     from django import forms
 
     from institution import views as kvk_views
-    from web import deals_views, group_views, help_views, insurance_views, pool_views
+    from web import deals_views, farm_views, group_views, help_views, insurance_views, pool_views
     from web import forms as wf
 
     out = set()
-    classes = {cls for mod in (wf, deals_views, insurance_views, help_views, kvk_views, pool_views, group_views) for _, cls in inspect.getmembers(mod, inspect.isclass)}
+    classes = {cls for mod in (wf, deals_views, insurance_views, help_views, kvk_views, pool_views, group_views, farm_views) for _, cls in inspect.getmembers(mod, inspect.isclass)}
     for cls in classes:
         if not issubclass(cls, forms.Form) or cls is forms.Form:
             continue
@@ -76,7 +76,7 @@ def form_strings() -> set[str]:
     from web.translations import API_ERRORS
 
     out.update(API_ERRORS.values())
-    out.update({"kg", "tonne", "bag", "quintal"})  # units shown next to quantities
+    out.update({"kg", "tonne", "bag", "quintal", "litre", "tray", "piece", "Litre", "Tray of 30", "Piece"})  # units shown next to quantities
     from market.models import Enquiry, Listing
     from web.calc_strings import CALC_STRINGS
 
@@ -146,6 +146,16 @@ def form_strings() -> set[str]:
     from web.context import FOOTER_SERVICES
 
     out.update(label for label, _ in FOOTER_SERVICES)
+    from farming.livelihoods import LIVELIHOODS
+    from farming.models import FarmEntry
+
+    for cfg in LIVELIHOODS.values():
+        out.update(x for x in (cfg["label"], cfg["hint"], cfg.get("count"), cfg.get("area"), cfg.get("tag")) if x)
+        out.update(label for _, label in cfg.get("kinds", []))
+        out.update(t for _, _, t in cfg.get("schedule", []))
+        if cfg.get("produce"):
+            out.add(cfg["produce"][2])
+    out.update(label for _, label in FarmEntry.Kind.choices)
     for choices in (InsPlan.Scheme.choices, InsPlan.Season.choices, InsPlan.Group.choices, InsApp.Status.choices, InsApp.Channel.choices):
         out.update(label for _, label in choices)
     return out

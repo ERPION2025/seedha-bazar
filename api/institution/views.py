@@ -238,8 +238,10 @@ def farmers(request):
     q = (request.GET.get("q") or "").strip()
     if q:
         qs = qs.filter(Q(name__icontains=q) | Q(village__icontains=q))
-    rows = [fp for fp in qs.order_by("-level", "name")[:400] if not crop or crop in (fp.crops or [])]
-    return render(request, "institution/farmers.html", _ctx(request, rows=rows[:200], crop=crop, q=q, crops=sorted({c for fp in qs[:2000] for c in (fp.crops or []) if c in CROPS}),
+    from farming import livelihoods as lh
+    seg = request.GET.get("seg", "")
+    rows = [fp for fp in qs.order_by("-level", "name")[:400] if (not crop or crop in (fp.crops or [])) and (seg not in lh.CODES or seg in lh.of(fp))]
+    return render(request, "institution/farmers.html", _ctx(request, rows=rows[:200], crop=crop, q=q, seg=seg, seg_options=list(lh.LIVELIHOODS.items()), crops=sorted({c for fp in qs[:2000] for c in (fp.crops or []) if c in CROPS}),
                                                        sharing=sum(1 for fp in rows if fp.share_with_extension)))
 
 

@@ -71,6 +71,8 @@ def weather_tick(now=None):
         from engagement import voice
         from storage.services import remind_due  # daily jobs ride on the same once-a-day run
         remind_due()
+        from farming.farm import send_reminders
+        send_reminders()
         voice.notify_new_matches()
         voice.purge_audio()
     if out:

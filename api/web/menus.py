@@ -2,7 +2,7 @@
 and the rest behind "More". Each item: (label, icon, url, paths that light it up, badge key)."""
 
 FARMER = [
-    ("Home", "🏠", "/farmer/", ["=/farmer/"], ""), ("My book", "📒", "/farmer/book/", ["/farmer/book"], ""),
+    ("Home", "🏠", "/farmer/", ["=/farmer/"], ""), ("My book", "📒", "/farmer/book/", ["/farmer/book"], ""), ("My farm", "🐄", "/farm/", ["/farm"], ""),
     ("Sell", "🏷️", "/farmer/sell/", ["/farmer/sell"], ""), ("Rates", "📈", "/rates/", ["/rates"], ""),
     ("Orders", "📦", "/deals/", ["/deals"], "deal_unread"), ("Messages", "💬", "/farmer/enquiries/", ["/farmer/enquiries", "/enquiry"], "unread"),
     ("Weather", "🌦️", "/weather/", ["/weather"], ""), ("Speak", "🎙️", "/voice/", ["/voice"], ""), ("Ask an expert", "🧑‍🔬", "/help/", ["/help"], ""),
@@ -19,7 +19,7 @@ FARMER = [
 FPO = [
     ("Home", "🏠", "/fpo/", ["=/fpo/"], ""), ("My farmers", "🧑‍🌾", "/fpo/farmers/", ["=/fpo/farmers/"], ""),
     ("Sell", "🏷️", "/fpo/sell/", ["/fpo/sell"], ""), ("Orders", "📦", "/deals/", ["/deals"], "deal_unread"),
-    ("Group selling", "🤝", "/fpo/pools/", ["/fpo/pools"], ""), ("Group farming", "👥", "/fpo/groups/", ["/fpo/groups"], ""), ("Weather", "🌦️", "/weather/", ["/weather"], ""), ("My shared posts", "📣", "/shared/", ["/shared"], ""),
+    ("Group selling", "🤝", "/fpo/pools/", ["/fpo/pools"], ""), ("Group farming", "👥", "/fpo/groups/", ["/fpo/groups"], ""), ("Members' farms", "🐄", "/fpo/farm/", ["/fpo/farm"], ""), ("Weather", "🌦️", "/weather/", ["/weather"], ""), ("My shared posts", "📣", "/shared/", ["/shared"], ""),
     ("Add farmer", "➕", "/fpo/farmers/add/", ["/fpo/farmers/add"], ""), ("Requests", "📥", "/fpo/requests/", ["/fpo/requests"], ""),
     ("Messages", "💬", "/fpo/enquiries/", ["/fpo/enquiries", "/enquiry"], "unread"), ("Ask an expert", "🧑‍🔬", "/help/", ["/help"], ""),
     ("Seeds and inputs", "🌱", "/inputs/", ["/inputs"], ""), ("Insurance", "🛡️", "/fpo/insurance/", ["/fpo/insurance", "/insurance"], ""),
@@ -71,6 +71,14 @@ def _active(path: str, patterns) -> bool:
 
 def menu(request, badges: dict) -> dict:
     path = request.path
-    rows = [{"label": l, "icon": i, "url": u, "active": _active(path, pats), "badge": badges.get(b, 0) if b else 0} for l, i, u, pats, b in items_for(getattr(request, "user", None), getattr(request, "site", "main"))]
+    user = getattr(request, "user", None)
+    items = items_for(user, getattr(request, "site", "main"))
+    if user and user.is_authenticated and user.role in ("farmer", "agent") and getattr(request, "site", "main") == "main":
+        # each person sees only the tools for their livelihoods: a silk farmer gets no fish ponds, a dairy farmer no mandi crop tools
+        from farming import livelihoods as lh
+        segs = lh.of(user)
+        animal = [s for s in segs if s in lh.ANIMAL_CODES]
+        items = [(l, (lh.LIVELIHOODS[animal[0]]["emoji"] if u in lh.ANIMAL_ONLY and animal else i), u, p, b) for l, i, u, p, b in items if lh.menu_allows(u, segs)]
+    rows = [{"label": l, "icon": i, "url": u, "active": _active(path, pats), "badge": badges.get(b, 0) if b else 0} for l, i, u, pats, b in items]
     main, more = rows[:MAIN], rows[MAIN:]
     return {"all": rows, "main": main, "more": more, "more_active": any(r["active"] for r in more), "more_badge": sum(r["badge"] for r in more)}

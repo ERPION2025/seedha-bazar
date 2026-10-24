@@ -17,10 +17,10 @@ def backend_for(channel: str):
 
 KIND_OF = {"kvk_notice": "notice", "system_notice": "system", "advisory": "advisory", "weather_alert": "weather", "group_invite": "group",
            "input_offer": "input", "input_update": "input", "issue_alert": "issue", "issue_reply": "issue", "deal_request": "order", "deal_update": "order",
-           "pool_invite": "market", "pool_paid": "market", "pledge_due": "other", "interest_news": "other"}
+           "pool_invite": "market", "farm_task": "farm", "pool_paid": "market", "pledge_due": "other", "interest_news": "other"}
 TITLE_OF = {"notice": "Message from your KVK", "system": "Seedha Bazar", "advisory": "New advice for your district", "weather": "Weather warning",
             "order": "Update on your order", "market": "Group selling", "group": "Group farming", "input": "Seeds and inputs", "issue": "Your problem",
-            "other": "Seedha Bazar"}
+            "farm": "Farm reminder", "other": "Seedha Bazar"}
 
 
 def _path(link: str) -> str:

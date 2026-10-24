@@ -1,5 +1,5 @@
 """The product catalog: names, kinds and conversions. See data.py. No database needed to read it."""
-from .data import CONVERSIONS, FRESH, NEEDS, PRODUCTS, RAW, SEMI  # noqa: F401
+from .data import CONVERSIONS, FRESH, LIVE, NEEDS, PRODUCTS, RAW, SEMI  # noqa: F401
 
 
 def name(key: str) -> str:
