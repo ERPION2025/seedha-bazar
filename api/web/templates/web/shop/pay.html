@@ -1,0 +1,15 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Pay now" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>💳 {% t "Pay now" %}</h1>
+<div class="card tint"><div class="line"><span>{% t "Order" %} {{ o.number }}</span><b class="big2">{{ o.total|inr }}</b></div></div>
+<button class="btn block" id="rzp" type="button">{% t "Pay now" %}</button>
+<form method="post" id="rzp-done" hidden>{% csrf_token %}<input type="hidden" name="razorpay_order_id"><input type="hidden" name="razorpay_payment_id"><input type="hidden" name="razorpay_signature"></form>
+<p class="hint">{% t "Payment is handled by Razorpay. Seedha Bazar never sees your card or bank details." %} <a href="/shop/orders/{{ o.number }}/">{% t "Back to the order" %}</a></p>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>(function(){var f=document.getElementById("rzp-done");
+document.getElementById("rzp").addEventListener("click",function(){new Razorpay({key:"{{ key|escapejs }}",order_id:"{{ o.payment_ref|escapejs }}",name:"Seedha Bazar",description:"{{ o.number|escapejs }}",
+ prefill:{name:"{{ o.name|escapejs }}",contact:"{{ o.phone|escapejs }}"},theme:{color:"#1f7a3f"},
+ handler:function(r){f.razorpay_order_id.value=r.razorpay_order_id;f.razorpay_payment_id.value=r.razorpay_payment_id;f.razorpay_signature.value=r.razorpay_signature;f.submit();}}).open();});})();</script>
+{% endblock %}

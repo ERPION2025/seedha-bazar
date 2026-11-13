@@ -96,6 +96,7 @@ def page(request):
         pref.alarm_sound = request.POST.get("alarm_sound") == "1"
         pref.whatsapp = request.POST.get("whatsapp") == "1"
         pref.sms = request.POST.get("sms") == "1"
+        pref.soft_sounds = request.POST.get("soft_sounds") == "1"
         pref.save()
         ok(request, "Saved.")
         return redirect("/notifications/settings/")

@@ -42,12 +42,12 @@
   }
 
   // 2. Keep the bell fresh. Without server push keys, new notices still pop up while the app is open.
-  var last = cfg.last || 0, tone = null;
+  var last = cfg.last || 0;
   function check() {
     fetch("/notifications/unread.json?after=" + last, { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (d) {
       if (bellN) { bellN.textContent = d.unread; bellN.hidden = !d.unread; }
       if (d.items && d.items.length) {
-        if (document.visibilityState === "visible") { tone = tone || new Audio(cfg.tone); tone.play().catch(function () {}); }
+        if (window.SBSound) window.SBSound.play();  // the soft breeze, not a beep
         if (!cfg.vapid && supported && Notification.permission === "granted") {
           reg.then(function (r) { if (!r) return; d.items.forEach(function (it) {
             r.showNotification(it.title, { body: it.text, tag: "sb-" + it.id, icon: cfg.icon, requireInteraction: !!it.critical, data: { url: it.url } });

@@ -1,0 +1,1 @@
+<span class="stars" role="img" aria-label="{{ p.stars }} / 5">{% for i in "12345" %}{% if forloop.counter <= p.stars_full %}<i class="s-full">★</i>{% elif forloop.counter == p.stars_full|add:1 and p.stars_half %}<i class="s-half">★</i>{% else %}<i class="s-empty">★</i>{% endif %}{% endfor %}</span>

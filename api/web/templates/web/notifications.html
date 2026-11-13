@@ -10,8 +10,10 @@
   <div class="row"><button type="button" class="btn" id="push-on" data-key="{{ vapid }}">{% t "Turn on notifications" %}</button><button type="button" class="btn ghost" id="push-test" hidden>{% t "Send a test" %}</button></div>
   <p class="hint" id="push-status" style="margin-top:8px"></p>
   {% else %}<p class="mute" style="margin:0">{% t "Phone notifications are not set up on this server yet." %}</p>{% endif %}
-  <p class="hint">{% t "Phone notifications use your phone's notification sound. Our own alarm tone plays when the app is open." %} <button type="button" class="link-btn" style="color:var(--g-dark)" onclick="new Audio('{% static 'web/sounds/notify.wav' %}').play()">▶ {% t "Hear our tune" %}</button></p></div>
+  <p class="hint">{% t "Phone notifications use your phone's notification sound. Inside the app, Seedha Bazar plays a soft breeze through the crops." %}</p></div>
 <form method="post" class="card">{% csrf_token %}<h3>{% t "Other ways" %}</h3>
+  <label class="check-line"><input type="checkbox" name="soft_sounds" value="1"{% if pref.soft_sounds %} checked{% endif %}> 🌾 {% t "Play a soft breeze sound for notifications and when something is done" %}</label>
+  <p class="hint" style="margin:-4px 0 10px 30px"><button type="button" class="link-btn" style="color:var(--g-dark)" onclick="var a=new Audio('{% static 'web/sounds/breeze.wav' %}');a.volume=0.3;a.play()">▶ {% t "Hear it" %}</button></p>
   <label class="check-line"><input type="checkbox" name="alarm_sound" value="1"{% if pref.alarm_sound %} checked{% endif %}> 🚨 {% t "Play the alarm tone for critical weather alerts" %}</label>
   <label class="check-line"><input type="checkbox" name="whatsapp" value="1"{% if pref.whatsapp %} checked{% endif %}> 💬 {% t "Send me WhatsApp messages" %}{% if not whatsapp_ready %} <span class="mute">({% t "starts when WhatsApp is connected" %})</span>{% endif %}</label>
   <label class="check-line"><input type="checkbox" name="sms" value="1"{% if pref.sms %} checked{% endif %}> ✉️ {% t "Send me SMS" %}</label>

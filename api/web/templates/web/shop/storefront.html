@@ -1,0 +1,41 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% if store %}{{ store.name }}{% elif cat %}{% t cat.0 %}{% elif params.q %}{{ params.q }}{% else %}{% t "Shop: made by farmers and rural makers" %}{% endif %}{% endblock %}
+{% block desc %}{% t "Packed food, millets, honey, handloom, handicrafts, clothing and home décor made by farmers, FPOs, NGOs and village groups. Delivered in tier 1 and tier 2 cities." %}{% endblock %}
+{% block mainclass %} wide{% endblock %}
+{% block content %}
+<form method="get" action="{% if category %}/shop/c/{{ category }}/{% else %}/shop/{% endif %}" class="sf-search" role="search">
+  <input type="search" name="q" value="{{ params.q }}" placeholder="{% t "Search: honey, saree, bamboo, millet cookies..." %}" aria-label="{% t "Search" %}"><button class="btn" aria-label="{% t "Search" %}">🔍</button></form>
+<form method="get" class="sf-pin">{% for k, v in params.items %}{% if v and k != "cat" and k != "seller" %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+  📍 {% if pin %}{% t "Delivering to" %} <b>{{ pin }}</b>{% else %}{% t "Enter your PIN code for delivery dates" %}{% endif %}
+  <input type="text" name="pin" inputmode="numeric" maxlength="6" placeholder="{% t "PIN code" %}" aria-label="{% t "PIN code" %}"><button class="link-btn">{% if pin %}{% t "Change" %}{% else %}{% t "Apply" %}{% endif %}</button></form>
+<nav class="crumbs" aria-label="{% t "You are here" %}"><a href="/shop/">{% t "Shop" %}</a>{% if cat %} › <span>{% t cat.0 %}</span>{% endif %}{% if store %} › <span>{{ store.name }}</span>{% endif %}</nav>
+{% if store %}<div class="card store-head"><div class="row between"><div><h1 style="margin:0">🏪 {{ store.name }}</h1><p class="mute" style="margin:4px 0 0">📍 {{ store.place }} · {% t "On Seedha Bazar since {date}" date=store.since|date:"M Y" %}{% if store.verified %} · ✔ {% t "Verified FPO / NGO" %}{% endif %}</p></div>
+  {% if store.rating %}<div class="store-rate"><b>★ {{ store.rating }}</b><small>{% t "{n} ratings" n=store.ratings_n %}</small></div>{% endif %}</div></div>{% endif %}
+<div class="sf">
+  <aside class="sf-filters">
+    <details class="sf-sheet" open><summary class="btn ghost small">⚙️ {% t "Filters" %}</summary><div class="sf-sheet-body">
+    <h2>{% t "Category" %}</h2>
+    <a class="sf-opt{% if not category %} on{% endif %}" href="/shop/{% if qs_nosort %}?{{ qs_nosort }}{% endif %}">{% t "All" %}</a>
+    {% for k, label, emoji, n in f.cats %}<a class="sf-opt{% if k == category %} on{% endif %}" href="/shop/c/{{ k }}/{% if qs %}?{{ qs }}{% endif %}">{{ emoji }} {% t label %} <span class="mute">({{ n }})</span></a>{% endfor %}
+    <form method="get">{% for k, v in params.items %}{% if v and k != "cat" and k != "seller" and k != "price" and k != "rating" and k != "from" and k != "state" %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+      <h2>{% t "Price" %}</h2>{% for key, lo, hi in f.bands %}<label class="sf-check"><input type="radio" name="price" value="{{ key }}"{% if params.price == key %} checked{% endif %} onchange="this.form.submit()"> {% if hi %}₹{{ lo }} – ₹{{ hi }}{% else %}{% t "Over" %} ₹{{ lo }}{% endif %}</label>{% endfor %}
+      <h2>{% t "Customer rating" %}</h2>{% for r in "43" %}<label class="sf-check"><input type="radio" name="rating" value="{{ r }}"{% if params.rating == r %} checked{% endif %} onchange="this.form.submit()"> {{ r }}★ {% t "& up" %}</label>{% endfor %}
+      <h2>{% t "Ships from" %}</h2>
+      <label class="sf-check"><input type="radio" name="from" value="warehouse"{% if params.from == "warehouse" %} checked{% endif %} onchange="this.form.submit()"> ✔ {% t "Seedha Bazar fulfilled" %} <span class="mute">({{ f.ships.warehouse|default:0 }})</span></label>
+      <label class="sf-check"><input type="radio" name="from" value="seller"{% if params.from == "seller" %} checked{% endif %} onchange="this.form.submit()"> {% t "Ships from the maker" %} <span class="mute">({{ f.ships.seller|default:0 }})</span></label>
+      {% if f.states %}<h2>{% t "Made in" %}</h2>{% for s in f.states %}<label class="sf-check"><input type="radio" name="state" value="{{ s.state }}"{% if params.state == s.state %} checked{% endif %} onchange="this.form.submit()"> {{ s.state }} <span class="mute">({{ s.n }})</span></label>{% endfor %}{% endif %}
+      <noscript><button class="btn small">{% t "Apply" %}</button></noscript>
+      {% if params.price or params.rating or params.from or params.state %}<p><a href="{% if category %}/shop/c/{{ category }}/{% else %}/shop/{% endif %}{% if params.q %}?q={{ params.q|urlencode }}{% endif %}">✕ {% t "Clear filters" %}</a></p>{% endif %}
+    </form></div></details>
+  </aside>
+  <section class="sf-results">
+    <div class="sf-bar"><p class="mute" style="margin:0">{% if total %}{% t "{n} results" n=total %}{% if params.q %} {% t "for" %} “<b>{{ params.q }}</b>”{% endif %}{% else %}{% t "No results" %}{% endif %}</p>
+      <form method="get">{% for k, v in params.items %}{% if v and k != "sort" and k != "cat" and k != "seller" %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+        <label class="mute" for="sort">{% t "Sort by" %}</label> <select id="sort" name="sort" onchange="this.form.submit()">{% for v, l in sorts %}<option value="{{ v }}"{% if params.sort == v or not params.sort and v == "relevance" %} selected{% endif %}>{% t l %}</option>{% endfor %}</select></form></div>
+    <div class="pc-grid">{% for p in rows %}{% include "web/shop/_card.html" %}{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No product matches. Try fewer filters or another word." %}</p></div>{% endfor %}</div>
+    {% if pages > 1 %}<nav class="pager" aria-label="{% t "Pages" %}">{% if page > 1 %}<a class="btn ghost small" href="?{{ qs }}&page={{ page|add:-1 }}">‹ {% t "Previous" %}</a>{% endif %}<span class="mute">{{ page }} / {{ pages }}</span>{% if page < pages %}<a class="btn ghost small" href="?{{ qs }}&page={{ page|add:1 }}">{% t "Next" %} ›</a>{% endif %}</nav>{% endif %}
+    <div class="card tint" style="margin-top:18px"><b>✔ {% t "Why buy on Seedha Bazar" %}</b><p style="margin:4px 0 0">{% t "Every product is checked by Seedha Bazar before it goes on sale. We confirm your order with the makers, deliver it, and collect payment, so you and the makers deal through us." %}</p></div>
+  </section>
+</div>
+<script>(function(){var d=document.querySelector(".sf-sheet");if(d&&matchMedia("(max-width:899px)").matches)d.open=false;})();</script>
+{% endblock %}

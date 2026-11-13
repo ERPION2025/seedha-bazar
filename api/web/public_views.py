@@ -155,7 +155,9 @@ def sitemap(request):
 
     import catalog
 
-    paths = ["/for-farmers/", "/for-fpos/", "/for-ngos/", "/for-buyers/", "/produce/", "/privacy/", "/login/"] + [f"/produce/{k}/" for k in catalog.PRODUCTS]
+    from shop.models import CATEGORIES, Product
+    paths = ["/for-farmers/", "/for-fpos/", "/for-ngos/", "/for-buyers/", "/produce/", "/shop/", "/privacy/", "/login/"] + [f"/produce/{k}/" for k in catalog.PRODUCTS]
+    paths += [f"/shop/c/{k}/" for k, _, _ in CATEGORIES] + [f"/shop/p/{pk}/" for pk in Product.objects.filter(status="live").values_list("pk", flat=True)[:5000]]
     body = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     body += "".join(f"  <url><loc>{settings.SITE_URL}{p}</loc></url>\n" for p in paths) + "</urlset>\n"
     return HttpResponse(body, content_type="application/xml")
@@ -165,6 +167,12 @@ def robots(request):
     from django.conf import settings
     from django.http import HttpResponse
 
-    lines = ["User-agent: *", "Allow: /for-farmers/", "Allow: /for-fpos/", "Allow: /for-ngos/", "Allow: /for-buyers/", "Allow: /produce/", "Allow: /privacy/",
+    lines = ["User-agent: *", "Allow: /for-farmers/", "Allow: /for-fpos/", "Allow: /for-ngos/", "Allow: /for-buyers/", "Allow: /produce/", "Allow: /shop/", "Disallow: /shop/cart/", "Disallow: /shop/checkout/", "Disallow: /shop/orders/", "Disallow: /shop/manage/", "Allow: /privacy/",
              "Disallow: /console/", "Disallow: /admin/", "Disallow: /api/", "Disallow: /s/", "Disallow: /verify/", f"Sitemap: {settings.SITE_URL}/sitemap.xml"]
     return HttpResponse("\n".join(lines) + "\n", content_type="text/plain")
+
+
+def csrf_failure(request, reason=""):
+    """A form from a page that was open too long, or from before signing in elsewhere: explain, and offer a fresh start."""
+    back = "/login/" if request.path.startswith("/login") else (request.path if request.method == "GET" else "/")
+    return render(request, "web/public/csrf_failure.html", {"back": back}, status=403)

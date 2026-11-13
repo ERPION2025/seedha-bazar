@@ -1,0 +1,14 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Checkout" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Checkout" %}</h1>
+<div class="card tint">{% for g in c.groups %}<p class="mute" style="margin:0 0 4px">{% if g.mode == "pickup" %}🙋 {% t "Pickup" %} · {{ g.place }}{% else %}🚚 {% t "Delivery in {days} days" days=g.courier.days %} · {% if g.kind == "warehouse" %}{% t "from Jabalpur" %}{% else %}{% t "from" %} {{ g.place }}{% endif %}{% endif %}</p>
+  {% for r in g.rows %}<div class="line"><span>{{ r.product.title }} × {{ r.qty }}</span><span>{{ r.line|inr }}</span></div>{% endfor %}{% endfor %}
+  <div class="line"><span>{% t "Delivery" %}</span><span>{% if c.delivery %}{{ c.delivery|inr }}{% else %}{% t "Free" %}{% endif %}</span></div>
+  <div class="line"><b>{% t "Total" %}</b><b>{{ c.total|inr }}</b></div></div>
+<form method="post" class="card">{% csrf_token %}{% include "web/partials/form_body.html" %}
+  {% if upi %}<p class="hint">{% t "UPI: pay Seedha Bazar at {upi} after we confirm your order. Write the order number in the note." upi=upi %}</p>{% endif %}
+  <button class="btn block">{% t "Place order" %}</button></form>
+<p class="hint">{% t "We deliver in these cities for now. Seedha Bazar confirms the order with the makers before it is packed." %} <a href="/shop/cart/">{% t "Change delivery or PIN code" %}</a></p>
+{% endblock %}

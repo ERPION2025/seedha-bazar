@@ -1,0 +1,29 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Cart" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>🛒 {% t "Cart" %}</h1>
+{% if c.rows %}<form method="post" class="card tint row">{% csrf_token %}<label for="pin"><b>📍 {% t "Deliver to PIN code" %}</b></label>
+  <input id="pin" type="text" name="pin" value="{{ c.pin }}" inputmode="numeric" maxlength="6" placeholder="482001" style="width:130px"><button class="btn small">{% t "Check delivery" %}</button></form>{% endif %}
+<form method="post">{% csrf_token %}
+{% for g in c.groups %}<div class="card">
+  <p class="mute" style="margin:0 0 8px">{% if g.kind == "warehouse" %}🏬 {% t "From the Seedha Bazar warehouse" %} · {{ g.place }}{% else %}📦 {% t "From the maker" %} · 📍 {{ g.place }}{% endif %}</p>
+  {% for r in g.rows %}<div class="line"><span><a href="/shop/p/{{ r.product.pk }}/"><b>{{ r.product.title }}</b></a> × {{ r.qty }}<br><small class="mute">{{ r.product.pack }} · {{ r.each|inr }} {% t "each" %}{% if r.b2b %} · 🏢 {% t "Business price" %}{% endif %}{% if r.out %} · <span class="neg">{% t "Out of stock" %}</span>{% endif %}</small></span><b>{{ r.line|inr }}</b></div>{% endfor %}
+  {% if c.pin %}<div class="deliver-opts">
+    <label class="check-inline"><input type="radio" name="mode_{{ g.key }}" value="courier"{% if g.mode == "courier" %} checked{% endif %} onchange="this.form.submit()"> 🚚 {% t "Seedha Bazar delivery" %}{% if g.courier %} · {% t "{days} days" days=g.courier.days %} · {% if c.free_delivery %}{% t "Free" %}{% else %}{{ g.courier.fee|inr }}{% endif %}{% endif %}</label>
+    {% if g.pickup %}<label class="check-inline"><input type="radio" name="mode_{{ g.key }}" value="pickup"{% if g.mode == "pickup" %} checked{% endif %} onchange="this.form.submit()"> 🙋 {% t "I will pick it up" %} · {{ g.place }} · {% t "Free" %}</label>{% endif %}
+  </div>{% endif %}
+</div>{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "Your cart is empty." %} <a href="/shop/">{% t "Go to the shop" %}</a></p></div>{% endfor %}
+<noscript><button class="btn small ghost">{% t "Update" %}</button></noscript></form>
+{% for r in c.rows %}{% if forloop.first %}<details class="card"><summary>{% t "Change quantities" %}</summary>{% endif %}
+  <form method="post" action="/shop/cart/change/" class="row" style="margin-top:8px">{% csrf_token %}<input type="hidden" name="product" value="{{ r.product.pk }}"><input type="hidden" name="set" value="1">
+    <span style="flex:1">{{ r.product.title }}</span><input type="number" name="qty" value="{{ r.qty }}" min="0" max="{{ r.product.max_per_order }}" style="width:80px" aria-label="{% t "How many" %}"><button class="btn small ghost">{% t "Update" %}</button><button class="link-btn" name="qty" value="0">{% t "Remove" %}</button></form>
+{% if forloop.last %}</details>{% endif %}{% endfor %}
+{% if c.rows %}<div class="card tint">
+  <div class="line"><span>{% t "Items" %} ({{ c.count }})</span><b>{{ c.goods|add:c.fee|inr }}</b></div>
+  <div class="line"><span>{% t "Delivery" %}</span><b>{% if not c.pin %}{% t "Enter your PIN code" %}{% elif c.delivery %}{{ c.delivery|inr }}{% else %}{% t "Free" %}{% endif %}</b></div>
+  {% if c.delivery %}<p class="hint" style="margin:4px 0">{% t "Free delivery on orders above {amount}." amount=free_above|inr %}</p>{% endif %}
+  <div class="line"><span><b>{% t "Total" %}</b></span><b class="big2">{{ c.total|inr }}</b></div>
+  {% if c.pin %}<a class="btn block" href="/shop/checkout/" style="margin-top:10px">{% t "Checkout" %}</a>{% else %}<p class="hint">{% t "Enter your PIN code to see delivery options." %}</p>{% endif %}
+  <p class="hint" style="margin:8px 0 0">{% t "Prices include GST where it applies. You get GST invoices with your order." %}</p></div>{% endif %}
+{% endblock %}

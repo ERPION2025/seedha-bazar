@@ -1,0 +1,11 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Warehouse inbound" %}{% endblock %}
+{% block content %}
+<h1>🏬 {% t "Warehouse inbound" %}</h1>
+<p class="mute">{{ warehouse.name }} · {{ warehouse.address }} {{ warehouse.pincode }}. {% t "Stock sent by sellers counts only when you receive and count it here." %}</p>
+{% for i in rows %}<div class="card{% if i.status == "sent" %} sun{% endif %}"><div class="row between"><b>{{ i.product.title }}</b><span class="pill grey">{% t i.get_status_display %}</span></div>
+  <p class="mute" style="margin:4px 0">{{ i.created_at|date:"j M Y" }} · {% t "Sent" %} {{ i.quantity }} · {{ i.product.seller.phone }}{% if i.note %} · {{ i.note }}{% endif %}{% if i.received is not None %} · {% t "Received" %} {{ i.received }}{% endif %}</p>
+  {% if i.status == "sent" %}<form method="post" class="row">{% csrf_token %}<input type="hidden" name="inbound" value="{{ i.pk }}"><label>{% t "Counted and good" %} <input type="number" name="received" min="0" value="{{ i.quantity }}" style="width:90px"></label>
+    <input type="text" name="note" placeholder="{% t "Note (optional)" %}" style="flex:1;min-width:140px"><button class="btn small">{% t "Receive" %}</button></form>{% endif %}</div>
+{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "Nothing sent yet." %}</p></div>{% endfor %}
+{% endblock %}

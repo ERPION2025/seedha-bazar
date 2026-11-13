@@ -77,6 +77,53 @@ One codebase and one database serve **two separate sites**. Change this structur
   - "Animals and livestock" problems go to the KVK as before.
 - No hardware, sensors or outside registries are needed; government IDs are optional text fields.
 
+## 4c. Shop: retail and B2B products, Seedha Bazar in the middle
+
+There are two ways to sell:
+- **Marketplace** (`/market/`): bulk farm produce, with enquiries, signed agreements and advances.
+- **Shop** (`/shop/`): ready products at fixed prices with a cart. These include packed food, millets, honey, handloom, handicrafts, clothing and décor.
+
+How the shop works:
+- **Producers** (farmers, FPOs, NGOs, groups) list products with their price and stock in My shop.
+- **Review:** Seedha Bazar reviews every new product and every price or description change in Console → Shop review, and may change the price before it goes live. Stock changes stay live.
+- **Buyers:** households and businesses buy in serviceable cities (`SHOP_CITIES`). Businesses get the business price from the minimum quantity.
+- **Fees** come from both sides, per category, set in Console → Shop fees:
+  - a seller fee kept from the producer's price;
+  - a buyer fee added to the price shown;
+  - delivery is charged below the free-delivery amount.
+- **Stock** is taken when the order is placed, so the last piece cannot be sold twice. Every change is a stock movement, and a cancelled order returns its stock.
+- **Order steps:** placed, then confirmed by the makers, then packed, on the way and delivered, all run by Seedha Bazar in Console → Shop orders. Cash on delivery is marked paid on delivery, and producers are marked paid after that.
+- **Privacy:** buyers and producers never see each other's phone numbers.
+- **Visibility:** the storefront and product pages are open to visitors and search engines. The cart can be filled without signing in, but checkout, orders and My shop need sign-in.
+- **Two fulfilment models** per product:
+  - **From the seller:** the buyer picks up (if the seller allows it; the address is shared after confirmation), or Seedha Bazar books a courier from the seller's PIN code.
+  - **From the Seedha Bazar warehouse** (Jabalpur, `SHOP_WAREHOUSE`): the seller sends stock there first, and it is sellable only once the warehouse receives and counts it (Console → Warehouse inbound).
+- **Delivery zones** (`shop/shipping.py`): from the origin PIN code to the buyer's, each zone has promised days and a charge by weight (`SHOP_ZONE_FEES`).
+  - Zones: local, same state, neighbouring state, metro, national, remote.
+  - The cart is grouped by origin, and each group gets delivery or pickup.
+  - Each group becomes one shipment with its boxes, tracking ids and labels.
+- **GST** (`shop/gst.py`): documents are issued when goods leave or are handed over.
+  - A GST-registered seller's goods get a tax invoice: CGST+SGST within the state, IGST across states, with prices including GST.
+  - Unregistered or exempt goods get a bill of supply.
+  - Seedha Bazar's own fee and delivery get its service invoice when `GSTIN` is set.
+  - TCS (`GST_TCS_PCT`) is kept from registered sellers' payouts.
+  - Confirm the set-up with a chartered accountant.
+- **Payment:** pay on delivery always; UPI to Seedha Bazar with `SHOP_UPI_ID`; online through Razorpay with `RAZORPAY_*`.
+  - Online payment is verified by signature on the server.
+  - Unpaid online orders are cancelled after `SHOP_UNPAID_MINUTES`.
+- **Couriers** (`shop/couriers.py`), optional:
+  - Shiprocket and Delhivery book one shipment and label per box once their keys are set.
+  - A local courier needs only its name and tracking ids.
+  - Seedha Bazar's own labels, one per box, print for every shipment.
+
+## 4d. Sound
+
+The app has one sound: a soft breeze through the crops (`web/static/web/sounds/breeze.wav`, made by `tools/make_tones.py`).
+- **When it plays:** quietly, when a notification arrives and when something the person did has worked.
+- **Limits:** never more than once every few seconds.
+- **Switch:** people can turn it off in Notifications → Settings.
+- **The alarm tone** is kept only for critical weather alerts.
+
 ## 4a. Menus: one per role, nothing else
 
 Menus are defined in `web/menus.py`. Phones show the first 4 items in the bottom bar and the rest under "More".

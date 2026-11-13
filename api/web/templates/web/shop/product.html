@@ -1,0 +1,78 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{{ p.title }}{% endblock %}
+{% block desc %}{{ p.description|truncatechars:150 }}{% endblock %}
+{% block mainclass %} wide{% endblock %}
+{% block content %}
+<nav class="crumbs" aria-label="{% t "You are here" %}"><a href="/shop/">{% t "Shop" %}</a> › <a href="/shop/c/{{ p.category }}/">{% t p.cat_label %}</a> › <span>{{ p.title|truncatechars:40 }}</span></nav>
+<div class="pd">
+  <div class="pd-gallery">
+    <div class="pd-main">{% if photos %}<img id="pd-big" src="{{ photos.0 }}" alt="{{ p.title }}">{% else %}<span aria-hidden="true">{{ p.cat_emoji }}</span>{% endif %}
+      {% if p.bestseller %}<span class="pc-badge">{% t "Bestseller" %}</span>{% endif %}</div>
+    {% if photos|length > 1 %}<div class="pd-thumbs">{% for src in photos %}<button type="button" class="pd-thumb{% if forloop.first %} on{% endif %}" data-src="{{ src }}" aria-label="{% t "Photo" %} {{ forloop.counter }}"><img src="{{ src }}" alt="" loading="lazy"></button>{% endfor %}</div>{% endif %}
+  </div>
+
+  <div class="pd-info">
+    <h1 class="pd-title">{{ p.title }}{% if p.pack %} <span class="mute">· {{ p.pack }}</span>{% endif %}</h1>
+    <a class="pd-store" href="/shop/m/{{ p.seller_id }}/">{% t "Visit the {name} store" name=store.name %}</a>
+    <div class="pd-rate">{% if p.ratings_n %}<b>{{ rs.avg }}</b> {% include "web/shop/_stars.html" %} <a href="#reviews">{% t "{n} ratings" n=p.ratings_n %}</a>{% else %}<span class="mute">{% t "No ratings yet" %}</span>{% endif %}
+      {% if p.sold_label %}<span class="mute"> · {% t "{n} bought in the past month" n=p.sold_label %}</span>{% endif %}</div>
+    <hr>
+    <div class="pd-price">{% if p.off %}<span class="pd-off">-{{ p.off }}%</span> {% endif %}<span class="pd-now"><small>₹</small>{{ p.show_price|floatformat:"0g" }}</span></div>
+    {% if p.show_mrp %}<p class="mute pd-mrp">{% t "M.R.P." %} <s>₹{{ p.show_mrp|floatformat:"0g" }}</s></p>{% endif %}
+    <p class="hint" style="margin:2px 0 8px">{% t "Inclusive of all taxes" %}</p>
+    {% if b2b_each %}<p class="pd-b2b">🏢 {% t "Business price {price} each from {n} units" price=b2b_each|inr n=p.b2b_min %}</p>{% endif %}
+    <div class="pd-perks">
+      <div><span>🚚</span>{% if p.free_delivery %}{% t "Free delivery" %}{% else %}{% t "Delivery by Seedha Bazar" %}{% endif %}</div>
+      {% if org.pickup and not p.from_warehouse %}<div><span>🤝</span>{% t "Self pickup" %}</div>{% endif %}
+      <div><span>💵</span>{% t "Cash or UPI on delivery" %}</div>
+      <div><span>↩️</span>{% if p.returnable %}{% t "{n}-day return" n=p.return_days %}{% else %}{% t "Not returnable" %}{% endif %}</div>
+      <div><span>✔</span>{% t "Checked by Seedha Bazar" %}</div>
+    </div>
+    {% if highlights %}<h2 class="pd-h">{% t "About this item" %}</h2><ul class="pd-hl">{% for h in highlights %}<li>{{ h }}</li>{% endfor %}</ul>{% endif %}
+    {% if p.description %}<div class="pd-desc">{{ p.description|linebreaksbr }}</div>{% endif %}
+    {% if mine %}<p class="hint">{% t "This is your product." %} <a href="/shop/manage/{{ p.pk }}/">{% t "Edit" %}</a></p>{% endif %}
+  </div>
+
+  <aside class="pd-buy card">
+    <div class="pd-now"><small>₹</small>{{ p.show_price|floatformat:"0g" }}</div>
+    <p style="margin:6px 0">{% if p.free_delivery %}<b>{% t "FREE delivery" %}</b> {% endif %}{% if p.deliver_by %}{% t "Get it by" %} <b>{{ p.deliver_by|date:"l, j F" }}</b>{% endif %}
+      {% if est %}<br><span class="hint">{% t "Delivery to {pin} in {days} days" pin=pin days=est.days %}{% if not p.free_delivery %} · {% t "Delivery charge" %} {{ est.fee|inr }}{% endif %}</span>{% endif %}</p>
+    <form method="get" class="pd-pin">📍 <input type="text" name="pin" value="{{ pin }}" inputmode="numeric" maxlength="6" placeholder="{% t "Your PIN code" %}" aria-label="{% t "PIN code" %}"><button class="link-btn">{% if pin %}{% t "Change" %}{% else %}{% t "Check delivery" %}{% endif %}</button></form>
+    {% if pin and not org.pin %}<p class="hint">{% t "The maker is setting up shipping; pickup or delivery is confirmed after you order." %}</p>{% endif %}
+    {% if p.status == "live" and p.stock %}
+      <p class="pd-stock {% if p.low_stock %}low{% else %}ok{% endif %}">{% if p.low_stock %}{% t "Only {n} left in stock" n=p.stock %}{% else %}{% t "In stock" %}{% endif %}</p>
+      <form method="post" action="/shop/cart/change/">{% csrf_token %}<input type="hidden" name="product" value="{{ p.pk }}"><input type="hidden" name="back" value="/shop/p/{{ p.pk }}/">
+        <label class="pd-qty">{% t "Quantity" %} <select name="qty">{% for n in qty_range %}<option value="{{ n }}">{{ n }}</option>{% endfor %}</select></label>
+        <button class="btn pd-cart">🛒 {% t "Add to cart" %}</button>
+        <button class="btn pd-now-btn" name="buy" value="1">{% t "Buy now" %}</button></form>
+    {% else %}<p class="pd-stock low">{% t "Not on sale right now." %}</p>{% endif %}
+    <table class="pd-who"><tr><th>{% t "Ships from" %}</th><td>{% if p.from_warehouse %}{% t "Seedha Bazar, {place}" place=warehouse.district %}{% else %}{{ p.place }}{% endif %}</td></tr>
+      <tr><th>{% t "Sold by" %}</th><td><a href="/shop/m/{{ p.seller_id }}/">{{ store.name|default:p.maker }}</a></td></tr>
+      <tr><th>{% t "Payment" %}</th><td>{% t "Secure, through Seedha Bazar" %}</td></tr></table>
+  </aside>
+</div>
+
+{% if specs %}<section class="pd-sec"><h2>{% t "Product details" %}</h2><table class="pd-specs">{% for k, v in specs %}{% if v %}<tr><th>{% t k %}</th><td>{{ v }}</td></tr>{% endif %}{% endfor %}</table></section>{% endif %}
+
+<section class="pd-sec card store-card"><div class="row between"><div><b>🏪 {{ store.name }}</b>{% if store.verified %} <span class="pill">✔ {% t "Verified FPO / NGO" %}</span>{% endif %}
+  <p class="mute" style="margin:2px 0 0">📍 {{ store.place|default:p.place }} · {% t "On Seedha Bazar since {date}" date=store.since|date:"M Y" %}{% if store.rating %} · ★ {{ store.rating }} ({{ store.ratings_n }}){% endif %}</p></div>
+  <a class="btn ghost small" href="/shop/m/{{ p.seller_id }}/">{% t "Visit the store" %}</a></div></section>
+
+{% if from_maker %}<section class="pd-sec"><h2>{% t "More from this maker" %}</h2><div class="pc-rail">{% for p in from_maker %}{% include "web/shop/_card.html" %}{% endfor %}</div></section>{% endif %}
+
+<section class="pd-sec" id="reviews"><h2>{% t "Customer reviews" %}</h2>
+  <div class="rv">
+    <div class="rv-sum">{% if rs.n %}<p style="margin:0"><b class="rv-avg">{{ rs.avg }}</b> {% t "out of 5" %}</p><p class="mute" style="margin:0 0 8px">{% t "{n} ratings" n=rs.n %}</p>
+      {% for s, c, pct in rs.bars %}<div class="rv-bar"><span>{{ s }}★</span><i><b style="width:{{ pct }}%"></b></i><span class="mute">{{ pct }}%</span></div>{% endfor %}
+      {% else %}<p class="mute" style="margin:0">{% t "No ratings yet" %}</p>{% endif %}
+      <p class="hint">{% t "Only buyers who received this product can rate it." %}</p></div>
+    <div class="rv-list">{% for r in reviews %}<article class="rv-item"><p style="margin:0"><b>{{ r.who }}</b></p>
+      <p style="margin:2px 0"><span class="stars">{% for i in "12345" %}<i class="{% if forloop.counter <= r.stars %}s-full{% else %}s-empty{% endif %}">★</i>{% endfor %}</span>{% if r.title %} <b>{{ r.title }}</b>{% endif %}</p>
+      <p class="hint" style="margin:0">{{ r.created_at|date:"j M Y" }} · <span class="pc-sb">{% t "Verified purchase" %}</span></p>
+      {% if r.text %}<p style="margin:4px 0 0">{{ r.text }}</p>{% endif %}</article>{% empty %}<p class="mute">{% t "Be the first to rate it after your order arrives." %}</p>{% endfor %}</div>
+  </div></section>
+
+{% if similar %}<section class="pd-sec"><h2>{% t "Similar products" %}</h2><div class="pc-rail">{% for p in similar %}{% include "web/shop/_card.html" %}{% endfor %}</div></section>{% endif %}
+<p class="hint">✔ {% t "Checked by Seedha Bazar. We confirm, deliver and collect payment; you and the makers deal through us." %}</p>
+<script>document.querySelectorAll(".pd-thumb").forEach(function(b){b.addEventListener("click",function(){document.getElementById("pd-big").src=b.dataset.src;document.querySelectorAll(".pd-thumb").forEach(function(x){x.classList.toggle("on",x===b);});});});</script>
+{% endblock %}

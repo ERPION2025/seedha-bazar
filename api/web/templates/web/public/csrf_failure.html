@@ -1,0 +1,8 @@
+{% extends base_template %}{% load web_tags %}
+{% block title %}{% t "Please try again" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>{% t "Please try again" %}</h1>
+<div class="card"><p style="margin:0 0 12px">{% t "This page was open for a long time, or you signed in from another tab, so it could not be sent safely. Open it again and repeat the last step." %}</p>
+<a class="btn" href="{{ back }}">{% t "Open it again" %}</a></div>
+{% endblock %}

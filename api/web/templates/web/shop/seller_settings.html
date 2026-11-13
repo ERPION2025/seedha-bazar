@@ -1,0 +1,9 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Shop settings" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<p><a href="/shop/manage/">← {% t "My shop" %}</a></p>
+<h1>⚙️ {% t "Shop settings" %}</h1>
+<p class="mute">{% t "Seedha Bazar uses this for courier pickups from your place, GST invoices and your payments. Buyers see only your village, district and state." %}</p>
+<form method="post" class="card">{% csrf_token %}{% include "web/partials/form_body.html" %}<button class="btn block">{% t "Save" %}</button></form>
+{% endblock %}

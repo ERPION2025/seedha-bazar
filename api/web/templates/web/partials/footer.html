@@ -17,6 +17,7 @@ links that need sign-in carry rel="nofollow" for visitors, so search engines spe
     <nav class="ft-col ft-market" aria-label="{% t "Marketplace" %}"><h2>{% t "Marketplace" %}</h2>
       {% for k in footer_produce %}<a href="{{ SITE_URL }}/produce/{{ k }}/">{% crop k as cname %}{% t "Buy {crop}" crop=cname %}</a>{% endfor %}
       <a href="{{ SITE_URL }}/produce/"><b>{% t "All produce" %} →</b></a>
+      <a href="{{ SITE_URL }}/shop/"><b>🛍️ {% t "Shop: food, handloom, crafts" %} →</b></a>
     </nav>
     <nav class="ft-col" aria-label="{% t "Services" %}"><h2>{% t "Services" %}</h2>
       {% for label, url in footer_services %}<a href="{{ SITE_URL }}{{ url }}"{% if not user.is_authenticated %} rel="nofollow"{% endif %}>{% t label %}</a>{% endfor %}

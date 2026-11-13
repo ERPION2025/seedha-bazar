@@ -100,6 +100,7 @@ class BuyerProfile(models.Model):
         CATERER = "caterer", "Caterer"
         PROCESSOR = "processor", "Processor / food company"
         DISTRIBUTOR = "distributor", "Wholesaler / distributor"
+        INDIVIDUAL = "individual", "Individual / household"
         OTHER = "other", "Other"
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="buyer_profile")
@@ -114,6 +115,8 @@ class BuyerProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def compute_level(self) -> int:
+        if self.business_type == self.BusinessType.INDIVIDUAL:  # a household needs only a name and a city
+            return 1 if self.contact_name.strip() and self.city.strip() else 0
         if not (self.business_name.strip() and self.business_type and self.city.strip()):
             return 0
         if self.documents_verified and (self.gstin or self.fssai):

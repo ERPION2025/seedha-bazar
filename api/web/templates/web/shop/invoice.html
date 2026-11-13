@@ -1,0 +1,14 @@
+{% load web_tags %}<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{{ inv.get_kind_display }} {{ inv.number }}</title><meta name="robots" content="noindex">
+<style>body{font:14px/1.45 system-ui,sans-serif;color:#111;margin:24px;max-width:860px}h1{font-size:20px;margin:0}table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f3f3f3}.r{text-align:right}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0}.box{border:1px solid #ccc;padding:10px}
+.muted{color:#555}@media print{button{display:none}body{margin:0}}</style></head><body>
+<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h1>{% if inv.kind == "tax" %}TAX INVOICE{% elif inv.kind == "supply" %}BILL OF SUPPLY{% else %}{% if d.supplier.gstin %}TAX INVOICE{% else %}INVOICE{% endif %}{% endif %}</h1>
+<p class="muted">{% if inv.kind == "platform" %}Marketplace service and delivery{% else %}Supplied through Seedha Bazar (e-commerce operator){% if d.operator.gstin %}, GSTIN {{ d.operator.gstin }}{% endif %}{% endif %}</p></div>
+<div><b>No.</b> {{ inv.number }}<br><b>Date</b> {{ inv.issued_at|date:"d-m-Y" }}<br><b>Order</b> {{ inv.order.number }}</div></div>
+<div class="grid"><div class="box"><b>Supplier</b><br>{{ d.supplier.name }}<br>{{ d.supplier.address }}<br>State: {{ d.supplier.state }}{% if d.supplier.gstin %}<br>GSTIN: {{ d.supplier.gstin }}{% endif %}</div>
+<div class="box"><b>Bill / ship to</b><br>{{ d.buyer.name }}<br>{{ d.buyer.address }}<br>Place of supply: {{ d.place_of_supply }}{% if d.buyer.gstin %}<br>GSTIN: {{ d.buyer.gstin }}{% endif %}</div></div>
+<table><thead><tr><th>Item</th><th>HSN/SAC</th><th class="r">Qty</th><th class="r">Taxable value</th><th class="r">GST %</th>{% if d.intra %}<th class="r">CGST</th><th class="r">SGST</th>{% else %}<th class="r">IGST</th>{% endif %}<th class="r">Total</th></tr></thead><tbody>
+{% for l in d.lines %}<tr><td>{{ l.item }}{% if l.pack %} ({{ l.pack }}){% endif %}</td><td>{{ l.hsn }}</td><td class="r">{{ l.qty }}</td><td class="r">{{ l.taxable }}</td><td class="r">{{ l.rate }}</td>{% if d.intra %}<td class="r">{{ l.cgst }}</td><td class="r">{{ l.sgst }}</td>{% else %}<td class="r">{{ l.igst }}</td>{% endif %}<td class="r">{{ l.total }}</td></tr>{% endfor %}
+<tr><th colspan="3">Total</th><th class="r">{{ d.totals.taxable }}</th><th></th>{% if d.intra %}<th class="r">{{ d.totals.cgst }}</th><th class="r">{{ d.totals.sgst }}</th>{% else %}<th class="r">{{ d.totals.igst }}</th>{% endif %}<th class="r">₹ {{ d.totals.total }}</th></tr></tbody></table>
+{% if d.note %}<p class="muted">{{ d.note }}</p>{% endif %}<p class="muted">Prices include GST where it applies. This is a computer-generated document.</p>
+<button onclick="window.print()">Print / save as PDF</button></body></html>

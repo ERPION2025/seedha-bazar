@@ -1,0 +1,16 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Shop review" %}{% endblock %}
+{% block content %}
+<h1>🛍️ {% t "Shop review" %}</h1>
+<p class="mute">{% t "New products and price changes wait here. Check the photo, description and price; approve at the producer's price or change it, or turn it down with a note." %} {% t "{n} products on sale." n=live %}</p>
+{% for p in rows %}<div class="card"><div class="row" style="align-items:flex-start;gap:14px">
+  <div class="sp-thumb">{% if p.photo %}<img src="/shop/img/{{ p.pk }}/" alt="">{% else %}<span aria-hidden="true">{{ p.cat_emoji }}</span>{% endif %}</div>
+  <div style="flex:1;min-width:220px"><b>{{ p.title }}</b> · {{ p.pack }}<p class="mute" style="margin:2px 0">{% t p.cat_label %} · {{ p.maker|default:"—" }} · {{ p.origin }}{% if p.fssai_no %} · FSSAI {{ p.fssai_no }}{% endif %}</p>
+    <p style="margin:4px 0;white-space:pre-line">{{ p.description|truncatechars:400 }}</p>
+    <p class="mute" style="margin:0">{% t "Asked" %}: <b>{{ p.asked_price|inr }}</b>{% if p.price %} · {% t "Selling at" %} {{ p.price|inr }}{% endif %}{% if p.b2b_price %} · {% t "Business" %} {{ p.b2b_price|inr }} × {{ p.b2b_min }}+{% endif %} · {% t "Stock" %} {{ p.stock }} · {% t "Fees" %} {{ p.fee.0 }}% / {{ p.fee.1 }}%</p></div></div>
+  <form method="post" class="row" style="margin-top:10px">{% csrf_token %}<input type="hidden" name="product" value="{{ p.pk }}">
+    <label>{% t "Price" %} ₹ <input type="number" step="0.01" min="1" name="price" value="{{ p.asked_price }}" style="width:110px"></label>
+    <input type="text" name="note" placeholder="{% t "Note to the producer (optional)" %}" style="flex:1;min-width:160px">
+    <button class="btn small" name="decision" value="approve">✔ {% t "Approve" %}</button><button class="btn small ghost" name="decision" value="reject">{% t "Turn down" %}</button></form></div>
+{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "Nothing waiting." %}</p></div>{% endfor %}
+{% endblock %}

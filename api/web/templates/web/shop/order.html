@@ -1,0 +1,27 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{{ o.number }}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<p><a href="/shop/orders/">← {% t "My orders" %}</a></p>
+<h1>{% t "Order" %} {{ o.number }}</h1>
+{% if o.status == "cancelled" %}<div class="card warn"><b>{% t "Cancelled" %}</b></div>
+{% else %}<ol class="steps">{% for s in steps %}<li class="{{ s.state }}">{% t s.label %}</li>{% endfor %}</ol>{% endif %}
+<div class="card">{% for l in o.lines.all %}<div class="line"><span><a href="/shop/p/{{ l.product_id }}/">{{ l.title }}</a> · {{ l.pack }} × {{ l.quantity }}</span><span>{{ l.amount|add:l.buyer_fee|inr }}</span></div>
+  {% if o.status == "delivered" %}<details class="rate-it"{% if not l.rated %} open{% endif %}><summary>{% if l.rated %}★ {% t "You rated it {n} / 5. Change" n=l.rated.stars %}{% else %}⭐ {% t "Rate this product" %}{% endif %}</summary>
+    <form method="post" action="/shop/review/{{ l.pk }}/">{% csrf_token %}
+      <div class="rate-stars" role="radiogroup" aria-label="{% t "Stars" %}">{% for s in "54321" %}<input type="radio" id="r{{ l.pk }}-{{ s }}" name="stars" value="{{ s }}"{% if l.rated.stars|stringformat:"d" == s %} checked{% endif %} required><label for="r{{ l.pk }}-{{ s }}" title="{{ s }}">★</label>{% endfor %}</div>
+      <input type="text" name="title" maxlength="100" value="{{ l.rated.title }}" placeholder="{% t "In a few words (optional)" %}" aria-label="{% t "Title" %}">
+      <textarea name="text" rows="2" maxlength="1000" placeholder="{% t "What did you like or not like? (optional)" %}" aria-label="{% t "Review" %}">{{ l.rated.text }}</textarea>
+      <button class="btn small">{% t "Submit" %}</button></form></details>{% endif %}{% endfor %}
+  <div class="line"><span>{% t "Delivery" %}</span><span>{% if o.delivery_fee %}{{ o.delivery_fee|inr }}{% else %}{% t "Free" %}{% endif %}</span></div>
+  <div class="line"><b>{% t "Total" %}</b><b>{{ o.total|inr }}</b></div>
+  <p class="mute" style="margin:8px 0 0">{% t o.get_payment_display %}{% if o.paid %} · ✔ {% t "Paid" %}{% endif %} · {{ o.name }}, {{ o.address }}, {{ o.city }} {{ o.pincode }}</p></div>
+{% if o.payment == "online" and not o.paid and o.status != "cancelled" %}<a class="btn block" href="/shop/orders/{{ o.number }}/pay/">💳 {% t "Pay now" %}</a>{% endif %}
+{% for sh in shipments %}<div class="card"><div class="row between"><b>{% if sh.mode == "pickup" %}🙋 {% t "Pickup" %}{% else %}🚚 {% t "Delivery" %}{% endif %}</b><span class="pill grey">{% t sh.get_status_display %}</span></div>
+  <p class="mute" style="margin:4px 0">{% for l in sh.lines.all %}{{ l.title }} × {{ l.quantity }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+  {% if sh.mode == "pickup" %}<p style="margin:0">{% if sh.origin == "warehouse" %}{% t "Collect at" %} {{ warehouse.name }}, {{ warehouse.address }}{% elif sh.status == "ready" %}{% t "Ready. Seedha Bazar will call you with the pickup address and time." %}{% else %}{% t "Seedha Bazar will tell you when it is ready to collect." %}{% endif %}</p>
+  {% else %}<p style="margin:0">{% if sh.sla_days %}{% t "Delivery in {days} days" days=sh.sla_days %}{% endif %}{% if sh.tracking_ids %} · {{ sh.courier_name }}: {% for t in sh.tracking_ids %}<b>{{ t }}</b>{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% if sh.tracking_url %} · <a href="{{ sh.tracking_url }}" target="_blank" rel="noopener noreferrer">{% t "Track" %} ↗</a>{% endif %}</p>{% endif %}</div>{% endfor %}
+{% if invoices %}<div class="card"><h3>🧾 {% t "Invoices" %}</h3>{% for inv in invoices %}<div class="line"><span>{% t inv.get_kind_display %} · {{ inv.number }}</span><a href="/shop/invoice/{{ inv.number }}/" target="_blank">{% t "Open" %}</a></div>{% endfor %}</div>{% endif %}
+{% if o.payment == "upi" and not o.paid and upi and o.status != "cancelled" %}<p class="hint">{% t "UPI: pay Seedha Bazar at {upi} after we confirm your order. Write the order number in the note." upi=upi %}</p>{% endif %}
+{% if o.status == "placed" or o.status == "confirmed" or o.status == "packed" %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="cancel"><button class="link-btn neg">{% t "Cancel this order" %}</button></form>{% endif %}
+{% endblock %}

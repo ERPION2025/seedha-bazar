@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "storage",
     "advisory",
     "farming",
+    "shop",
     "institution",
     "market",
     "web",
@@ -226,3 +227,41 @@ COMPANY_NAME = os.environ.get("COMPANY_NAME", "Vindhyachal Farms LLP")
 COMPANY_ADDRESS = os.environ.get("COMPANY_ADDRESS", "Plot number 39, Palak Vihar, Near Housing Board Colony, Maharajpur, Adhartal, Jabalpur, Madhya Pradesh")
 COMPANY_EMAIL = os.environ.get("COMPANY_EMAIL", "pranav@erpion.in")
 COMPANY_PHONE = os.environ.get("COMPANY_PHONE", "9770417301")
+
+# --- Shop: retail and B2B products, Seedha Bazar in the middle ---
+SHOP_CITIES = [c.strip() for c in os.environ.get("SHOP_CITIES", "Delhi,Mumbai,Bengaluru,Hyderabad,Chennai,Kolkata,Pune,Ahmedabad,Indore,Bhopal,Jabalpur,Gwalior,"
+               "Nagpur,Nashik,Aurangabad,Raipur,Lucknow,Jaipur,Surat,Vadodara,Noida,Gurugram,Chandigarh").split(",") if c.strip()]  # where delivery runs
+SHOP_DELIVERY_FEE = int(os.environ.get("SHOP_DELIVERY_FEE", "49"))
+SHOP_FREE_DELIVERY_ABOVE = int(os.environ.get("SHOP_FREE_DELIVERY_ABOVE", "999"))
+SHOP_SELLER_PCT = os.environ.get("SHOP_SELLER_PCT", "3")  # defaults for categories without their own fee rule
+SHOP_BUYER_PCT = os.environ.get("SHOP_BUYER_PCT", "5")
+SHOP_UPI_ID = os.environ.get("SHOP_UPI_ID", "")  # Seedha Bazar's UPI ID shown to buyers who choose UPI
+CSRF_FAILURE_VIEW = "web.public_views.csrf_failure"  # a plain explanation instead of a bare "403 Forbidden"
+
+# --- Shop fulfilment: the Seedha Bazar warehouse, delivery zones, GST, payments, couriers ---
+SHOP_WAREHOUSE = {
+    "name": os.environ.get("SHOP_WAREHOUSE_NAME", "Seedha Bazar Warehouse, Jabalpur"),
+    "address": os.environ.get("SHOP_WAREHOUSE_ADDRESS", COMPANY_ADDRESS),
+    "pincode": os.environ.get("SHOP_WAREHOUSE_PINCODE", "482004"),
+    "district": "Jabalpur", "state": "Madhya Pradesh",
+    "pickup_allowed": os.environ.get("SHOP_WAREHOUSE_PICKUP", "1") == "1",  # buyers may collect at the warehouse
+}
+# Delivery charge per parcel by zone, plus each extra 500 g above the first 500 g (rupees)
+SHOP_ZONE_FEES = {"local": (30, 10), "state": (50, 15), "near": (70, 20), "metro": (80, 25), "national": (90, 30), "remote": (130, 40)}
+# GST: Seedha Bazar's own registration (for its service invoice and TCS as an e-commerce operator, section 52).
+# Rates and rules change: confirm with your chartered accountant before going live.
+GSTIN = os.environ.get("GSTIN", "")
+GST_STATE = os.environ.get("GST_STATE", "Madhya Pradesh")
+GST_SERVICE_RATE = os.environ.get("GST_SERVICE_RATE", "18")
+GST_TCS_PCT = os.environ.get("GST_TCS_PCT", "0.5")
+# Online payments (Razorpay). Without keys, only pay-on-delivery and UPI are offered.
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+SHOP_UNPAID_MINUTES = int(os.environ.get("SHOP_UNPAID_MINUTES", "30"))  # unpaid online orders are cancelled after this
+# Courier partners (optional). Each switches on when its keys are set; a local courier with a manual tracking id always works.
+SHIPROCKET_EMAIL = os.environ.get("SHIPROCKET_EMAIL", "")
+SHIPROCKET_PASSWORD = os.environ.get("SHIPROCKET_PASSWORD", "")
+SHIPROCKET_PICKUP_LOCATION = os.environ.get("SHIPROCKET_PICKUP_LOCATION", "Jabalpur")  # pickup location name registered in Shiprocket
+DELHIVERY_TOKEN = os.environ.get("DELHIVERY_TOKEN", "")
+DELHIVERY_PICKUP_NAME = os.environ.get("DELHIVERY_PICKUP_NAME", "")  # warehouse name registered with Delhivery
+DELHIVERY_BASE = os.environ.get("DELHIVERY_BASE", "https://track.delhivery.com")  # https://staging-express.dlv.ink for tests

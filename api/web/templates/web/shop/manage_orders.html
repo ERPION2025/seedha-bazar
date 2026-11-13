@@ -1,0 +1,11 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "Shop orders" %}{% endblock %}
+{% block content %}
+<p><a href="/shop/manage/">← {% t "My shop" %}</a></p>
+<h1>📦 {% t "Shop orders" %}</h1>
+<p class="mute">{% t "Confirm each order and pack it. Seedha Bazar collects it, delivers it and pays you after delivery." %}</p>
+{% for l in rows %}<div class="card{% if l.order.status == "placed" and not l.seller_confirmed_at %} sun{% endif %}"><div class="row between"><b>{{ l.title }} × {{ l.quantity }}</b><span class="pill grey">{% t l.order.get_status_display %}</span></div>
+  <p class="mute" style="margin:4px 0">{{ l.order.number }} · {{ l.order.created_at|date:"j M" }} · {{ l.order.city }} · {% t "You receive" %} <b>{{ l.payout|inr }}</b>{% if l.paid_out_at %} · ✔ {% t "Paid to you" %}{% endif %}</p>
+  {% if l.order.status == "placed" and not l.seller_confirmed_at %}<form method="post">{% csrf_token %}<input type="hidden" name="line" value="{{ l.pk }}"><button class="btn small">✔ {% t "Confirm: I have it ready" %}</button></form>{% endif %}</div>
+{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No orders yet." %}</p></div>{% endfor %}
+{% endblock %}

@@ -13,12 +13,14 @@
 <link rel="apple-touch-icon" href="{% static 'web/icons/icon-192.png' %}">
 {% block head %}{% endblock %}
 </head>
-<body class="{% if nav.all %}has-nav{% else %}no-nav{% endif %}{% if portal %} portal-{{ portal }}{% endif %}">
+<body data-sound="{% static 'web/sounds/breeze.wav' %}" data-sound-on="{% if sound_on %}1{% endif %}" class="{% if nav.all %}has-nav{% else %}no-nav{% endif %}{% if portal %} portal-{{ portal }}{% endif %}">
 <header class="top"><div class="wrap">
   <a class="brand" href="/"><i>सी</i>{% t "Seedha Bazar" %}</a>
   {% if portal == "kvk" %}<span class="portal-tag">🏛️ {% t "Institution Connect" %}</span>{% endif %}
   <nav class="langs" aria-label="Language">{% for code, name in lang_choices %}<a href="?lang={{ code }}"{% if code == lang %} class="on" aria-current="true"{% endif %}>{{ name }}</a>{% endfor %}</nav>
   {% if user.is_authenticated %}<a class="bell" href="/notifications/" aria-label="{% t "Notifications" %}{% if inbox_unread %}: {% t "{n} unread" n=inbox_unread %}{% endif %}"><span aria-hidden="true">🔔</span><span class="n" id="bell-n"{% if not inbox_unread %} hidden{% endif %}>{{ inbox_unread }}</span></a>{% endif %}
+  {% if not user.is_authenticated or user.role == "buyer" %}<a class="hdr-link" href="/shop/">🛍️ <span>{% t "Shop" %}</span></a><a class="hdr-link" href="/shop/cart/" aria-label="{% t "Cart" %}">🛒{% if cart_count %} <b>{{ cart_count }}</b>{% endif %}</a>{% endif %}
+  {% if not user.is_authenticated and not request.path|slice:":6" == "/login" %}<a class="login" href="/login/?as=buyer">{% t "Sign in" %}</a>{% endif %}
   {% if user.is_authenticated %}
     <a class="login" href="{{ home_url }}">{% t "My page" %}</a>
     <form method="post" action="/logout/">{% csrf_token %}<button class="link-btn">{% t "Sign out" %}</button></form>
@@ -61,6 +63,7 @@ s.addEventListener("click",function(e){if(e.target===s)set(false);});document.ad
 <script src="{% static 'web/notify_prompt.js' %}" defer></script>{% endif %}
 {% include "web/partials/loader.html" %}
 <script src="{% static 'web/loader.js' %}" defer></script>
+<script src="{% static 'web/sound.js' %}" defer></script>
 {{ voice|json_script:"sb-voice" }}
 <script src="{% static 'web/voice.js' %}" defer></script>
 {% if SUPPORT_WHATSAPP %}<a class="wa" href="https://wa.me/{{ SUPPORT_WHATSAPP }}" data-track="whatsapp_click" rel="noopener">{% t "Help on WhatsApp" %}</a>{% endif %}

@@ -1,0 +1,9 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "My orders" %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<h1>🧾 {% t "My orders" %}</h1>
+{% for o in rows %}<a class="door" href="/shop/orders/{{ o.number }}/"><div class="card"><div class="row between"><b>{{ o.number }}</b><span class="pill{% if o.status == "cancelled" %} grey{% endif %}">{% t o.get_status_display %}</span></div>
+  <p class="mute" style="margin:4px 0 0">{{ o.created_at|date:"j M Y" }} · {{ o.lines.all|length }} {% t "items" %} · <b>{{ o.total|inr }}</b></p></div></a>
+{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No orders yet." %} <a href="/shop/">{% t "Go to the shop" %}</a></p></div>{% endfor %}
+{% endblock %}

@@ -22,5 +22,7 @@
 </form>
 {% if facebook and not linking_facebook %}<a class="btn block fb" href="/auth/facebook/?as={{ door }}">{% t "Continue with Facebook" %}</a>
 <p class="hint">{% t "The first time, we also ask for your mobile number, so we can send you codes and alerts." %}</p>{% endif %}
-{% if door == "fpo" %}<p class="mute">{% t "New FPO or NGO? Sign in, then register your organisation. Seedha Bazar checks it before it goes live." %}</p>{% endif %}
+{% if door == "fpo" %}<p class="mute">{% t "New FPO or NGO? Sign in, then register your organisation. Seedha Bazar checks it before it goes live." %}</p>
+{% elif door == "buyer" %}<p class="mute">{% t "New here? The same step creates your buyer account: households and businesses both welcome." %}</p>{% endif %}
+<a class="door" href="/shop/"><div class="card tint" style="margin-top:12px"><b>🛍️ {% t "Just browsing? Visit the shop" %}</b><p style="margin:4px 0 0">{% t "Food, handloom, crafts and more from farmers and village groups. Sign in only when you buy." %}</p></div></a>
 {% endblock %}

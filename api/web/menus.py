@@ -3,7 +3,7 @@ and the rest behind "More". Each item: (label, icon, url, paths that light it up
 
 FARMER = [
     ("Home", "🏠", "/farmer/", ["=/farmer/"], ""), ("My book", "📒", "/farmer/book/", ["/farmer/book"], ""), ("My farm", "🐄", "/farm/", ["/farm"], ""),
-    ("Sell", "🏷️", "/farmer/sell/", ["/farmer/sell"], ""), ("Rates", "📈", "/rates/", ["/rates"], ""),
+    ("Sell", "🏷️", "/farmer/sell/", ["/farmer/sell"], ""), ("My shop", "🛍️", "/shop/manage/", ["/shop/manage"], "shop_todo"), ("Rates", "📈", "/rates/", ["/rates"], ""),
     ("Orders", "📦", "/deals/", ["/deals"], "deal_unread"), ("Messages", "💬", "/farmer/enquiries/", ["/farmer/enquiries", "/enquiry"], "unread"),
     ("Weather", "🌦️", "/weather/", ["/weather"], ""), ("Speak", "🎙️", "/voice/", ["/voice"], ""), ("Ask an expert", "🧑‍🔬", "/help/", ["/help"], ""),
     ("Seeds and inputs", "🌱", "/inputs/", ["/inputs"], ""), ("Group farming", "👥", "/farmer/groups/", ["/farmer/groups"], ""),
@@ -18,7 +18,7 @@ FARMER = [
 ]
 FPO = [
     ("Home", "🏠", "/fpo/", ["=/fpo/"], ""), ("My farmers", "🧑‍🌾", "/fpo/farmers/", ["=/fpo/farmers/"], ""),
-    ("Sell", "🏷️", "/fpo/sell/", ["/fpo/sell"], ""), ("Orders", "📦", "/deals/", ["/deals"], "deal_unread"),
+    ("Sell", "🏷️", "/fpo/sell/", ["/fpo/sell"], ""), ("My shop", "🛍️", "/shop/manage/", ["/shop/manage"], "shop_todo"), ("Orders", "📦", "/deals/", ["/deals"], "deal_unread"),
     ("Group selling", "🤝", "/fpo/pools/", ["/fpo/pools"], ""), ("Group farming", "👥", "/fpo/groups/", ["/fpo/groups"], ""), ("Members' farms", "🐄", "/fpo/farm/", ["/fpo/farm"], ""), ("Weather", "🌦️", "/weather/", ["/weather"], ""), ("My shared posts", "📣", "/shared/", ["/shared"], ""),
     ("Add farmer", "➕", "/fpo/farmers/add/", ["/fpo/farmers/add"], ""), ("Requests", "📥", "/fpo/requests/", ["/fpo/requests"], ""),
     ("Messages", "💬", "/fpo/enquiries/", ["/fpo/enquiries", "/enquiry"], "unread"), ("Ask an expert", "🧑‍🔬", "/help/", ["/help"], ""),
@@ -27,7 +27,8 @@ FPO = [
     ("My district", "📊", "/insights/", ["/insights"], ""), ("Map", "🗺️", "/map/", ["/map"], ""), ("Notifications", "🔔", "/notifications/", ["/notifications"], ""),
 ]
 BUYER = [
-    ("Home", "🏠", "/buyer/", ["=/buyer/"], ""), ("Marketplace", "🛒", "/market/", ["/market"], ""),
+    ("Home", "🏠", "/buyer/", ["=/buyer/"], ""), ("Shop", "🛍️", "/shop/", ["=/shop/", "/shop/c", "/shop/p", "/shop/cart", "/shop/checkout"], ""),
+    ("Bulk produce", "🛒", "/market/", ["/market"], ""), ("My orders", "🧾", "/shop/orders/", ["/shop/orders"], ""),
     ("Find producers", "🧑‍🌾", "/buyer/producers/", ["/buyer/producers", "/producers"], ""), ("Orders", "📦", "/deals/", ["/deals"], "deal_unread"),
     ("Messages", "💬", "/buyer/enquiries/", ["/buyer/enquiries", "/enquiry"], "unread"), ("Rates", "📈", "/rates/", ["/rates"], ""),
     ("News", "📰", "/news/", ["/news", "/schemes", "/videos"], ""), ("Map", "🗺️", "/map/", ["/map"], ""),
@@ -44,7 +45,9 @@ KVK = [  # Institution Connect (its own site): only what a KVK or research agenc
 STAFF = [
     ("Overview", "📊", "/console/", ["=/console/"], ""), ("FPOs and NGOs", "🏢", "/console/orgs/", ["/console/orgs"], "waiting_orgs"),
     ("Farmers", "🧑‍🌾", "/console/farmers/", ["/console/farmers"], ""), ("Listings", "🏷️", "/console/listings/", ["/console/listings"], ""),
-    ("Buyers", "🛒", "/console/buyers/", ["/console/buyers"], ""), ("Institutions", "🏛️", "/console/institutions/", ["/console/institutions"], ""),
+    ("Buyers", "🛒", "/console/buyers/", ["/console/buyers"], ""), ("Shop review", "🛍️", "/console/shop/", ["=/console/shop/"], "shop_pending"),
+    ("Shop orders", "📦", "/console/shop/orders/", ["/console/shop/orders"], "shop_open"), ("Shop fees", "💹", "/console/shop/fees/", ["/console/shop/fees"], ""),
+    ("Warehouse inbound", "🏬", "/console/shop/inbound/", ["/console/shop/inbound"], ""), ("Couriers and payments", "🚚", "/console/shop/couriers/", ["/console/shop/couriers", "/console/shop/shipments"], ""), ("Institutions", "🏛️", "/console/institutions/", ["/console/institutions"], ""),
     ("Rates", "📈", "/console/rates/", ["/console/rates"], ""), ("News", "📰", "/console/news/", ["/console/news"], ""),
     ("System notices", "📢", "/console/notices/", ["/console/notices"], ""), ("Messages", "💬", "/console/messages/", ["/console/messages"], ""), ("Leads", "📥", "/console/leads/", ["/console/leads"], ""),
     ("Activity", "🕘", "/console/audit/", ["/console/audit"], ""), ("Data feeds", "🔄", "/console/feeds/", ["/console/feeds"], ""), ("Admins", "🔐", "/console/admins/", ["/console/admins"], ""),
