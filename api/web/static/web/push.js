@@ -13,7 +13,7 @@
         if (perm !== "granted") { out.textContent = "🔕"; return; }
         return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key(on.getAttribute("data-key")) }).then(function (sub) {
           return fetch("/push/subscribe/", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CSRFToken": csrf() }, body: JSON.stringify(sub) });
-        }).then(function () { out.textContent = "✔"; test.hidden = false; });
+        }).then(function () { out.textContent = "✔"; test.hidden = false; if (window.SBSound) window.SBSound.play(); });
       }).catch(function () { out.textContent = "✖"; });
     });
     test.addEventListener("click", function () { fetch("/push/test/", { method: "POST", credentials: "same-origin", headers: { "X-CSRFToken": csrf() } }); });

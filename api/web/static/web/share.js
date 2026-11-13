@@ -61,6 +61,7 @@
           return new Promise(function (res) { c.toBlob(res, "image/png"); }).then(function (blob) {
             var up = new FormData(); up.append("image", blob, d.code + ".png");
             fetch("/share/" + d.code + "/image/", { method: "POST", credentials: "same-origin", headers: { "X-CSRFToken": csrf() }, body: up });
+            if (window.SBSound) window.SBSound.play();  // the card is ready
             var file = new File([blob], "seedha-bazar-" + d.code + ".png", { type: "image/png" });
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
               return navigator.share({ files: [file], text: d.share_text, title: d.title }).catch(function () {});

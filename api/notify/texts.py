@@ -5,6 +5,21 @@ template and keep the {placeholders} in the same order. Keep them short.
 """
 
 TEXTS = {
+    "shop_order": {
+        "en": "Seedha Bazar: new order for {item} x {qty}. Confirm it in My shop: {link}",
+        "hi": "सीधा बाज़ार: {item} x {qty} का नया ऑर्डर। मेरी दुकान में पुष्टि करें: {link}",
+        "mr": "सीधा बाज़ार: {item} x {qty} ची नवीन ऑर्डर. माझे दुकानमध्ये पुष्टी करा: {link}",
+    },
+    "shop_update": {
+        "en": "Seedha Bazar order {product}: {what}. {link}",
+        "hi": "सीधा बाज़ार ऑर्डर {product}: {what}। {link}",
+        "mr": "सीधा बाज़ार ऑर्डर {product}: {what}. {link}",
+    },
+    "shop_review": {
+        "en": "Seedha Bazar: your product {item} is checked: {what}. {link}",
+        "hi": "सीधा बाज़ार: आपका उत्पाद {item} जाँचा गया: {what}। {link}",
+        "mr": "सीधा बाज़ार: तुमचे उत्पादन {item} तपासले: {what}. {link}",
+    },
     "farm_task": {
         "en": "Seedha Bazar reminder, {place}: {advice} {link}",
         "hi": "सीधा बाज़ार याद दिलाता है, {place}: {advice} {link}",

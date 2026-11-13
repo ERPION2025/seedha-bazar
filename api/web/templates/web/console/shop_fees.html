@@ -1,0 +1,15 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Shop fees" %}{% endblock %}
+{% block content %}
+<h1>💹 {% t "Shop fees and revenue" %}</h1>
+<form method="post" class="card">{% csrf_token %}<h3>{% t "Commission by category (%)" %}</h3>
+  <p class="hint">{% t "Seller fee: kept from the producer's price. Buyer fee: added to the price the buyer pays. Delivery: {fee}, free above {above}." fee=delivery_fee|inr above=free_above|inr %}</p>
+  <div class="scroll"><table class="tbl"><thead><tr><th>{% t "Category" %}</th><th>{% t "Seller fee" %}</th><th>{% t "Buyer fee" %}</th></tr></thead><tbody>
+  {% for r in rules %}<tr><td>{{ r.emoji }} {% t r.label %}</td><td><input type="number" step="0.1" min="0" max="30" name="s_{{ r.key }}" value="{{ r.seller }}" style="width:90px"></td><td><input type="number" step="0.1" min="0" max="30" name="b_{{ r.key }}" value="{{ r.buyer }}" style="width:90px"></td></tr>{% endfor %}</tbody></table></div>
+  <button class="btn">{% t "Save" %}</button></form>
+<div class="card"><h3>{% t "Revenue from delivered orders" %}</h3>
+  <p class="mute">{% t "Still to pay producers" %}: <b>{{ owed|inr }}</b></p>
+  <div class="scroll"><table class="tbl"><thead><tr><th>{% t "Month" %}</th><th>{% t "Orders" %}</th><th>{% t "Sales" %}</th><th>{% t "Seller fees" %}</th><th>{% t "Buyer fees" %}</th><th>{% t "Revenue" %}</th></tr></thead><tbody>
+  {% for m in months %}<tr><td>{{ m.order__created_at__month }}/{{ m.order__created_at__year }}</td><td>{{ m.n }}</td><td>{{ m.sales|inr }}</td><td>{{ m.sf|inr }}</td><td>{{ m.bf|inr }}</td><td><b>{{ m.sf|add:m.bf|inr }}</b></td></tr>
+  {% empty %}<tr><td colspan="6" class="mute">{% t "No delivered orders yet." %}</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

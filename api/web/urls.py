@@ -1,7 +1,7 @@
 from django.urls import path, re_path
 from django.views.generic import RedirectView
 
-from . import farm_views, group_views, notify_views, pool_views, share_views, social, voice_views, statement_views, storage_views, weather_views
+from . import farm_views, group_views, shop_views, notify_views, pool_views, share_views, social, voice_views, statement_views, storage_views, weather_views
 from . import auth_views, buyer_views, catalog_views, console_views, deals_views, engage_views, farmer_views, fpo_views, help_views, inputs_views, insurance_views, knowledge_views, location, market_views, public_views, rates_views
 
 urlpatterns = [
@@ -115,6 +115,32 @@ urlpatterns = [
     path("fpo/pools/", pool_views.fpo_list),
     path("fpo/pools/<int:pk>/", pool_views.fpo_detail),
     path("fpo/pools/<int:pk>/<str:action>/", pool_views.fpo_act),
+    path("shop/", shop_views.storefront),
+    path("shop/c/<slug:category>/", shop_views.storefront),
+    path("shop/p/<int:pk>/", shop_views.product_page),
+    path("shop/img/<int:pk>/", shop_views.photo),
+    path("shop/img/<int:pk>/<int:n>/", shop_views.photo_extra),
+    path("shop/m/<int:seller_id>/", shop_views.store),
+    path("shop/review/<int:line_id>/", shop_views.review),
+    path("shop/cart/", shop_views.cart),
+    path("shop/cart/change/", shop_views.cart_change),
+    path("shop/checkout/", shop_views.checkout),
+    path("shop/orders/", shop_views.my_orders),
+    path("shop/orders/<str:number>/", shop_views.order_page),
+    path("shop/orders/<str:number>/pay/", shop_views.pay),
+    path("shop/invoice/<path:number>/", shop_views.invoice),
+    path("shop/manage/settings/", shop_views.seller_settings),
+    path("console/shop/shipments/<int:pk>/", shop_views.desk_shipment),
+    path("console/shop/shipments/<int:pk>/labels/", shop_views.desk_labels),
+    path("console/shop/inbound/", shop_views.desk_inbound),
+    path("console/shop/couriers/", shop_views.desk_couriers),
+    path("shop/manage/", shop_views.manage),
+    path("shop/manage/new/", shop_views.product_form),
+    path("shop/manage/orders/", shop_views.manage_orders),
+    path("shop/manage/<int:pk>/", shop_views.product_form),
+    path("console/shop/", shop_views.desk_review),
+    path("console/shop/orders/", shop_views.desk_orders),
+    path("console/shop/fees/", shop_views.desk_fees),
     path("start/", farm_views.start),
     path("farm/", farm_views.farm),
     path("farm/new/", farm_views.unit_new),

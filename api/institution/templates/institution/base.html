@@ -11,7 +11,7 @@
 <link rel="icon" href="{% static 'web/icons/icon-192.png' %}">
 {% block head %}{% endblock %}
 </head>
-<body class="{% if nav.all %}has-nav{% else %}no-nav{% endif %} portal-kvk site-institution">
+<body data-sound="{% static 'web/sounds/breeze.wav' %}" data-sound-on="{% if sound_on %}1{% endif %}" class="{% if nav.all %}has-nav{% else %}no-nav{% endif %} portal-kvk site-institution">
 <header class="top"><div class="wrap">
   <a class="brand" href="/"><i>सी</i>{% t "Seedha Bazar" %}</a>
   <span class="portal-tag">🏛️ {% t "Institution Connect" %}</span>
@@ -54,6 +54,7 @@ s.addEventListener("click",function(e){if(e.target===s)set(false);});document.ad
 <script src="{% static 'web/notify_prompt.js' %}" defer></script>{% endif %}
 {% include "web/partials/loader.html" %}
 <script src="{% static 'web/loader.js' %}" defer></script>
+<script src="{% static 'web/sound.js' %}" defer></script>
 {{ voice|json_script:"sb-voice" }}
 <script src="{% static 'web/voice.js' %}" defer></script>
 </body>

@@ -54,10 +54,19 @@ def site(request):
         from issues.models import Issue
 
         kvk_open = Issue.objects.filter(centre__members__user=user, status="open").distinct().count()
+    shop_todo = shop_pending = shop_open = 0
+    if user and user.is_authenticated:
+        from shop.models import Order, OrderLine, Product
+        if user.role in ("farmer", "agent"):
+            shop_todo = OrderLine.objects.filter(seller=user, order__status="placed", seller_confirmed_at__isnull=True).count()
+        if user.is_staff or user.role == "admin":
+            shop_pending = Product.objects.filter(status="pending").count()
+            shop_open = Order.objects.filter(status__in=["placed", "confirmed", "packed"]).count()
     from .menus import menu
 
     site_name = getattr(request, "site", "main")
-    nav = menu(request, {"unread": unread, "deal_unread": deal_unread, "waiting_orgs": waiting_orgs, "kvk_open": kvk_open})
+    nav = menu(request, {"unread": unread, "deal_unread": deal_unread, "waiting_orgs": waiting_orgs, "kvk_open": kvk_open,
+                                "shop_todo": shop_todo, "shop_pending": shop_pending, "shop_open": shop_open})
     portal = "kvk" if site_name == "institution" else ""
     wx_alerts, alarm_on = [], True
     if user and user.is_authenticated and user.role == "farmer":
@@ -67,13 +76,14 @@ def site(request):
         wx_alerts = active_alerts(user)[:3]
         pref = Preference.objects.filter(user=user).first()
         alarm_on = pref.alarm_sound if pref else True
-    inbox_unread, notify_cfg = 0, None
+    inbox_unread, notify_cfg, sound_on = 0, None, True
     if user and user.is_authenticated:
         from notify import push
         from notify.models import InboxItem, Preference
 
         inbox_unread = InboxItem.objects.filter(user=user, read_at__isnull=True).count()
         pref = Preference.objects.filter(user=user).first()
+        sound_on = pref.soft_sounds if pref else True
         notify_cfg = {"asked": bool(pref and pref.prompt_answer), "vapid": settings.VAPID_PUBLIC_KEY if push.configured() else "",
                       "last": InboxItem.objects.filter(user=user).order_by("-pk").values_list("pk", flat=True).first() or 0,
                       "tone": static("web/sounds/notify.wav"), "icon": static("web/icons/icon-192.png")}
@@ -91,6 +101,8 @@ def site(request):
         "footer_produce": FOOTER_PRODUCE[:10],
         "footer_services": FOOTER_SERVICES,
         "inbox_unread": inbox_unread,
+        "cart_count": sum((getattr(request, "session", {}).get("cart") or {}).values()) if hasattr(request, "session") else 0,
+        "sound_on": sound_on,
         "notify_cfg": notify_cfg,
         "wx_alerts": wx_alerts,
         "alarm_on": alarm_on,

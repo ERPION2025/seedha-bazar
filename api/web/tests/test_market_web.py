@@ -546,4 +546,4 @@ class BuyerHomeTests(MarketCase):
     def test_new_buyer_is_pointed_at_the_profile(self):
         c = Client()
         c.force_login(make_buyer("9866666666", complete=False))
-        self.assertContains(c.get("/buyer/?lang=en"), "Tell us about your business")
+        self.assertContains(c.get("/buyer/?lang=en"), "Tell us about yourself")

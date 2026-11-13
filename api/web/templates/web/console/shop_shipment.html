@@ -1,0 +1,25 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Shipment" %}{% endblock %}
+{% block content %}
+<p><a href="/console/shop/orders/">← {% t "Shop orders" %}</a></p>
+<h1>{% if sh.mode == "pickup" %}🙋 {% t "Pickup" %}{% else %}🚚 {% t "Shipment" %}{% endif %} · {{ sh.order.number }}</h1>
+<p class="mute">{% t sh.get_status_display %} · {% if sh.origin == "warehouse" %}{% t "From the Seedha Bazar warehouse" %}{% else %}{% t "From the seller" %}{% endif %} → {{ sh.order.city }} {{ sh.order.pincode }}{% if sh.sla_days %} · {{ sh.sla_days }} {% t "days" %}{% endif %} · {{ sh.weight_g }} g</p>
+<div class="grid g2"><div class="card"><h3>{% t "Pick up from" %}</h3>{% if pickup %}{% if sh.origin == "warehouse" %}{{ pickup.name }}<br>{{ pickup.address }} {{ pickup.pincode }}{% else %}{{ pickup.legal_name }}<br>{{ pickup.address }}, {{ pickup.village }}, {{ pickup.district }}, {{ pickup.state }} {{ pickup.pincode }}<br>📞 {{ pickup.pickup_phone|default:sh.seller.phone }}{% endif %}{% else %}<span class="neg">{% t "The seller has no pickup address yet." %}</span>{% endif %}</div>
+  <div class="card"><h3>{% t "Deliver to" %}</h3>{{ sh.order.name }} · 📞 {{ sh.order.phone }}<br>{{ sh.order.address }}, {{ sh.order.city }} {{ sh.order.pincode }}<br>{% t sh.order.get_payment_display %}{% if sh.order.paid %} · ✔ {% t "Paid" %}{% endif %}</div></div>
+<div class="card"><h3>{% t "Contents" %}</h3>{% for l in lines %}<div class="line"><span>{{ l.title }} · {{ l.pack }} × {{ l.quantity }}</span><span>{{ l.amount|inr }}</span></div>{% endfor %}</div>
+{% if sh.error %}<div class="card warn"><b>{% t "Last error" %}</b><p style="margin:4px 0 0">{{ sh.error }}</p></div>{% endif %}
+{% if sh.tracking_ids %}<div class="card tint"><b>{{ sh.courier_name }}</b>: {{ sh.tracking_ids|join:", " }}{% if sh.tracking_url %} · <a href="{{ sh.tracking_url }}" target="_blank" rel="noopener noreferrer">{% t "Track" %} ↗</a>{% endif %}
+  {% for u in sh.label_urls %}<br><a href="{{ u }}" target="_blank" rel="noopener noreferrer">{% t "Courier label" %} {{ forloop.counter }} ↗</a>{% endfor %}</div>{% endif %}
+<form method="post" class="card">{% csrf_token %}<h3>{% t "Boxes" %}</h3><div class="row"><input type="number" name="boxes" min="1" max="50" value="{{ sh.boxes }}" style="width:90px" aria-label="{% t "Boxes" %}">
+  <button class="btn small ghost" name="action" value="boxes">{% t "Save" %}</button><a class="btn small" href="/console/shop/shipments/{{ sh.pk }}/labels/" target="_blank">🏷️ {% t "Print labels" %} ({{ sh.boxes }})</a></div></form>
+{% if sh.mode == "courier" and sh.status == "pending" %}
+  {% if partners %}<form method="post" class="card">{% csrf_token %}<h3>{% t "Book a courier partner" %}</h3><input type="hidden" name="boxes" value="{{ sh.boxes }}">
+    <div class="row"><select name="partner">{% for p in partners %}<option value="{{ p.code }}">{{ p.label }}</option>{% endfor %}</select><button class="btn" name="action" value="book">{% t "Book and get labels" %}</button></div>
+    <p class="hint">{% t "One booking per box; each box gets its own tracking id and label." %}</p></form>{% endif %}
+  <form method="post" class="card">{% csrf_token %}<h3>{% t "Local courier" %}</h3><input type="hidden" name="boxes" value="{{ sh.boxes }}">
+    <div class="grid g2"><div class="field"><label>{% t "Courier name" %}</label><input type="text" name="courier_name" placeholder="DTDC, India Post, local transporter..."></div>
+      <div class="field"><label>{% t "Tracking id (one per box, separated by commas)" %}</label><input type="text" name="tracking"></div></div>
+    <div class="field"><label>{% t "Tracking link (optional)" %}</label><input type="text" name="tracking_url" placeholder="https://"></div>
+    <button class="btn ghost" name="action" value="local">{% t "Save tracking" %}</button></form>
+{% elif sh.mode == "pickup" and sh.status == "pending" %}<form method="post">{% csrf_token %}<button class="btn" name="action" value="ready">✔ {% t "Ready for pickup" %}</button></form>{% endif %}
+{% endblock %}

@@ -247,11 +247,17 @@ class TaskForm(LangForm):
 
 class BuyerProfileForm(LangForm):
     contact_name = forms.CharField(label="Your name", max_length=120)
-    business_name = forms.CharField(label="Business name", max_length=160)
-    business_type = forms.ChoiceField(label="Type of business", choices=list(BuyerProfile.BusinessType.choices))
+    business_type = forms.ChoiceField(label="Buying as", choices=list(BuyerProfile.BusinessType.choices))
+    business_name = forms.CharField(label="Business name (not needed for a household)", max_length=160, required=False)
     city = forms.CharField(label="City", max_length=80)
     gstin = forms.CharField(label="GSTIN (optional)", max_length=15, required=False)
     fssai = forms.CharField(label="FSSAI number (optional)", max_length=14, required=False)
+
+    def clean(self):
+        d = super().clean()
+        if d.get("business_type") and d["business_type"] != "individual" and not (d.get("business_name") or "").strip():
+            self.add_error("business_name", "Write the business name.")
+        return d
 
     def clean_gstin(self):
         v = self.cleaned_data["gstin"].strip().upper()

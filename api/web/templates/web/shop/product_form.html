@@ -1,0 +1,25 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% if p %}{{ p.title }}{% else %}{% t "Add a product" %}{% endif %}{% endblock %}
+{% block mainclass %} narrow{% endblock %}
+{% block content %}
+<p><a href="/shop/manage/">← {% t "My shop" %}</a></p>
+<h1>{% if p %}{{ p.title }}{% else %}{% t "Add a product" %}{% endif %}</h1>
+{% if p %}<div class="card{% if p.status == "rejected" %} warn{% elif p.status == "pending" %} sun{% else %} tint{% endif %}">
+  <b>{% t p.get_status_display %}</b>{% if p.price %} · {% t "Selling at {price} (you asked {asked})" price=p.price|inr asked=p.asked_price|inr %}{% endif %}
+  {% if payout %}<p style="margin:4px 0 0">{% t "You receive {amount} per unit after Seedha Bazar's {pct}% fee." amount=payout|inr pct=seller_pct %}</p>{% endif %}
+  {% if p.review_note %}<p style="margin:4px 0 0">💬 {{ p.review_note }}</p>{% endif %}
+  {% if p.status == "live" %}<p style="margin:6px 0 0"><a href="/shop/p/{{ p.pk }}/">{% t "See it in the shop" %} →</a></p>{% endif %}</div>
+<form method="post" class="card">{% csrf_token %}<input type="hidden" name="action" value="stock"><h3>{% t "Stock" %}: {{ p.stock }}</h3>
+  {% if p.fulfilment == "warehouse" %}<p class="hint" style="margin:0 0 8px">{% t "This product is sold from the Seedha Bazar warehouse. Send the goods to: {name}, {address}. They go on sale when received." name=warehouse.name address=warehouse.address %}</p>{% endif %}
+  <div class="row"><input type="number" name="change" placeholder="+10 / -2" style="width:110px" aria-label="{% t "Change" %}"><input type="text" name="note" placeholder="{% t "Note (optional)" %}" style="flex:1;min-width:120px"><button class="btn small">{% if p.fulfilment == "warehouse" %}{% t "Send to the warehouse" %}{% else %}{% t "Update stock" %}{% endif %}</button></div>
+  {% for i in inbounds %}{% if forloop.first %}<p style="margin:8px 0 2px"><b>{% t "Sent to the warehouse" %}</b></p>{% endif %}<div class="line"><span>{{ i.created_at|date:"j M" }} · {{ i.quantity }}</span><span class="mute">{% t i.get_status_display %}{% if i.received is not None %} ({{ i.received }}){% endif %}</span></div>{% endfor %}
+  {% if moves %}<details style="margin-top:8px"><summary>{% t "Stock history" %}</summary>{% for m in moves %}<div class="line"><span>{{ m.created_at|date:"j M" }} · {% t m.get_reason_display %}{% if m.note %} · {{ m.note }}{% endif %}</span><b>{% if m.change > 0 %}+{% endif %}{{ m.change }}</b></div>{% endfor %}</details>{% endif %}</form>{% endif %}
+<form method="post" enctype="multipart/form-data" class="card">{% csrf_token %}
+  {% include "web/partials/form_body.html" %}
+  <div class="field"><label for="more_photos">{% t "More photos: sides, close-ups, in use (up to 4)" %}</label><input id="more_photos" type="file" name="more_photos" accept="image/*" multiple>
+    {% if p and p.photos.exists %}<p class="hint">{% t "{n} more photos now. Choosing new ones replaces them." n=p.photos.count %}</p>{% endif %}</div>
+  {% if not p %}<div class="field"><label for="stock">{% t "How many do you have ready now?" %}</label><input id="stock" type="number" name="stock" min="0" value="0"></div>{% endif %}
+  <p class="hint">{% t "Seedha Bazar adds a {pct}% platform fee for buyers on top of the selling price, and keeps {spct}% from your price as its fee. Changing the price or description sends the product for review again." pct=buyer_pct spct=seller_pct %}</p>
+  <button class="btn block">{% t "Save" %}</button></form>
+{% if p %}<form method="post">{% csrf_token %}{% if p.status == "paused" %}<button class="link-btn" name="action" value="resume">{% t "Put back on sale" %}</button>{% elif p.status == "live" %}<button class="link-btn" name="action" value="pause">{% t "Pause selling" %}</button>{% endif %}</form>{% endif %}
+{% endblock %}

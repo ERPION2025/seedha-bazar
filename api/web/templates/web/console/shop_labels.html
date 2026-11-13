@@ -1,0 +1,14 @@
+{% load web_tags %}<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Labels {{ o.number }}</title>
+<style>body{font:13px/1.35 system-ui,sans-serif;margin:16px}.lab{width:100mm;min-height:140mm;border:2px solid #000;padding:8px 10px;margin:0 8px 12px 0;display:inline-block;vertical-align:top;page-break-inside:avoid;box-sizing:border-box}
+.big{font-size:20px;font-weight:800;letter-spacing:.04em}.sec{border-top:1px dashed #000;margin-top:6px;padding-top:6px}.cod{border:2px solid #000;padding:4px;font-weight:800;text-align:center;margin-top:6px}
+@media print{button{display:none}.lab{margin:0 0 4mm 0;page-break-after:always}}</style></head><body>
+<button onclick="window.print()">Print</button>
+{% for b in boxes %}<div class="lab">
+  <div style="display:flex;justify-content:space-between"><b>SEEDHA BAZAR</b><span>Box {{ b.n }} of {{ sh.boxes }}</span></div>
+  <div class="big">{{ o.number }}</div>{% if b.id %}<div>{{ sh.courier_name }} · <b>{{ b.id }}</b></div>{% endif %}
+  <div class="sec"><b>TO</b><br><span style="font-size:15px"><b>{{ o.name }}</b></span><br>{{ o.address }}<br>{{ o.city }}{% if o.state %}, {{ o.state }}{% endif %}<br><span class="big">{{ o.pincode }}</span><br>📞 {{ o.phone }}</div>
+  <div class="sec"><b>FROM</b><br>{{ frm.name }}<br>{{ frm.address }} {{ frm.pincode }}</div>
+  <div class="sec">Weight about {{ per_box_g }} g{% if sh.sla_days %} · {{ sh.sla_days }} days{% endif %}</div>
+  {% if collect %}<div class="cod">COLLECT CASH ₹ {{ collect }}{% if sh.boxes > 1 %} (with box 1){% endif %}</div>{% else %}<div class="cod">PREPAID</div>{% endif %}
+</div>{% endfor %}
+</body></html>

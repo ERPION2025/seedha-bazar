@@ -1,0 +1,17 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Couriers and payments" %}{% endblock %}
+{% block content %}
+<h1>🚚 {% t "Couriers and payments" %}</h1>
+<div class="card"><h3>{% t "Courier partners" %}</h3>
+  {% for c, on in partners %}<div class="line"><span>{{ c.label }}</span><span class="{% if on %}pos{% else %}mute{% endif %}">{% if on %}✔ {% t "Connected" %}{% else %}{% t "Not connected" %}{% endif %}</span></div>{% endfor %}
+  <div class="line"><span>{% t "Local courier (manual tracking id)" %}</span><span class="pos">✔ {% t "Always available" %}</span></div>
+  <p class="hint">{% t "Shiprocket: set SHIPROCKET_EMAIL, SHIPROCKET_PASSWORD and the pickup location name. Delhivery: set DELHIVERY_TOKEN and DELHIVERY_PICKUP_NAME. Booking happens from each shipment." %}</p></div>
+<div class="card"><h3>{% t "Seedha Bazar warehouse" %}</h3><p style="margin:0">{{ warehouse.name }}<br>{{ warehouse.address }} {{ warehouse.pincode }}</p></div>
+<div class="card scroll"><h3>{% t "Delivery zones, days and charges" %}</h3><table class="tbl"><thead><tr><th>{% t "Zone" %}</th><th>{% t "Days" %}</th><th>{% t "First 500 g" %}</th><th>{% t "Each extra 500 g" %}</th></tr></thead><tbody>
+  {% for z, days, fee in zones %}<tr><td>{{ z }}</td><td>{{ days }}</td><td>₹{{ fee.0 }}</td><td>₹{{ fee.1 }}</td></tr>{% endfor %}</tbody></table></div>
+<div class="card"><h3>{% t "Payments and GST" %}</h3>
+  <div class="line"><span>{% t "Pay on delivery" %}</span><span class="pos">✔</span></div>
+  <div class="line"><span>UPI</span><span>{% if upi %}✔ {{ upi }}{% else %}<span class="mute">SHOP_UPI_ID</span>{% endif %}</span></div>
+  <div class="line"><span>{% t "Online (Razorpay)" %}</span><span>{% if online %}✔ {% t "Connected" %}{% else %}<span class="mute">RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET</span>{% endif %}</span></div>
+  <div class="line"><span>GSTIN</span><span>{% if gstin %}{{ gstin }}{% else %}<span class="mute">{% t "Not set: Seedha Bazar's service invoices carry no GST" %}</span>{% endif %}</span></div></div>
+{% endblock %}

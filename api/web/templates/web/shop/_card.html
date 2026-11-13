@@ -1,0 +1,14 @@
+{% load web_tags %}<article class="pc">
+  <a class="pc-img" href="/shop/p/{{ p.pk }}/" tabindex="-1">{% if p.photo %}<img src="/shop/img/{{ p.pk }}/" alt="{{ p.title }}" loading="lazy">{% else %}<span aria-hidden="true">{{ p.cat_emoji }}</span>{% endif %}
+    {% if p.bestseller %}<span class="pc-badge">{% t "Bestseller" %}</span>{% elif p.off >= 10 %}<span class="pc-badge deal">{{ p.off }}% {% t "off" %}</span>{% endif %}</a>
+  <div class="pc-body">
+    <a class="pc-title" href="/shop/p/{{ p.pk }}/">{{ p.title }}{% if p.pack %} <span class="mute">· {{ p.pack }}</span>{% endif %}</a>
+    {% if p.ratings_n %}<div class="pc-rate">{% include "web/shop/_stars.html" %} <span class="mute">{{ p.ratings_n }}</span></div>{% endif %}
+    {% if p.sold_label %}<div class="pc-sold">{% t "{n} bought in the past month" n=p.sold_label %}</div>{% endif %}
+    <div class="pc-price"><span class="pc-now"><small>₹</small>{{ p.show_price|floatformat:"0g" }}</span>{% if p.show_mrp %} <span class="pc-mrp">{% t "M.R.P." %} <s>₹{{ p.show_mrp|floatformat:"0g" }}</s></span> <span class="pc-off">({{ p.off }}% {% t "off" %})</span>{% endif %}</div>
+    {% if p.b2b_price %}<div class="pc-note">🏢 {% t "Business price from {n} units" n=p.b2b_min %}</div>{% endif %}
+    <div class="pc-deliver">{% if p.free_delivery %}<b>{% t "FREE delivery" %}</b> {% endif %}{% if p.deliver_by %}{% t "Get it by" %} <b>{{ p.deliver_by|date:"D, j M" }}</b>{% elif not p.free_delivery %}<span class="mute">{% t "Delivery date for your PIN code at checkout" %}</span>{% endif %}</div>
+    {% if p.low_stock %}<div class="pc-low">{% t "Only {n} left in stock" n=p.stock %}</div>{% endif %}
+    <div class="pc-meta">📍 {{ p.place }}{% if p.from_warehouse %} · <span class="pc-sb">✔ {% t "Seedha Bazar fulfilled" %}</span>{% endif %}</div>
+  </div>
+</article>

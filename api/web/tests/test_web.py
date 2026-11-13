@@ -654,3 +654,12 @@ class OrgApprovalVisibilityTests(WebCase):
         self.client.post("/admin/profiles/organisation/", {"action": "approve", "_selected_action": [org.pk]})
         org.refresh_from_db()
         self.assertTrue(org.verified)
+
+
+class CsrfFailureTests(TestCase):
+    def test_a_stale_form_gets_a_plain_explanation(self):
+        c = Client(enforce_csrf_checks=True)
+        r = c.post("/login/verify/?lang=en", {"code": "123456"})
+        self.assertEqual(r.status_code, 403)
+        self.assertContains(r, "Open it again", status_code=403)
+        self.assertContains(r, 'href="/login/"', status_code=403)

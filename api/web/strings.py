@@ -15,7 +15,7 @@ SCAN_PY = ("auth_views.py", "farmer_views.py", "fpo_views.py", "console_views.py
            "rates_views.py", "market_views.py", "location.py", "rate_alerts.py", "catalog_views.py", "knowledge_views.py", "insurance_views.py", "deals_views.py",
            "help_views.py", "../institution/views.py", "inputs_views.py", "engage_views.py",
            "weather_views.py", "pool_views.py", "storage_views.py", "statement_views.py",
-           "share_views.py", "notify_views.py", "voice_views.py", "social.py", "group_views.py", "farm_views.py")
+           "share_views.py", "notify_views.py", "voice_views.py", "social.py", "group_views.py", "farm_views.py", "shop_views.py")
 
 
 def template_strings() -> set[str]:
@@ -45,11 +45,11 @@ def form_strings() -> set[str]:
     from django import forms
 
     from institution import views as kvk_views
-    from web import deals_views, farm_views, group_views, help_views, insurance_views, pool_views
+    from web import deals_views, farm_views, group_views, help_views, insurance_views, pool_views, shop_views
     from web import forms as wf
 
     out = set()
-    classes = {cls for mod in (wf, deals_views, insurance_views, help_views, kvk_views, pool_views, group_views, farm_views) for _, cls in inspect.getmembers(mod, inspect.isclass)}
+    classes = {cls for mod in (wf, deals_views, insurance_views, help_views, kvk_views, pool_views, group_views, farm_views, shop_views) for _, cls in inspect.getmembers(mod, inspect.isclass)}
     for cls in classes:
         if not issubclass(cls, forms.Form) or cls is forms.Form:
             continue
@@ -58,7 +58,7 @@ def form_strings() -> set[str]:
         except Exception:
             continue
         for fname, field in form.fields.items():
-            if fname in ("districts", "state", "organisation"):  # place names and organisations' own names are not translated
+            if fname in ("districts", "state", "organisation", "city"):  # place names and organisations' own names are not translated
                 if field.label:
                     out.add(field.label)
                 continue
@@ -156,6 +156,13 @@ def form_strings() -> set[str]:
         if cfg.get("produce"):
             out.add(cfg["produce"][2])
     out.update(label for _, label in FarmEntry.Kind.choices)
+    from shop.models import CATEGORIES, GST_RATES, Inbound, Invoice, Order as ShopOrder, Product as ShopProduct, Shipment, StockMove
+
+    out.update(label for _, label, _ in CATEGORIES)
+    out.update(label for _, label in GST_RATES)
+    for choices in (ShopOrder.Status.choices, ShopOrder.Payment.choices, ShopProduct.Status.choices, StockMove.Reason.choices, ShopProduct.Fulfilment.choices,
+                    Shipment.Status.choices, Shipment.Mode.choices, Invoice.Kind.choices, Inbound._meta.get_field("status").choices):
+        out.update(label for _, label in choices)
     for choices in (InsPlan.Scheme.choices, InsPlan.Season.choices, InsPlan.Group.choices, InsApp.Status.choices, InsApp.Channel.choices):
         out.update(label for _, label in choices)
     return out

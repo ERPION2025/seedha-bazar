@@ -1,0 +1,18 @@
+{% extends "web/console/base.html" %}{% load web_tags %}
+{% block title %}{% t "Shop orders" %}{% endblock %}
+{% block content %}
+<h1>📦 {% t "Shop orders" %}</h1>
+<nav class="chip-row"><a class="chip{% if status == "open" %} on{% endif %}" href="?status=open">{% t "Open" %}</a>{% for v, l in statuses %}<a class="chip{% if v == status %} on{% endif %}" href="?status={{ v }}">{% t l %}</a>{% endfor %}<a class="chip{% if status == "all" %} on{% endif %}" href="?status=all">{% t "All" %}</a></nav>
+{% for o in rows %}<div class="card"><div class="row between"><b>{{ o.number }} · {{ o.city }}</b><span class="pill{% if o.status == "cancelled" %} grey{% endif %}">{% t o.get_status_display %}</span></div>
+  <p class="mute" style="margin:4px 0">{{ o.created_at|date:"j M H:i" }} · {{ o.name }} · 📞 {{ o.phone }} · {{ o.address }} {{ o.pincode }} · {{ o.channel|upper }} · {% t o.get_payment_display %}{% if o.paid %} · ✔ {% t "Paid" %}{% endif %}</p>
+  {% for l in o.lines.all %}<div class="line"><span>{{ l.title }} × {{ l.quantity }} · {{ l.seller.farmer_profile.name|default:l.seller.phone }} ({{ l.seller.phone }}){% if l.seller_confirmed_at %} ✔{% endif %}</span><span>{{ l.amount|inr }} · {% t "fees" %} {{ l.seller_fee|add:l.buyer_fee|inr }}</span></div>{% endfor %}
+  <div class="line"><b>{% t "Total" %}</b><b>{{ o.total|inr }}</b></div>
+  {% for sh in o.shipments.all %}<div class="line"><span>{% if sh.mode == "pickup" %}🙋 {% t "Pickup" %}{% else %}🚚 {% t "Courier" %}{% endif %} · {% if sh.origin == "warehouse" %}{% t "Warehouse" %}{% else %}{% t "Seller" %} {{ sh.from_pincode }}{% endif %}{% if sh.sla_days %} · {{ sh.sla_days }} {% t "days" %}{% endif %} · {% t sh.get_status_display %}{% if sh.tracking_ids %} · {{ sh.tracking_ids|join:", " }}{% endif %}</span>
+    <a href="/console/shop/shipments/{{ sh.pk }}/">{% t "Open" %}</a></div>{% endfor %}
+  <form method="post" class="row" style="margin-top:8px">{% csrf_token %}<input type="hidden" name="order" value="{{ o.pk }}">
+    {% if o.next_step %}<button class="btn small" name="action" value="{{ o.next_step }}">→ {% t o.next_label %}</button>{% endif %}
+    {% if not o.paid and o.status != "cancelled" %}<button class="btn small ghost" name="action" value="paid">{% t "Mark paid" %}</button>{% endif %}
+    {% if o.unpaid_out %}<button class="btn small ghost" name="action" value="payout">{% t "Mark producers paid" %}</button>{% endif %}
+    {% if o.status != "delivered" and o.status != "cancelled" %}<input type="text" name="note" placeholder="{% t "Note (optional)" %}" style="flex:1;min-width:120px"><button class="link-btn neg" name="action" value="cancelled">{% t "Cancel" %}</button>{% endif %}</form></div>
+{% empty %}<div class="card"><p class="mute" style="margin:0">{% t "No orders here." %}</p></div>{% endfor %}
+{% endblock %}

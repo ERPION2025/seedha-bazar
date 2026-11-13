@@ -1,0 +1,13 @@
+{% extends base_tpl %}{% load web_tags %}
+{% block title %}{% t "My shop" %}{% endblock %}
+{% block content %}
+<div class="row between"><h1 style="margin:0">🛍️ {% t "My shop" %}</h1><div class="row"><a class="btn ghost" href="/shop/manage/settings/">⚙️ {% t "Shop settings" %}</a><a class="btn" href="/shop/manage/new/">+ {% t "Add a product" %}</a></div></div>
+{% if not ss_ready %}<a class="door" href="/shop/manage/settings/"><div class="card sun"><b>{% t "Add your pickup address and PIN code" %}</b><p style="margin:4px 0 0">{% t "Needed before buyers can get your products delivered. Products kept at the Seedha Bazar warehouse do not need it." %}</p></div></a>{% endif %}
+<p class="mute">{% t "Sell what you make: packed food, millets, honey, handloom, crafts, clothes, décor. Seedha Bazar checks each product and its price, then sells it to households and businesses in the cities, and pays you after delivery." %}</p>
+<div class="stats4"><a class="door" href="/shop/manage/orders/"><div class="card stat{% if to_confirm %} sun{% endif %}"><small>{% t "Orders to confirm" %}</small><div class="big">{{ to_confirm }}</div></div></a>
+  <div class="card stat"><small>{% t "Earned (delivered)" %}</small><div class="big">{{ earned|inr }}</div></div></div>
+<div class="card scroll"><table class="tbl"><thead><tr><th>{% t "Product" %}</th><th>{% t "Your price" %}</th><th>{% t "Selling at" %}</th><th>{% t "Stock" %}</th><th>{% t "Status" %}</th></tr></thead><tbody>
+{% for p in rows %}<tr><td><a href="/shop/manage/{{ p.pk }}/"><b>{{ p.title }}</b></a><br><span class="mute">{{ p.pack }}</span></td><td>{{ p.asked_price|inr }}</td><td>{% if p.price %}{{ p.price|inr }}{% else %}—{% endif %}</td>
+  <td>{% if p.stock < 3 %}<span class="neg">{{ p.stock }}</span>{% else %}{{ p.stock }}{% endif %}</td><td><span class="pill{% if p.status != "live" %} grey{% endif %}">{% t p.get_status_display %}</span></td></tr>
+{% empty %}<tr><td colspan="5" class="mute">{% t "No products yet." %}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

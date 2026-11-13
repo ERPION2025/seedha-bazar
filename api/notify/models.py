@@ -55,6 +55,7 @@ class Preference(models.Model):
     messenger_psid = models.CharField(max_length=64, blank=True, help_text="Facebook Messenger id for our Page, set when the person messages the Page from our link")
     messenger_last_in = models.DateTimeField(null=True, blank=True, help_text="When they last messaged the Page (Meta's 24-hour window)")
     sms = models.BooleanField(default=True)
+    soft_sounds = models.BooleanField(default=True, help_text="The soft breeze sound for notifications and when something is done")
     prompt_answer = models.CharField(max_length=8, blank=True, help_text="The one-time question about phone notifications: yes, no, or blank if not asked yet")
     prompted_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)

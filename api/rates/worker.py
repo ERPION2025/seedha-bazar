@@ -100,10 +100,16 @@ def warehouse_tick(now=None):
     return out
 
 
+def shop_tick(now=None) -> int:
+    """Online orders left unpaid too long are cancelled, so their stock goes back on sale."""
+    from shop.payments import cancel_unpaid
+    return cancel_unpaid(now)
+
+
 def loop(poll_seconds: int = 600):
     log.info("worker started; rates every %s hours, news every %s hours", settings.RATES_REFRESH_HOURS, settings.NEWS_REFRESH_HOURS)
     while True:
-        for job in (tick, news_tick, issues_tick, weather_tick, advisory_tick, warehouse_tick):
+        for job in (tick, news_tick, issues_tick, weather_tick, advisory_tick, warehouse_tick, shop_tick):
             try:
                 job()
             except Exception:

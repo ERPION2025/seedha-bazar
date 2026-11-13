@@ -2,8 +2,10 @@
 {% block title %}{% t "Buyer" %}{% endblock %}
 {% block content %}
 <h1>{% t "Namaste" %}{% if profile.contact_name %}, {{ profile.contact_name }}{% endif %}</h1>
+<div class="grid g2" style="margin-bottom:14px"><a class="door" href="/shop/"><div class="card tint"><b>🛍️ {% t "Shop" %}</b><p style="margin:4px 0 0">{% t "Food, millets, honey, handloom, crafts and décor made by farmers and village groups. Home delivery or pickup." %}</p></div></a>
+  <a class="door" href="/market/"><div class="card"><b>🛒 {% t "Bulk produce" %}</b><p style="margin:4px 0 0">{% t "Grain, pulses and fresh produce in bulk, straight from farmers and FPOs, with a signed agreement." %}</p></div></a></div>
 {% if profile.level < 1 %}
-<div class="card sun"><span class="pill sun">{% t "Next step" %}</span><h2 style="margin-top:8px">{% t "Tell us about your business" %}</h2><p>{% t "Sellers want to know who is asking. It takes one minute." %}</p><a class="btn" href="/buyer/profile/">{% t "Business details" %}</a></div>
+<div class="card sun"><span class="pill sun">{% t "Next step" %}</span><h2 style="margin-top:8px">{% t "Tell us about yourself" %}</h2><p>{% t "A household or a business? It takes one minute." %}</p><a class="btn" href="/buyer/profile/">{% t "Business details" %}</a></div>
 {% else %}
 <div class="stats"><div class="card stat"><small>{% t "Open conversations" %}</small><div class="big">{{ open_enquiries }}</div></div><div class="card stat"><small>{% t "Accepted" %}</small><div class="big">{{ accepted }}</div></div>
   <div class="card stat"><small>{% t "Business" %}</small><div class="big" style="font-size:1rem">{% if profile.level >= 2 %}✔ {% t "Verified" %}{% else %}{% t "Not verified" %}{% endif %}</div></div></div>
